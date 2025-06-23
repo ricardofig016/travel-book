@@ -3,10 +3,23 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./styles/fonts.css" />
+    <link rel="stylesheet" href="./styles/main.css" />
+    <script type="module" src="./js/app.js" defer></script>
     <title>Travel Book</title>
   </head>
   <body>
-    <div id="app">hey</div>
-    <script type="module" src="./js/app.js"></script>
+    <div id="app">
+      <!-- Front Cover -->
+      <section id="front-section"></section>
+      <!-- World Map -->
+      <section hidden id="map-section"></section>
+      <!-- Photo Album -->
+      <section hidden id="album-section"></section>
+      <!-- Statistics -->
+      <section hidden id="stats-section"></section>
+      <!-- Back Cover -->
+      <section hidden id="back-section"></section>
+    </div>
   </body>
 </html>

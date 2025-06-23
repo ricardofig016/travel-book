@@ -1,0 +1,52 @@
+:root {
+  font-size: medium;
+
+  /* color palette */
+  --book-cover-green: #1d442e;
+  --book-cover-dark-gold: rgb(166, 124, 0);
+  --book-cover-medium-gold: rgb(191, 155, 48);
+  --book-cover-light-gold: rgb(255, 207, 64);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  font-family: "Wonderling", Arial;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+body {
+  background: url("../assets/images/wood-table-background.png") no-repeat left center fixed;
+  background-size: cover;
+  padding: 2rem;
+}
+
+#app {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+section {
+  width: 100%;
+  flex-grow: 1;
+}
+
+#front-section {
+  background: url("../assets/images/book-cover.png") no-repeat center center;
+  background-size: contain;
+}

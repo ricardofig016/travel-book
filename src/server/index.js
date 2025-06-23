@@ -1,10 +1,7 @@
-// src/server/index.js
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 
-// import markersRouter from "./routes/markers.js";
-// import citiesRouter from "./routes/cities.js";
 // import errorHandler from "./utils/errorHandler.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -16,11 +13,11 @@ const app = express();
 app.use(express.json());
 
 // Serve static assets
-app.use(express.static(path.join(__dirname, "../client")));
+const CLIENT_DIR = path.join(__dirname, "../client");
+app.use(express.static(CLIENT_DIR));
 
-// API Routes
-// app.use("/api/markers", markersRouter);
-// app.use("/api/cities", citiesRouter);
+// Redirect to index.html for all routes
+app.get("/*splat", (req, res) => res.sendFile(path.join(CLIENT_DIR, "index.html")));
 
 // 404 Handler
 app.use((req, res, next) => {
