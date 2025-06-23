@@ -47,6 +47,11 @@ section {
 }
 
 #front-section {
-  background: url("../assets/images/book-cover.png") no-repeat center center;
+  background: url("../assets/images/book-front-cover.png") no-repeat center center;
+  background-size: contain;
+}
+
+#back-section {
+  background: url("../assets/images/book-back-cover.png") no-repeat center center;
   background-size: contain;
 }
