@@ -2,10 +2,11 @@
   font-size: medium;
 
   /* color palette */
+  --text-white: #ffffff;
   --book-cover-green: #1d442e;
-  --book-cover-dark-gold: rgb(166, 124, 0);
-  --book-cover-medium-gold: rgb(191, 155, 48);
   --book-cover-light-gold: rgb(255, 207, 64);
+  --book-cover-medium-gold: rgb(191, 155, 48);
+  --book-cover-dark-gold: rgb(166, 124, 0);
 }
 
 *,
@@ -16,42 +17,102 @@
 
 html,
 body {
-  font-family: "Wonderling", Arial;
-  width: 100vw;
-  height: 100vh;
+  font-family: "Yrsa", Arial;
   margin: 0;
   padding: 0;
-  overflow: hidden;
-  -ms-overflow-style: none;
   scrollbar-width: none;
+  overflow-x: auto;
+  /* overflow: hidden; */
+  /* -ms-overflow-style: none; */
 }
 
 body {
   background: url("../assets/images/wood-table-background.png") no-repeat left center fixed;
   background-size: cover;
-  padding: 2rem;
-}
-
-#app {
-  width: 100%;
-  height: 100%;
+  padding: 1.8rem 0;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+  flex-wrap: nowrap;
+
+  /* this targets all the elements directly under body */
+  > * {
+    flex-shrink: 0;
+  }
 }
 
 section {
-  width: 100%;
-  flex-grow: 1;
+  width: 37rem;
+  height: 48rem;
+  z-index: 2;
 }
 
 #front-section {
-  background: url("../assets/images/book-front-cover.png") no-repeat center center;
+  width: 37rem;
+  background: url("../assets/images/book-front-cover.svg") no-repeat center center;
   background-size: contain;
 }
 
 #back-section {
-  background: url("../assets/images/book-back-cover.png") no-repeat center center;
+  width: 37rem;
+  background: url("../assets/images/book-back-cover.svg") no-repeat center center;
+  background-size: contain;
+}
+
+.ribbons-container {
+  height: 48rem;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: 0rem;
+  padding: 3rem 0;
+}
+
+#left-ribbons {
+  /* we flip the whole ribbon container and then we will flip the text back, 
+  this way we dont need new images for the mirrored ribbons. note: this probably wont
+  be suitable for when we apply more complex styling to the text inside the span, 
+  and so we may need to find another solution to flip the ribbon image */
+  transform: scaleX(-1);
+  .ribbon span {
+    display: inline-block;
+    transform: scaleX(-1);
+  }
+}
+
+#right-ribbons {
+}
+
+.ribbon {
+  all: unset;
+  cursor: pointer;
+  background: url("../assets/images/ribbon-green.svg") no-repeat center center;
+  background-size: contain;
+  width: 12rem;
+  height: 6rem;
+  color: var(--text-white);
+  font-size: 1.5rem;
+  letter-spacing: 0.1rem;
+  text-align: center;
+  transition: transform 0.15s ease;
+  &:hover {
+    transform: scale(1.05);
+  }
+}
+
+.ribbon-map {
+  background: url("../assets/images/ribbon-red.svg") no-repeat center center;
+  background-size: contain;
+}
+
+.ribbon-album {
+  background: url("../assets/images/ribbon-blue.svg") no-repeat center center;
+  background-size: contain;
+}
+
+.ribbon-stats {
+  background: url("../assets/images/ribbon-yellow.svg") no-repeat center center;
   background-size: contain;
 }
