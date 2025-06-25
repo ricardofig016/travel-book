@@ -43,9 +43,9 @@ body {
 }
 
 section {
-  width: 37rem;
+  width: 37rem; /* this is wrong for when the book is opened */
   height: 48rem;
-  z-index: 2;
+  z-index: 2; /* so that the ribbons go behind the book when we hover over them */
 }
 
 #front-section {
@@ -86,8 +86,9 @@ section {
 }
 
 .ribbon {
-  all: unset;
-  cursor: pointer;
+  border: none;
+  font-family: inherit;
+  /* cursor: pointer; */
   background: url("../assets/images/ribbon-green.svg") no-repeat center center;
   background-size: contain;
   width: 12rem;
