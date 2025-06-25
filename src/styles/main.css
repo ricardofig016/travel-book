@@ -42,20 +42,18 @@ body {
   }
 }
 
-section {
-  width: 37rem; /* this is wrong for when the book is opened */
-  height: 48rem;
+.page {
   z-index: 2; /* so that the ribbons go behind the book when we hover over them */
+  color: var(--text-white);
+  font-size: large;
 }
 
-#front-section {
-  width: 37rem;
+#front-page {
   background: url("../assets/images/book-front-cover.svg") no-repeat center center;
   background-size: contain;
 }
 
-#back-section {
-  width: 37rem;
+#back-page {
   background: url("../assets/images/book-back-cover.svg") no-repeat center center;
   background-size: contain;
 }
@@ -97,6 +95,7 @@ section {
   font-size: 1.5rem;
   letter-spacing: 0.1rem;
   text-align: center;
+  padding: 0;
   transition: transform 0.15s ease;
   &:hover {
     transform: scale(1.05);

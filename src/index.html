@@ -6,6 +6,13 @@
     <link rel="icon" href="./assets/images/globe-icon.svg" type="image/x-icon" />
     <link rel="stylesheet" href="./styles/fonts.css" />
     <link rel="stylesheet" href="./styles/main.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "page-flip": "https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.module.js"
+        }
+      }
+    </script>
     <script type="module" src="./js/app.js" defer></script>
     <title>Travel Book</title>
   </head>
@@ -18,16 +25,13 @@
       <button type="button" class="ribbon ribbon-back" value="back"><span>Back</span></button>
     </div>
 
-    <!-- Front Cover -->
-    <section id="front-section"></section>
-    <!-- World Map -->
-    <section id="map-section">map</section>
-    <!-- Photo Album -->
-    <section id="album-section">album</section>
-    <!-- Statistics -->
-    <section id="stats-section">stats</section>
-    <!-- Back Cover -->
-    <section id="back-section"></section>
+    <div id="book">
+      <div id="front-page" class="page"></div>
+      <div id="map-page" class="page"><h1>map</h1></div>
+      <div id="album-page" class="page"><h1>album</h1></div>
+      <div id="stats-page" class="page"><h1>stats</h1></div>
+      <div id="back-page" class="page"></div>
+    </div>
 
     <div id="right-ribbons" class="ribbons-container">
       <!-- Navigation Buttons -->

@@ -1,49 +1,69 @@
-// constants
-const sections = {
-  front: document.getElementById("front-section"),
-  map: document.getElementById("map-section"),
-  album: document.getElementById("album-section"),
-  stats: document.getElementById("stats-section"),
-  back: document.getElementById("back-section"),
-};
+import { PageFlip } from "page-flip";
 
+// constants
+const book = document.getElementById("book");
+const mainPages = { front: 0, map: 1, album: 2, stats: 3, back: 4 };
 const leftRibbonsContainer = document.getElementById("left-ribbons");
-const leftRibbons = {
-  front: leftRibbonsContainer.querySelector(".ribbon-front"),
-  map: leftRibbonsContainer.querySelector(".ribbon-map"),
-  album: leftRibbonsContainer.querySelector(".ribbon-album"),
-  stats: leftRibbonsContainer.querySelector(".ribbon-stats"),
-  back: leftRibbonsContainer.querySelector(".ribbon-back"),
-};
 const rightRibbonsContainer = document.getElementById("right-ribbons");
-const rightRibbons = {
-  front: rightRibbonsContainer.querySelector(".ribbon-front"),
-  map: rightRibbonsContainer.querySelector(".ribbon-map"),
-  album: rightRibbonsContainer.querySelector(".ribbon-album"),
-  stats: rightRibbonsContainer.querySelector(".ribbon-stats"),
-  back: rightRibbonsContainer.querySelector(".ribbon-back"),
-};
+
+// load book
+const pageFlip = new PageFlip(book, {
+  width: 430,
+  height: 570,
+  size: "fixed",
+  minShadowOpacity: 0.2,
+  maxShadowOpacity: 0.6,
+  showCover: true,
+  mobileScrollSupport: true,
+});
+pageFlip.loadFromHTML(document.querySelectorAll(".page"));
 
 // functions
-const hideAllSections = () => {
-  for (const s in sections) sections[s].hidden = true;
-  for (const r in leftRibbons) leftRibbons[r].hidden = true;
-  for (const r in rightRibbons) rightRibbons[r].hidden = true;
+// the last page needs to have an odd index or else it wont be a cover
+const offsetLastPage = () => {
+  if (mainPages.back % 2 === 1) return; // already odd, no need to offset
+  const pages = document.querySelectorAll(".page");
+  const lastPage = pages[pages.length - 1];
+  const penultimatePage = pages[pages.length - 2];
+  if (penultimatePage && penultimatePage.classList.contains("blank")) {
+    // if the penultimate page is blank, we can remove it
+    penultimatePage.remove();
+    mainPages.back -= 1;
+  } else {
+    // otherwise, we need to create a new blank page before the last page
+    const newBlankPage = document.createElement("div");
+    newBlankPage.classList.add("page", "blank");
+    newBlankPage.innerText = "blank";
+    lastPage.parentNode.insertBefore(newBlankPage, lastPage);
+    mainPages.back += 1;
+  }
+  pageFlip.updateFromHtml(document.querySelectorAll(".page"));
 };
 
-const switchSection = (sectionName) => {
-  hideAllSections();
-  sections[sectionName].hidden = false;
-  // show left ribbons until the current section
-  for (const key in leftRibbons) {
-    if (key != sectionName) leftRibbons[key].hidden = false;
-    else break;
+const hideAllRibbons = () => {
+  for (const container of [leftRibbonsContainer, rightRibbonsContainer]) {
+    for (const pageName in mainPages) {
+      const ribbon = container.querySelector(`.ribbon-${pageName}`);
+      if (ribbon) ribbon.hidden = true;
+    }
   }
-  // show right ribbons from the current section
-  const reversedRightRibbonKeys = Object.keys(rightRibbons).reverse();
-  for (const key of reversedRightRibbonKeys) {
-    if (key != sectionName) rightRibbons[key].hidden = false;
-    else break;
+};
+
+const updateRibbons = (pageIndex) => {
+  hideAllRibbons();
+  for (const pageName in mainPages) {
+    if (mainPages[pageName] < pageIndex) {
+      const leftRibbon = leftRibbonsContainer.querySelector(`.ribbon-${pageName}`);
+      if (leftRibbon) leftRibbon.hidden = false;
+    } else if (mainPages[pageName] > pageIndex + 1) {
+      // +1 to account for the page thats directly to the right of current page
+      const rightRibbon = rightRibbonsContainer.querySelector(`.ribbon-${pageName}`);
+      if (rightRibbon) rightRibbon.hidden = false;
+    } else if (mainPages[pageName] > pageIndex && pageIndex === 0) {
+      // special case for the first page, where there is no page directly to the right
+      const rightRibbon = rightRibbonsContainer.querySelector(`.ribbon-${pageName}`);
+      if (rightRibbon) rightRibbon.hidden = false;
+    }
   }
 };
 
@@ -69,12 +89,10 @@ window.addEventListener(
   { passive: false }
 );
 
-document.addEventListener("DOMContentLoaded", () => {
-  // open with front section
-  switchSection("front");
+pageFlip.on("flip", (e) => updateRibbons(e.data));
 
-  const ribbonButtons = document.querySelectorAll("button.ribbon");
-  for (const button of ribbonButtons) {
-    button.addEventListener("click", () => switchSection(button.value));
-  }
+document.addEventListener("DOMContentLoaded", () => {
+  updateRibbons(0);
+  offsetLastPage();
+  loadBook();
 });
