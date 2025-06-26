@@ -19,25 +19,51 @@ const pageFlip = new PageFlip(book, {
 pageFlip.loadFromHTML(document.querySelectorAll(".page"));
 
 // functions
+
+const getPagesContainer = () => {
+  return book.querySelector(".page").parentNode;
+};
+
+const updateBook = () => {
+  pageFlip.updateFromHtml(document.querySelectorAll(".page"));
+  pageFlip.update();
+};
+
+const addPage = (index, innerHTML = "", isBlank = false) => {
+  const newPage = document.createElement("div");
+  newPage.classList.add("page");
+  if (isBlank) newPage.classList.add("blank");
+  newPage.innerHTML = innerHTML;
+  const pagesContainer = getPagesContainer();
+  if (index >= pageFlip.getPageCount()) pagesContainer.appendChild(newPage);
+  else pagesContainer.insertBefore(newPage, pagesContainer.children[index]);
+  // increment all page indices after the new page
+  for (const key in mainPages) if (mainPages[key] >= index) mainPages[key] += 1;
+  updateBook();
+};
+
+const removePage = (index) => {
+  const pages = getPagesContainer();
+  const page = pages.children[index];
+  if (!page) return;
+  pages.removeChild(page);
+  // decrement all page indices after the new page
+  for (const key in mainPages) if (mainPages[key] > index) mainPages[key] -= 1;
+  updateBook();
+};
+
 // the last page needs to have an odd index or else it wont be a cover
 const offsetLastPage = () => {
   if (mainPages.back % 2 === 1) return; // already odd, no need to offset
-  const pages = document.querySelectorAll(".page");
-  const lastPage = pages[pages.length - 1];
-  const penultimatePage = pages[pages.length - 2];
-  if (penultimatePage && penultimatePage.classList.contains("blank")) {
+  const pages = pageFlip.getPageCollection();
+  if (pages.length >= 2 && pages[pages.length - 2].classList.contains("blank")) {
     // if the penultimate page is blank, we can remove it
-    penultimatePage.remove();
-    mainPages.back -= 1;
+    removePage(mainPages.back - 1);
   } else {
     // otherwise, we need to create a new blank page before the last page
-    const newBlankPage = document.createElement("div");
-    newBlankPage.classList.add("page", "blank");
-    newBlankPage.innerText = "blank";
-    lastPage.parentNode.insertBefore(newBlankPage, lastPage);
-    mainPages.back += 1;
+    console.log("Creating new blank page: ", mainPages.back);
+    addPage(mainPages.back, "blank", true);
   }
-  pageFlip.updateFromHtml(document.querySelectorAll(".page"));
 };
 
 const hideAllRibbons = () => {
@@ -94,5 +120,5 @@ pageFlip.on("flip", (e) => updateRibbons(e.data));
 document.addEventListener("DOMContentLoaded", () => {
   updateRibbons(0);
   offsetLastPage();
-  loadBook();
+  updateBook();
 });
