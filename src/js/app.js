@@ -16,7 +16,7 @@ const pageFlip = new PageFlip(book, {
   minShadowOpacity: 0.2,
   maxShadowOpacity: 0.6,
   showCover: true,
-  mobileScrollSupport: true,
+  mobileScrollSupport: false,
 });
 pageFlip.loadFromHTML(document.querySelectorAll(".page"));
 
