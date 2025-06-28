@@ -35,17 +35,14 @@ body {
   align-items: center;
   justify-content: flex-start;
   flex-wrap: nowrap;
+}
 
-  /* this targets all the elements directly under body */
-  > * {
-    flex-shrink: 0;
-  }
+#book {
+  z-index: 2; /* so that the ribbons go behind the book when we hover over them */
 }
 
 .page {
-  z-index: 2; /* so that the ribbons go behind the book when we hover over them */
-  color: var(--text-white);
-  font-size: large;
+  background-color: var(--book-cover-medium-gold);
 }
 
 #front-page {

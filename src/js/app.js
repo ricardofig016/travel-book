@@ -2,14 +2,16 @@ import { PageFlip } from "page-flip";
 
 // constants
 const book = document.getElementById("book");
+const pageWidthPixels = 440;
+const pageHeightPixels = 570;
 const mainPages = { front: 0, map: 1, album: 2, stats: 3, back: 4 };
 const leftRibbonsContainer = document.getElementById("left-ribbons");
 const rightRibbonsContainer = document.getElementById("right-ribbons");
 
 // load book
 const pageFlip = new PageFlip(book, {
-  width: 430,
-  height: 570,
+  width: pageWidthPixels,
+  height: pageHeightPixels,
   size: "fixed",
   minShadowOpacity: 0.2,
   maxShadowOpacity: 0.6,
@@ -95,7 +97,7 @@ const updateRibbons = (pageIndex) => {
 
 // listeners
 let zoomLevel = 1;
-const MIN_Z = 0.5;
+const MIN_Z = 0;
 const MAX_Z = 5;
 const Z_STEP = 0.005;
 window.addEventListener(
