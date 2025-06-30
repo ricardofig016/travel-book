@@ -1,10 +1,10 @@
-import { PageFlip } from "page-flip";
+import { PageFlip } from "page-flip"; // docs: https://nodlik.github.io/StPageFlip/docs/classes/pageflip.html
 
 // constants
 const book = document.getElementById("book");
 const pageWidthPixels = 411;
 const pageHeightPixels = 570;
-const mainPages = { front: 0, map: 1, album: 2, stats: 3, back: 4 };
+const mainPageNames = ["front", "map", "album", "stats", "back"];
 const leftRibbonsContainer = document.getElementById("left-ribbons");
 const rightRibbonsContainer = document.getElementById("right-ribbons");
 
@@ -21,9 +21,15 @@ const pageFlip = new PageFlip(book, {
 pageFlip.loadFromHTML(document.querySelectorAll(".page"));
 
 // functions
-
 const getPagesContainer = () => {
   return book.querySelector(".page").parentNode;
+};
+
+const getMainPageIndex = (pageName) => {
+  if (!mainPageNames.includes(pageName)) throw new Error(`Unknown main page name: ${pageName}`);
+  const pages = Array.from(document.querySelectorAll(".page"));
+  const page = pages.find((p) => p.id === `${pageName}-main-page`);
+  return page ? pages.indexOf(page) : -1;
 };
 
 const updateBook = () => {
@@ -39,8 +45,6 @@ const addPage = (index, innerHTML = "", isBlank = false) => {
   const pagesContainer = getPagesContainer();
   if (index >= pageFlip.getPageCount()) pagesContainer.appendChild(newPage);
   else pagesContainer.insertBefore(newPage, pagesContainer.children[index]);
-  // increment all page indices after the new page
-  for (const key in mainPages) if (mainPages[key] >= index) mainPages[key] += 1;
   updateBook();
 };
 
@@ -49,49 +53,46 @@ const removePage = (index) => {
   const page = pages.children[index];
   if (!page) return;
   pages.removeChild(page);
-  // decrement all page indices after the new page
-  for (const key in mainPages) if (mainPages[key] > index) mainPages[key] -= 1;
   updateBook();
 };
 
 // the last page needs to have an odd index or else it wont be a cover
 const offsetLastPage = () => {
-  if (mainPages.back % 2 === 1) return; // already odd, no need to offset
+  const backCoverIndex = getMainPageIndex("back");
+  if (backCoverIndex % 2 === 1) return; // already odd, no need to offset
   const pages = pageFlip.getPageCollection();
   if (pages.length >= 2 && pages[pages.length - 2].classList.contains("blank")) {
     // if the penultimate page is blank, we can remove it
-    removePage(mainPages.back - 1);
+    removePage(backCoverIndex - 1);
   } else {
     // otherwise, we need to create a new blank page before the last page
-    console.log("Creating new blank page: ", mainPages.back);
-    addPage(mainPages.back, "blank", true);
+    console.log("Creating new blank page: ", backCoverIndex);
+    addPage(backCoverIndex, "blank", true);
   }
 };
 
 const hideAllRibbons = () => {
   for (const container of [leftRibbonsContainer, rightRibbonsContainer]) {
-    for (const pageName in mainPages) {
+    for (const pageName of mainPageNames) {
       const ribbon = container.querySelector(`.ribbon-${pageName}`);
       if (ribbon) ribbon.hidden = true;
     }
   }
 };
 
-const updateRibbons = (pageIndex) => {
+const updateRibbons = (currentPageIndex) => {
   hideAllRibbons();
-  for (const pageName in mainPages) {
-    if (mainPages[pageName] < pageIndex) {
-      const leftRibbon = leftRibbonsContainer.querySelector(`.ribbon-${pageName}`);
-      if (leftRibbon) leftRibbon.hidden = false;
-    } else if (mainPages[pageName] > pageIndex + 1) {
-      // +1 to account for the page thats directly to the right of current page
-      const rightRibbon = rightRibbonsContainer.querySelector(`.ribbon-${pageName}`);
-      if (rightRibbon) rightRibbon.hidden = false;
-    } else if (mainPages[pageName] > pageIndex && pageIndex === 0) {
-      // special case for the first page, where there is no page directly to the right
-      const rightRibbon = rightRibbonsContainer.querySelector(`.ribbon-${pageName}`);
-      if (rightRibbon) rightRibbon.hidden = false;
-    }
+  for (const mainPageName of mainPageNames) {
+    const mainPageIndex = getMainPageIndex(mainPageName);
+    const leftRibbon = leftRibbonsContainer.querySelector(`.ribbon-${mainPageName}`);
+    const rightRibbon = rightRibbonsContainer.querySelector(`.ribbon-${mainPageName}`);
+    if (!leftRibbon || !rightRibbon) throw new Error(`Ribbon for main page ${mainPageName} not found`);
+
+    if (mainPageIndex < currentPageIndex) leftRibbon.hidden = false;
+    // +1 to account for the page thats directly to the right of current page
+    else if (mainPageIndex > currentPageIndex + 1) rightRibbon.hidden = false;
+    // special case for the first page, where there is no page directly to the right
+    else if (mainPageIndex > currentPageIndex && currentPageIndex === 0) rightRibbon.hidden = false;
   }
 };
 
