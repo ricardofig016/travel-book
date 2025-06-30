@@ -45,12 +45,12 @@ body {
   background: url("../assets/images/page-background.png") no-repeat left center fixed;
 }
 
-#front-page {
+#front-main-page {
   background: url("../assets/images/book-front-cover.svg") no-repeat center center;
   background-size: contain;
 }
 
-#back-page {
+#back-main-page {
   background: url("../assets/images/book-back-cover.svg") no-repeat center center;
   background-size: contain;
 }
@@ -93,7 +93,7 @@ body {
   font-size: 1.5rem;
   letter-spacing: 0.15rem;
   text-align: center;
-  padding: 0 2rem 0 0 ;
+  padding: 0 2rem 0 0;
   transition: transform 0.15s ease;
   &:hover {
     transform: scale(1.05);
