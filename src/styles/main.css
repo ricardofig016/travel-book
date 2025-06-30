@@ -42,17 +42,17 @@ body {
 }
 
 .page {
-  background: url("../assets/images/page-background.png") no-repeat left center fixed;
+  background: url("../assets/images/book/page-background.png") no-repeat left center fixed;
   /* border: 1px solid red; */
 }
 
 #front-main-page {
-  background: url("../assets/images/book-front-cover.svg") no-repeat center center;
+  background: url("../assets/images/book/front-cover.svg") no-repeat center center;
   background-size: contain;
 }
 
 #back-main-page {
-  background: url("../assets/images/book-back-cover.svg") no-repeat center center;
+  background: url("../assets/images/book/back-cover.svg") no-repeat center center;
   background-size: contain;
 }
 
@@ -64,7 +64,7 @@ body {
   align-items: start;
   gap: 0rem;
   padding: 7rem 0;
-  transform: scale(1.02);
+  transform: scale(1.02); /* fix weird visual bug where ribbons are slightly separated from the book */
 }
 
 #left-ribbons {
@@ -86,7 +86,7 @@ body {
   border: none;
   font-family: inherit;
   /* cursor: pointer; */
-  background: url("../assets/images/ribbon-green.svg") no-repeat center center;
+  background: url("../assets/images/ribbons/green.svg") no-repeat center center;
   background-size: contain;
   width: 12rem;
   height: 6rem;
@@ -102,16 +102,16 @@ body {
 }
 
 .ribbon-map {
-  background: url("../assets/images/ribbon-red.svg") no-repeat center center;
+  background: url("../assets/images/ribbons/red.svg") no-repeat center center;
   background-size: contain;
 }
 
 .ribbon-album {
-  background: url("../assets/images/ribbon-blue.svg") no-repeat center center;
+  background: url("../assets/images/ribbons/blue.svg") no-repeat center center;
   background-size: contain;
 }
 
 .ribbon-stats {
-  background: url("../assets/images/ribbon-yellow.svg") no-repeat center center;
+  background: url("../assets/images/ribbons/yellow.svg") no-repeat center center;
   background-size: contain;
 }
