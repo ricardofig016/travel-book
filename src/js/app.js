@@ -29,7 +29,8 @@ const getMainPageIndex = (pageName) => {
   if (!mainPageNames.includes(pageName)) throw new Error(`Unknown main page name: ${pageName}`);
   const pages = Array.from(document.querySelectorAll(".page"));
   const page = pages.find((p) => p.id === `${pageName}-main-page`);
-  return page ? pages.indexOf(page) : -1;
+  if (!page) throw new Error(`Main page ${pageName} not found`);
+  return pages.indexOf(page);
 };
 
 const updateBook = () => {
@@ -45,6 +46,7 @@ const addPage = (index, innerHTML = "", isBlank = false) => {
   const pagesContainer = getPagesContainer();
   if (index >= pageFlip.getPageCount()) pagesContainer.appendChild(newPage);
   else pagesContainer.insertBefore(newPage, pagesContainer.children[index]);
+  offsetLastPage(); // ensure the last page is always a cover
   updateBook();
 };
 
@@ -53,6 +55,7 @@ const removePage = (index) => {
   const page = pages.children[index];
   if (!page) return;
   pages.removeChild(page);
+  offsetLastPage(); // ensure the last page is always a cover
   updateBook();
 };
 
@@ -118,7 +121,18 @@ window.addEventListener(
   { passive: false }
 );
 
-pageFlip.on("flip", (e) => updateRibbons(e.data));
+pageFlip.on("flip", (e) => {
+  updateRibbons(e.data);
+});
+
+for (const ribbonButton of document.querySelectorAll(".ribbon")) {
+  ribbonButton.addEventListener("click", (e) => {
+    e.preventDefault();
+    const mainPageName = e.currentTarget.value;
+    const mainPageIndex = getMainPageIndex(mainPageName);
+    pageFlip.flip(mainPageIndex);
+  });
+}
 
 document.addEventListener("DOMContentLoaded", () => {
   updateRibbons(0);
