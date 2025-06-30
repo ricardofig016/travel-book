@@ -1,36 +1,79 @@
 import { PageFlip } from "page-flip"; // docs: https://nodlik.github.io/StPageFlip/docs/classes/pageflip.html
 
-// constants
+// global variables
+const pageSizeRatio = { width: 778, height: 1080 };
+const ribbonContainerSizeRatio = { width: 12, height: 48 };
+const ribbonSizeRatio = { width: 12, height: 6 };
 const book = document.getElementById("book");
-const pageWidthPixels = 411;
-const pageHeightPixels = 570;
-const mainPageNames = ["front", "map", "album", "stats", "back"];
 const leftRibbonsContainer = document.getElementById("left-ribbons");
 const rightRibbonsContainer = document.getElementById("right-ribbons");
-
-// load book
-const pageFlip = new PageFlip(book, {
-  width: pageWidthPixels,
-  height: pageHeightPixels,
-  size: "fixed",
-  minShadowOpacity: 0.2,
-  maxShadowOpacity: 0.6,
-  showCover: true,
-  mobileScrollSupport: false,
-  usePortrait: false,
-});
-pageFlip.loadFromHTML(document.querySelectorAll(".page"));
+const mainPageCodes = ["front", "map", "album", "stats", "back"];
+let pageFlip;
 
 // functions
+const getSizes = () => {
+  // page
+  const vw = document.documentElement.clientWidth;
+  const vh = document.documentElement.clientHeight;
+  const scaleByWidth = (0.7 * vw) / (2 * pageSizeRatio.width);
+  const scaleByHeight = (0.9 * vh) / pageSizeRatio.height;
+  const scale = Math.min(scaleByHeight, scaleByWidth);
+  const pageWidth = pageSizeRatio.width * scale;
+  const pageHeight = pageSizeRatio.height * scale;
+  // ribbon container
+  const ribbonContainerHeight = pageHeight; // same height as the page
+  const ribbonContainerWidth =
+    (ribbonContainerSizeRatio.width * ribbonContainerHeight) / ribbonContainerSizeRatio.height;
+  // ribbon
+  const ribbonWidth = ribbonContainerWidth; // same width as its container
+  const ribbonHeight = (ribbonSizeRatio.height * ribbonWidth) / ribbonSizeRatio.width;
+
+  const sizes = {
+    page: { width: pageWidth, height: pageHeight },
+    ribbonContainer: { width: ribbonContainerWidth, height: ribbonContainerHeight },
+    ribbon: { width: ribbonWidth, height: ribbonHeight },
+  };
+  return sizes;
+};
+
+const loadBook = ({ width, height }) => {
+  pageFlip = new PageFlip(book, {
+    width: width,
+    height: height,
+    size: "fixed",
+    minShadowOpacity: 0.2,
+    maxShadowOpacity: 0.6,
+    showCover: true,
+    mobileScrollSupport: false,
+    usePortrait: false,
+  });
+  pageFlip.loadFromHTML(document.querySelectorAll(".page"));
+  pageFlip.on("flip", (e) => {
+    updateRibbons(e.data);
+  });
+};
+
+const resizeRibbonContainers = ({ width, height }) => {
+  leftRibbonsContainer.style.height = `${height}px`;
+  rightRibbonsContainer.style.height = `${height}px`;
+};
+
+const resizeRibbons = ({ width, height }) => {
+  for (const ribbon of document.querySelectorAll(".ribbon")) {
+    ribbon.style.width = `${width}px`;
+    ribbon.style.height = `${height}px`;
+  }
+};
+
 const getPagesContainer = () => {
   return book.querySelector(".page").parentNode;
 };
 
-const getMainPageIndex = (pageName) => {
-  if (!mainPageNames.includes(pageName)) throw new Error(`Unknown main page name: ${pageName}`);
+const getMainPageIndex = (pageCode) => {
+  if (!mainPageCodes.includes(pageCode)) throw new Error(`Unknown main page code: ${pageCode}`);
   const pages = Array.from(document.querySelectorAll(".page"));
-  const page = pages.find((p) => p.id === `${pageName}-main-page`);
-  if (!page) throw new Error(`Main page ${pageName} not found`);
+  const page = pages.find((p) => p.id === `${pageCode}-main-page`);
+  if (!page) throw new Error(`Main page ${pageCode} not found`);
   return pages.indexOf(page);
 };
 
@@ -65,20 +108,17 @@ const offsetLastPage = () => {
   const backCoverIndex = getMainPageIndex("back");
   if (backCoverIndex % 2 === 1) return; // already odd, no need to offset
   const pages = pageFlip.getPageCollection();
-  if (pages.length >= 2 && pages[pages.length - 2].classList.contains("blank")) {
-    // if the penultimate page is blank, we can remove it
+  // if the penultimate page is blank, we can remove it
+  if (pages.length >= 2 && pages[pages.length - 2].classList.contains("blank"))
     removePage(backCoverIndex - 1);
-  } else {
-    // otherwise, we need to create a new blank page before the last page
-    console.log("Creating new blank page: ", backCoverIndex);
-    addPage(backCoverIndex, "blank", true);
-  }
+  // otherwise, we need to create a new blank page before the last page
+  else addPage(backCoverIndex, "blank", true);
 };
 
 const hideAllRibbons = () => {
   for (const container of [leftRibbonsContainer, rightRibbonsContainer]) {
-    for (const pageName of mainPageNames) {
-      const ribbon = container.querySelector(`.ribbon-${pageName}`);
+    for (const code of mainPageCodes) {
+      const ribbon = container.querySelector(`.ribbon-${code}`);
       if (ribbon) ribbon.hidden = true;
     }
   }
@@ -86,11 +126,11 @@ const hideAllRibbons = () => {
 
 const updateRibbons = (currentPageIndex) => {
   hideAllRibbons();
-  for (const mainPageName of mainPageNames) {
-    const mainPageIndex = getMainPageIndex(mainPageName);
-    const leftRibbon = leftRibbonsContainer.querySelector(`.ribbon-${mainPageName}`);
-    const rightRibbon = rightRibbonsContainer.querySelector(`.ribbon-${mainPageName}`);
-    if (!leftRibbon || !rightRibbon) throw new Error(`Ribbon for main page ${mainPageName} not found`);
+  for (const code of mainPageCodes) {
+    const mainPageIndex = getMainPageIndex(code);
+    const leftRibbon = leftRibbonsContainer.querySelector(`.ribbon-${code}`);
+    const rightRibbon = rightRibbonsContainer.querySelector(`.ribbon-${code}`);
+    if (!leftRibbon || !rightRibbon) throw new Error(`Ribbon for main page ${code} not found`);
 
     if (mainPageIndex < currentPageIndex) leftRibbon.hidden = false;
     // +1 to account for the page thats directly to the right of current page
@@ -122,21 +162,21 @@ window.addEventListener(
   { passive: false }
 );
 
-pageFlip.on("flip", (e) => {
-  updateRibbons(e.data);
-});
-
 for (const ribbonButton of document.querySelectorAll(".ribbon")) {
   ribbonButton.addEventListener("click", (e) => {
     e.preventDefault();
-    const mainPageName = e.currentTarget.value;
-    const mainPageIndex = getMainPageIndex(mainPageName);
-    pageFlip.flip(mainPageIndex);
+    const pageCode = e.currentTarget.value;
+    const pageIndex = getMainPageIndex(pageCode);
+    pageFlip.flip(pageIndex);
   });
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  updateRibbons(0);
+  const sizes = getSizes();
+  loadBook(sizes.page);
+  resizeRibbonContainers(sizes.ribbonContainer);
+  resizeRibbons(sizes.ribbon);
+  updateRibbons(pageFlip.getCurrentPageIndex());
   offsetLastPage();
   updateBook();
 });

@@ -44,6 +44,7 @@ body {
 }
 
 .page {
+  /* size calculated dynamically in app.js */
   background: url("../assets/images/book/page-background.png") no-repeat left center fixed;
   /* border: 1px solid red; */
 }
@@ -59,8 +60,7 @@ body {
 }
 
 .ribbons-container {
-  height: 48rem;
-  width: 12rem;
+  /* size calculated dynamically in app.js */
   display: flex;
   flex-direction: column;
   align-items: start;
@@ -85,13 +85,12 @@ body {
 }
 
 .ribbon {
+  /* size calculated dynamically in app.js */
   border: none;
   font-family: inherit;
   /* cursor: pointer; */
   background: url("../assets/images/ribbons/green.svg") no-repeat center center;
   background-size: contain;
-  width: 12rem;
-  height: 6rem;
   color: var(--text-white);
   font-size: 1.5rem;
   letter-spacing: 0.15rem;
