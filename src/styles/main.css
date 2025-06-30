@@ -30,16 +30,17 @@ body {
 body {
   background: url("../assets/images/wood-table-background.png") no-repeat left center fixed;
   background-size: cover;
-  /* padding: 1.8rem 0; */
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: center;
   flex-wrap: nowrap;
+  /* border: 1px solid red; */
 }
 
 #book {
   z-index: 2; /* so that the ribbons go behind the book when we hover over them */
+  /* border: 1px solid blue; */
 }
 
 .page {
