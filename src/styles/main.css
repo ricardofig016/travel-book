@@ -43,6 +43,7 @@ body {
 
 .page {
   background: url("../assets/images/page-background.png") no-repeat left center fixed;
+  /* border: 1px solid red; */
 }
 
 #front-main-page {

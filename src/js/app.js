@@ -2,7 +2,7 @@ import { PageFlip } from "page-flip";
 
 // constants
 const book = document.getElementById("book");
-const pageWidthPixels = 440;
+const pageWidthPixels = 411;
 const pageHeightPixels = 570;
 const mainPages = { front: 0, map: 1, album: 2, stats: 3, back: 4 };
 const leftRibbonsContainer = document.getElementById("left-ribbons");
