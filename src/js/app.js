@@ -54,7 +54,9 @@ const loadBook = ({ width, height }) => {
 };
 
 const resizeRibbonContainers = ({ width, height }) => {
+  leftRibbonsContainer.style.width = `${width}px`;
   leftRibbonsContainer.style.height = `${height}px`;
+  rightRibbonsContainer.style.width = `${width}px`;
   rightRibbonsContainer.style.height = `${height}px`;
 };
 
