@@ -1,9 +1,0 @@
-{
-  "overrides": [
-    {
-      "files": ["tsconfig.json"],
-      "parser": "jsonc-eslint-parser",
-      "rules": {}
-    }
-  ]
-}
