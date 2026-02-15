@@ -8,17 +8,18 @@
     - [Data Storage](#data-storage)
   - [Application Structure](#application-structure)
     - [1. Book Cover (Landing Page)](#1-book-cover-landing-page)
-    - [2. World Map (Main Interface)](#2-world-map-main-interface)
+    - [2. Book Index (Table of Contents)](#2-book-index-table-of-contents)
+    - [3. World Map (Main Interface)](#3-world-map-main-interface)
       - [Visual Design](#visual-design)
       - [Map Controls Menu](#map-controls-menu)
       - [Map Interactions](#map-interactions)
-    - [3. Photo Albums](#3-photo-albums)
+    - [4. Photo Albums](#4-photo-albums)
       - [Entry Point](#entry-point)
       - [Page Turning Animation](#page-turning-animation)
       - [Album Pages Layout](#album-pages-layout)
       - [Album End (Back Cover)](#album-end-back-cover)
-    - [4. Navigation Bookmarks](#4-navigation-bookmarks)
-    - [5. Statistics Chapter (Future Feature)](#5-statistics-chapter-future-feature)
+    - [5. Navigation Bookmarks](#5-navigation-bookmarks)
+    - [6. Statistics Chapter (Future Feature)](#6-statistics-chapter-future-feature)
   - [Data Structure Requirements](#data-structure-requirements)
     - [Marker Data Object](#marker-data-object)
     - [Geographic Data](#geographic-data)
@@ -37,6 +38,7 @@
     - [Cloudinary Setup](#cloudinary-setup)
     - [Supabase Setup](#supabase-setup)
     - [GitHub Pages Deployment](#github-pages-deployment)
+    - [GitHub Actions - Supabase Keep-Alive](#github-actions---supabase-keep-alive)
   - [Security \& Privacy](#security--privacy)
     - [Data Protection](#data-protection)
     - [Access Control](#access-control)
@@ -117,12 +119,89 @@
 
 **Behavior**:
 
-- On click: animate page flip transition to reveal the world map
+- On click: animate page flip transition to reveal the Book Index
 - Bookmarks visible on the right edge of closed book
 
 ---
 
-### 2. World Map (Main Interface)
+### 2. Book Index (Table of Contents)
+
+**Description**: Navigation hub and table of contents for the travel book
+
+**Purpose**: Provides a central location for users to navigate to any major section of the book
+
+**Visual Design**:
+
+- **Layout**: Single page styled as a traditional book index/table of contents
+- **Aesthetic**:
+  - Vintage book index appearance
+  - Elegant typography for section names
+  - Page numbers or decorative elements next to each entry
+  - Optional decorative flourishes (ornamental dividers, corner decorations)
+- **Page Position**: First content page after opening the cover
+
+**Index Entries**:
+List of navigable sections, each clickable:
+
+1. **World Map**
+   - Description: "Explore your travels"
+   - Icon/Symbol: Compass or globe icon
+   - Click behavior: Page flip animation to map view
+
+2. **Photo Albums**
+   - Description: "Relive your memories"
+   - Icon/Symbol: Camera or photo frame icon
+   - Click behavior: Page flip to album section (shows list of cities with albums)
+
+3. **Statistics** (Future)
+   - Description: "Your travel insights"
+   - Icon/Symbol: Chart or graph icon
+   - Click behavior: Page flip to statistics chapter
+   - State: Grayed out or "Coming Soon" label until implemented
+
+4. **Settings** (Optional)
+   - Description: "Customize your book"
+   - Icon/Symbol: Gear icon
+   - Potential options: Theme, animation speed, display preferences
+
+**Interactive Elements**:
+
+- Hover effects on each index entry:
+  - Subtle highlight or underline
+  - Slight scale or movement
+  - Show preview thumbnail or teaser of the section
+- Page corner curl effect on hover (bottom-right)
+- "Previous Page" clickable area (bottom-left) to return to cover
+
+**Additional Features**:
+
+- **Quick Stats Display** (Optional):
+  - Small summary at top or bottom of index
+  - Examples: "X countries visited", "Y cities explored", "Z photos uploaded"
+  - Subtle, non-intrusive placement
+
+- **Recent Activity** (Optional):
+  - "Last visited: [City Name]"
+  - "Recently added: [Number] photos"
+  - Quick access link to recently modified markers
+
+**Behavior**:
+
+- Default landing page after opening book cover
+- Always accessible via bookmark or back navigation
+- Page flip animations when navigating to other sections
+- Smooth transitions for all interactive elements
+
+**Alternative Access**:
+
+- Can be accessed from any page via:
+  - Dedicated "Index" bookmark (optional 4th bookmark)
+  - Menu button (hamburger icon) if bookmarks are too crowded
+  - Keyboard shortcut (e.g., 'I' key)
+
+---
+
+### 3. World Map (Main Interface)
 
 **Description**: Interactive map for viewing and managing travel markers
 
@@ -207,7 +286,7 @@ Two mutually exclusive modes:
 
 ---
 
-### 3. Photo Albums
+### 4. Photo Albums
 
 **Description**: Scrapbook-style photo viewing experience for each city
 
@@ -239,22 +318,26 @@ Two mutually exclusive modes:
 #### Album End (Back Cover)
 
 - When all photos for a city are viewed, user reaches the back cover
-- Back cover displays three options:
+- Back cover displays navigation options:
   1. "Go to Book Cover" - returns to landing page
-  2. "Back to Map" - returns to world map
-  3. "Restart Album" - goes back to first page of this city's album
+  2. "Back to Index" - returns to book index/table of contents
+  3. "Back to Map" - returns to world map
+  4. "Restart Album" - goes back to first page of this city's album
 
 ---
 
-### 4. Navigation Bookmarks
+### 5. Navigation Bookmarks
 
 **Description**: Persistent navigation elements styled as physical bookmarks
 
 **Bookmark Types** (in order):
 
-1. Map bookmark (goes to world map)
-2. City Albums bookmark (goes to album section)
-3. Statistics bookmark (future feature, goes to statistics chapter)
+1. Index bookmark (goes to book index/table of contents) - Optional
+2. Map bookmark (goes to world map)
+3. City Albums bookmark (goes to album section)
+4. Statistics bookmark (future feature, goes to statistics chapter)
+
+**Note**: The Index bookmark is optional and can be omitted if navigation via other bookmarks is sufficient. Alternatively, it can be accessed via a menu button to avoid visual clutter.
 
 **Dynamic Positioning**:
 Bookmarks change position based on current location to maintain realism:
@@ -276,7 +359,7 @@ Bookmarks change position based on current location to maintain realism:
 
 ---
 
-### 5. Statistics Chapter (Future Feature)
+### 6. Statistics Chapter (Future Feature)
 
 **Description**: To be defined later
 
@@ -344,23 +427,26 @@ Each city marker should store:
 ### Primary User Journey
 
 1. User lands on book cover
-2. Clicks cover → page flip animation → arrives at world map
-3. Selects hierarchy level (e.g., "States")
-4. Chooses display mode (Markers or Area Highlighting)
-5. Clicks on a region on the map
-6. Searches/selects a city from the list
-7. Marks city and adds details/photos
-8. Clicks "Save" → marker appears on map
-9. Clicks marker → views details
-10. Clicks "See Album" → page-turning animation → photo album
-11. Flips through album pages
-12. Uses bookmarks to navigate to other sections
+2. Clicks cover → page flip animation → arrives at Book Index
+3. Reviews available sections and clicks "World Map"
+4. Page flips to world map
+5. Selects hierarchy level (e.g., "States")
+6. Chooses display mode (Markers or Area Highlighting)
+7. Clicks on a region on the map
+8. Searches/selects a city from the list
+9. Marks city and adds details/photos
+10. Clicks "Save" → marker appears on map
+11. Clicks marker → views details
+12. Clicks "See Album" → page-turning animation → photo album
+13. Flips through album pages
+14. Uses bookmarks or index to navigate to other sections
 
 ### Navigation Patterns
 
-- **Forward**: Cover → Map → Albums → (Statistics) → Back Cover
+- **Forward**: Cover → Index → Map → Albums → (Statistics) → Back Cover
 - **Bookmarks**: Jump directly to any major section
-- **Back navigation**: Always available through bookmarks or back cover options
+- **Index**: Central navigation hub accessible from any page
+- **Back navigation**: Always available through bookmarks, index, or back cover options
 
 ---
 
@@ -369,11 +455,13 @@ Each city marker should store:
 ### Page Flip Animations
 
 - **Trigger Points**:
-  - Cover to Map
+  - Cover to Index
+  - Index to Map (or other sections)
   - Map to Albums
   - Between album pages
   - Bookmark navigation
   - Back cover navigation
+  - Return to Index from any section
 
 - **Animation Style**:
   - Realistic 3D page curl/flip effect
@@ -442,6 +530,48 @@ Each city marker should store:
   - Ensure routing works with static hosting
   - Configure environment variables for API keys
 
+### GitHub Actions - Supabase Keep-Alive
+
+**Purpose**: Prevent Supabase free tier instance from sleeping due to inactivity
+
+**Implementation**:
+
+- Create a GitHub Actions workflow file: `.github/workflows/supabase-keepalive.yml`
+- Schedule workflow to run every 2-3 days using cron syntax
+- Workflow should make a simple HTTP request to Supabase to keep it active
+
+**Workflow Requirements**:
+
+- **Trigger**: Scheduled cron job
+  - Run frequency: Every 48-72 hours (e.g., `0 0 */2 * *` for every 2 days)
+  - Consider timezone and optimal timing
+- **Action Steps**:
+  1. Make HTTP GET request to Supabase API endpoint
+  2. Use a lightweight query (e.g., SELECT count from a specific table)
+  3. Log success/failure of ping
+- **Configuration**:
+  - Store Supabase URL in repository secrets (`SUPABASE_URL`)
+  - Store Supabase anon key in repository secrets (`SUPABASE_ANON_KEY`)
+  - Use `curl` or JavaScript/Node action to make request
+- **Example Schedule Options**:
+  - Every 2 days at midnight UTC: `cron: '0 0 */2 * *'`
+  - Every 3 days at 3am UTC: `cron: '0 3 */3 * *'`
+  - Twice per week (Monday & Thursday): `cron: '0 0 * * 1,4'`
+
+**Best Practices**:
+
+- Add error notification if ping fails
+- Keep request minimal to avoid unnecessary data transfer
+- Test workflow manually before relying on schedule
+- Monitor GitHub Actions usage (free tier has limits)
+- Consider adding a health check endpoint query
+
+**Alternative Approaches**:
+
+- Use external cron services (cron-job.org, EasyCron)
+- Set up Supabase Edge Functions with scheduled triggers
+- Use Uptime monitoring services (UptimeRobot, Pingdom free tier)
+
 ---
 
 ## Security & Privacy
@@ -466,6 +596,7 @@ Each city marker should store:
 ### Phase 1: Core Map Interface
 
 - Book cover component
+- Book index / table of contents component
 - Basic map display
 - Hierarchy selector
 - Zone selection and city list
@@ -522,6 +653,7 @@ Each city marker should store:
 **Core Components**:
 
 - `book-cover`: Landing page component
+- `book-index`: Table of contents / navigation hub component
 - `world-map`: Main map interface
 - `map-controls`: Hierarchy selector and display mode toggle
 - `map-canvas`: Map rendering and interactions
@@ -862,15 +994,16 @@ https://www.youtube.com/watch?v=MNZFmLQBR4I
 The project will be considered complete when:
 
 1. ✅ User can navigate through all book sections with smooth animations
-2. ✅ User can add markers to cities with full details
-3. ✅ User can upload and view photos in scrapbook-style albums
-4. ✅ Map displays hierarchy levels correctly
-5. ✅ Area highlighting mode works for all hierarchy levels
-6. ✅ Bookmarks provide intuitive navigation
-7. ✅ Application is deployed and accessible via GitHub Pages
-8. ✅ Data persists correctly in Supabase
-9. ✅ Photos load efficiently from Cloudinary
-10. ✅ Application works smoothly on desktop and tablet devices
+2. ✅ Book index provides intuitive navigation to all major sections
+3. ✅ User can add markers to cities with full details
+4. ✅ User can upload and view photos in scrapbook-style albums
+5. ✅ Map displays hierarchy levels correctly
+6. ✅ Area highlighting mode works for all hierarchy levels
+7. ✅ Bookmarks provide quick navigation access
+8. ✅ Application is deployed and accessible via GitHub Pages
+9. ✅ Data persists correctly in Supabase
+10. ✅ Photos load efficiently from Cloudinary
+11. ✅ Application works smoothly on desktop and tablet devices
 
 ---
 
