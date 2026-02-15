@@ -715,11 +715,13 @@ Each city marker should store:
 
 ## Mood Board & Design Inspiration
 
-https://benomadpt.com/products/travel-book
+https://benomadpt.com/products/travel-book - physical travel book
 
-https://www.figma.com/design/fbJetSJm9PbxAsOqDnpvG7/Travel-Book?node-id=54198-66&p=f&t=hX0FHvQySuNl1V2Y-0
+https://www.figma.com/design/fbJetSJm9PbxAsOqDnpvG7/Travel-Book?node-id=54198-66&p=f&t=hX0FHvQySuNl1V2Y-0 - design, moodboard & prototype
 
-https://www.youtube.com/watch?v=MNZFmLQBR4I
+https://www.youtube.com/watch?v=MNZFmLQBR4I - storyteller gameplay
+
+https://www.youtube.com/watch?v=W6K26i9FwZU - flip book animation pure css
 
 ### Visual References
 
