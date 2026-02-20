@@ -31,7 +31,7 @@ travel-book/
 │   │       └── indie-flower.ttf                # Handwritten notes
 │   ├── favicon.ico                             # Browser tab icon
 │   ├── robots.txt                              # SEO & crawlers
-│   └── manifest.json                           # PWA manifest (future)
+│   └── manifest.json                           # PWA manifest
 ├── src/
 │   ├── main.ts                                 # Application entry point
 │   ├── index.html                              # HTML shell
@@ -48,7 +48,7 @@ travel-book/
 │       ├── app.component.ts/scss/html          # Root component
 │       ├── core/                               # Core modules & infrastructure
 │       │   ├── guards/                         # Route guards
-│       │   │   └── auth.guard.ts               # Authentication guard (future)
+│       │   │   └── auth.guard.ts               # Authentication guard
 │       │   ├── interceptors/                   # HTTP interceptors
 │       │   │   ├── supabase.interceptor.ts     # Auth headers, API setup
 │       │   │   └── error.interceptor.ts        # Global error handling
@@ -69,7 +69,7 @@ travel-book/
 │       │   ├── photo-albums/
 │       │   │   ├── photo-albums.component.ts/html/scss
 │       │   │   └── photo-albums.module.ts
-│       │   └── statistics/                     # Future feature
+│       │   └── statistics/
 │       │       ├── statistics.component.ts/html/scss
 │       │       └── statistics.module.ts
 │       ├── features/                           # Feature modules (grouped by domain)
