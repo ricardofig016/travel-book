@@ -60,155 +60,111 @@ travel-book/
 │       │       └── core-feature.module.ts      # Core feature with providers
 │       ├── pages/                              # Full-page components (one per route)
 │       │   ├── book-cover/
-│       │   │   ├── book-cover.component.ts
-│       │   │   ├── book-cover.component.html
-│       │   │   └── book-cover.component.scss
+│       │   │   └── book-cover.component.ts/html/scss
 │       │   ├── book-index/
-│       │   │   ├── book-index.component.ts
-│       │   │   ├── book-index.component.html
-│       │   │   └── book-index.component.scss
+│       │   │   └── book-index.component.ts/html/scss
 │       │   ├── world-map/
-│       │   │   ├── world-map.component.ts
-│       │   │   ├── world-map.component.html
-│       │   │   ├── world-map.component.scss
+│       │   │   ├── world-map.component.ts/html/scss
 │       │   │   └── world-map.module.ts         # Lazy-loaded feature module
 │       │   ├── photo-albums/
-│       │   │   ├── photo-albums.component.ts
-│       │   │   ├── photo-albums.component.html
-│       │   │   ├── photo-albums.component.scss
+│       │   │   ├── photo-albums.component.ts/html/scss
 │       │   │   └── photo-albums.module.ts
 │       │   └── statistics/                     # Future feature
-│       │       ├── statistics.component.ts
-│       │       ├── statistics.component.html
-│       │       ├── statistics.component.scss
+│       │       ├── statistics.component.ts/html/scss
 │       │       └── statistics.module.ts
 │       ├── features/                           # Feature modules (grouped by domain)
 │       │   ├── map/
-│       │   │   ├── map.module.ts                              # Shared map module
+│       │   │   ├── map.module.ts               # Shared map module
 │       │   │   ├── components/
 │       │   │   │   ├── world-map/
-│       │   │   │   │   ├── world-map.component.ts
-│       │   │   │   │   ├── world-map.component.html
-│       │   │   │   │   └── world-map.component.scss
-│       │   │   │   ├── map-controls/
-│       │   │   │   │   ├── map-controls.component.ts         # Hierarchy selector + mode toggle
-│       │   │   │   │   ├── map-controls.component.html
-│       │   │   │   │   └── map-controls.component.scss
+│       │   │   │   │   └── world-map.component.ts/html/scss
+│       │   │   │   ├── map-controls/           # Hierarchy selector + mode toggle
+│       │   │   │   │   └── map-controls.component.ts/html/scss
 │       │   │   │   ├── map-canvas/
-│       │   │   │   │   ├── map-canvas.component.ts
-│       │   │   │   │   ├── map-canvas.component.html
-│       │   │   │   │   └── map-canvas.component.scss
+│       │   │   │   │   └── map-canvas.component.ts/html/scss
 │       │   │   │   ├── city-list/
-│       │   │   │   │   ├── city-list.component.ts
-│       │   │   │   │   ├── city-list.component.html
-│       │   │   │   │   └── city-list.component.scss
+│       │   │   │   │   └── city-list.component.ts/html/scss
 │       │   │   │   ├── marker-form/
-│       │   │   │   │   ├── marker-form.component.ts
-│       │   │   │   │   ├── marker-form.component.html
-│       │   │   │   │   └── marker-form.component.scss
+│       │   │   │   │   └── marker-form.component.ts/html/scss
 │       │   │   │   └── marker-details/
-│       │   │   │       ├── marker-details.component.ts
-│       │   │   │       ├── marker-details.component.html
-│       │   │   │       └── marker-details.component.scss
+│       │   │   │       └── marker-details.component.ts/html/scss
 │       │   │   ├── services/
-│       │   │   │   ├── map.service.ts                        # Geographic data & state
-│       │   │   │   ├── marker.service.ts                     # Marker CRUD (Supabase)
-│       │   │   │   ├── geo-hierarchy.service.ts              # Hierarchy logic
-│       │   │   │   ├── map-display-mode.service.ts           # Markers vs Area mode
-│       │   │   │   └── city.service.ts                       # City database queries
+│       │   │   │   ├── map.service.ts                          # Geographic data & state
+│       │   │   │   ├── marker.service.ts                       # Marker CRUD (Supabase)
+│       │   │   │   ├── geo-hierarchy.service.ts                # Hierarchy logic
+│       │   │   │   ├── map-display-mode.service.ts             # Markers vs Area mode
+│       │   │   │   └── city.service.ts                         # City database queries
 │       │   │   └── models/
 │       │   │       ├── marker.model.ts
 │       │   │       ├── city.model.ts
 │       │   │       ├── hierarchy.model.ts
 │       │   │       └── display-mode.model.ts
 │       │   ├── albums/
-│       │   │   ├── albums.module.ts                          # Album feature module
+│       │   │   ├── albums.module.ts                            # Album feature module
 │       │   │   ├── components/
-│       │   │   │   ├── photo-album/
-│       │   │   │   │   ├── photo-album.component.ts          # Main album container
-│       │   │   │   │   ├── photo-album.component.html
-│       │   │   │   │   └── photo-album.component.scss
-│       │   │   │   ├── album-spread/
-│       │   │   │   │   ├── album-spread.component.ts         # Two-page spread view
-│       │   │   │   │   ├── album-spread.component.html
-│       │   │   │   │   └── album-spread.component.scss
-│       │   │   │   └── album-photo/
-│       │   │   │       ├── album-photo.component.ts          # Individual photo with tape effect
-│       │   │   │       ├── album-photo.component.html
-│       │   │   │       └── album-photo.component.scss
+│       │   │   │   ├── photo-album/                            # Main album container
+│       │   │   │   │   └── photo-album.component.ts/html/scss
+│       │   │   │   ├── album-spread/                           # Two-page spread view
+│       │   │   │   │   └── album-spread.component.ts/html/scss
+│       │   │   │   └── album-photo/                            # Individual photo with tape effect
+│       │   │   │       └── album-photo.component.ts/html/scss
 │       │   │   ├── services/
-│       │   │   │   ├── album.service.ts                      # Album data management
-│       │   │   │   └── album-layout.service.ts               # Photo placement logic
+│       │   │   │   ├── album.service.ts                        # Album data management
+│       │   │   │   └── album-layout.service.ts                 # Photo placement logic
 │       │   │   └── models/
 │       │   │       └── album.model.ts
 │       │   ├── navigation/
-│       │   │   ├── navigation.module.ts                      # Navigation feature module
+│       │   │   ├── navigation.module.ts                        # Navigation feature module
 │       │   │   ├── components/
 │       │   │   │   └── navigation-bookmarks/
-│       │   │   │       ├── navigation-bookmarks.component.ts
-│       │   │   │       ├── navigation-bookmarks.component.html
-│       │   │   │       └── navigation-bookmarks.component.scss
+│       │   │   │       └── navigation-bookmarks.component.ts/html/scss
 │       │   │   └── services/
-│       │   │       ├── navigation.service.ts                 # Route transitions
-│       │   │       └── bookmark-position.service.ts          # Dynamic positioning logic
+│       │   │       ├── navigation.service.ts                   # Route transitions
+│       │   │       └── bookmark-position.service.ts            # Dynamic positioning logic
 │       │   └── animations/
-│       │       ├── animations.module.ts                      # Animation infrastructure
+│       │       ├── animations.module.ts                        # Animation infrastructure
 │       │       ├── directives/
-│       │       │   ├── page-flip.directive.ts                # Reusable flip animation
-│       │       │   └── fade-in.directive.ts                  # Other animation triggers
+│       │       │   ├── page-flip.directive.ts                  # Reusable flip animation
+│       │       │   └── fade-in.directive.ts                    # Other animation triggers
 │       │       └── services/
-│       │           ├── animation.service.ts                  # Coordinate all animations
-│       │           ├── page-flip.service.ts                  # Flip calculation logic
-│       │           └── gsap-wrapper.service.ts               # GSAP abstraction layer
-│       ├── shared/                             # Reusable components & utilities (across features)
-│       │   ├── shared.module.ts                              # Declare & export shared items
+│       │           ├── animation.service.ts                    # Coordinate all animations
+│       │           ├── page-flip.service.ts                    # Flip calculation logic
+│       │           └── gsap-wrapper.service.ts                 # GSAP abstraction layer
+│       ├── shared/                                             # Reusable components & utilities (across features)
+│       │   ├── shared.module.ts                                # Declare & export shared items
 │       │   ├── components/
 │       │   │   ├── book-page/
-│       │   │   │   ├── book-page.component.ts                # Base page styling wrapper
-│       │   │   │   ├── book-page.component.html
-│       │   │   │   └── book-page.component.scss
+│       │   │   │   └── book-page.component.ts/html/scss        # Base page styling wrapper
 │       │   │   ├── button/
-│       │   │   │   ├── button.component.ts
-│       │   │   │   ├── button.component.html
-│       │   │   │   └── button.component.scss
+│       │   │   │   └── button.component.ts/html/scss
 │       │   │   ├── modal-dialog/
-│       │   │   │   ├── modal-dialog.component.ts
-│       │   │   │   ├── modal-dialog.component.html
-│       │   │   │   └── modal-dialog.component.scss
+│       │   │   │   └── modal-dialog.component.ts/html/scss
 │       │   │   ├── image-uploader/
-│       │   │   │   ├── image-uploader.component.ts
-│       │   │   │   ├── image-uploader.component.html
-│       │   │   │   └── image-uploader.component.scss
+│       │   │   │   └── image-uploader.component.ts/html/scss
 │       │   │   ├── loading-spinner/
-│       │   │   │   ├── loading-spinner.component.ts
-│       │   │   │   ├── loading-spinner.component.html
-│       │   │   │   └── loading-spinner.component.scss
+│       │   │   │   └── loading-spinner.component.ts/html/scss
 │       │   │   ├── error-message/
-│       │   │   │   ├── error-message.component.ts
-│       │   │   │   ├── error-message.component.html
-│       │   │   │   └── error-message.component.scss
+│       │   │   │   └── error-message.component.ts/html/scss
 │       │   │   └── notification/
-│       │   │       ├── notification.component.ts
-│       │   │       ├── notification.component.html
-│       │   │       └── notification.component.scss
+│       │   │       └── notification.component.ts/html/scss
 │       │   ├── pipes/
-│       │   │   ├── date-range.pipe.ts                        # Format visit date ranges
-│       │   │   ├── safe-html.pipe.ts                         # Sanitize HTML for display
-│       │   │   └── placeholder-image.pipe.ts                 # Fallback for missing photos
+│       │   │   ├── date-range.pipe.ts                          # Format visit date ranges
+│       │   │   ├── safe-html.pipe.ts                           # Sanitize HTML for display
+│       │   │   └── placeholder-image.pipe.ts                   # Fallback for missing photos
 │       │   ├── directives/
-│       │   │   ├── click-outside.directive.ts                # Close modals on outside click
-│       │   │   ├── debounce.directive.ts                     # Debounce rapid clicks
-│       │   │   └── image-lazy-load.directive.ts              # Lazy load photos
+│       │   │   ├── click-outside.directive.ts                  # Close modals on outside click
+│       │   │   ├── debounce.directive.ts                       # Debounce rapid clicks
+│       │   │   └── image-lazy-load.directive.ts                # Lazy load photos
 │       │   └── models/
-│       │       └── common.model.ts                           # Shared type definitions
+│       │       └── common.model.ts                             # Shared type definitions
 │       └── services/
 │           ├── data/
-│           │   ├── storage.service.ts                        # Local storage management
-│           │   ├── supabase.service.ts                       # Supabase SDK wrapper
-│           │   └── cloudinary.service.ts                     # Cloudinary integration
+│           │   ├── storage.service.ts                          # Local storage management
+│           │   ├── supabase.service.ts                         # Supabase SDK wrapper
+│           │   └── cloudinary.service.ts                       # Cloudinary integration
 │           └── utilities/
-│               ├── logger.service.ts                         # Logging & debugging
-│               └── error-handler.service.ts                  # Global error management
+│               ├── logger.service.ts                           # Logging & debugging
+│               └── error-handler.service.ts                    # Global error management
 ├── .editorconfig                               # IDE coding style consistency
 ├── .gitignore                                  # Git ignore rules
 ├── .env.example                                # Environment variables template
