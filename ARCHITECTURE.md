@@ -4,42 +4,42 @@
 travel-book/
 ├── .github/
 │   ├── workflows/
-│   │   ├── deploy.yml                    # GitHub Pages deployment automation
-│   │   └── supabase-keepalive.yml       # Supabase database keep-alive cron
-│   └── copilot-instructions.md          # AI agent instructions
+│   │   ├── deploy.yml                          # GitHub Pages deployment automation
+│   │   └── supabase-keepalive.yml              # Supabase database keep-alive cron job
+│   └── copilot-instructions.md                 # AI agent instructions
 ├── .vscode/
-│   └── settings.json                     # Workspace-specific VS Code settings
+│   └── settings.json                           # Workspace-specific VS Code settings
 ├── public/
-│   ├── favicon.ico                       # Browser tab icon
-│   ├── robots.txt                        # SEO & crawlers
-│   └── manifest.json                     # PWA manifest (future)
+│   ├── favicon.ico                             # Browser tab icon
+│   ├── robots.txt                              # SEO & crawlers
+│   └── manifest.json                           # PWA manifest (future)
 ├── src/
-│   ├── main.ts                          # Application entry point
-│   ├── index.html                       # HTML shell
-│   ├── styles.scss                      # Global styles
+│   ├── main.ts                                 # Application entry point
+│   ├── index.html                              # HTML shell
+│   ├── styles.scss                             # Global styles
 │   ├── styles/
-│   │   ├── _variables.scss              # Color palette, fonts, spacing vars
-│   │   ├── _typography.scss             # Font declarations, mixins
-│   │   ├── _reset.scss                  # Browser reset/normalize
-│   │   ├── _animations.scss             # Global animation keyframes
-│   │   └── _utilities.scss              # Helper classes (margins, padding, etc)
+│   │   ├── _variables.scss                     # Color palette, fonts, spacing vars
+│   │   ├── _typography.scss                    # Font declarations, mixins
+│   │   ├── _reset.scss                         # Browser reset/normalize
+│   │   ├── _animations.scss                    # Global animation keyframes
+│   │   └── _utilities.scss                     # Helper classes (margins, padding, etc)
 │   ├── app/
-│   │   ├── app.config.ts                # Root Angular config
-│   │   ├── app.routes.ts                # Root routing configuration
-│   │   ├── app.component.ts/scss/html   # Root component
-│   │   ├── core/                        # Core modules & infrastructure
-│   │   │   ├── guards/                  # Route guards
-│   │   │   │   └── auth.guard.ts        # Authentication guard (future)
-│   │   │   ├── interceptors/            # HTTP interceptors
-│   │   │   │   ├── supabase.interceptor.ts      # Auth headers, API setup
+│   │   ├── app.config.ts                       # Root Angular config
+│   │   ├── app.routes.ts                       # Root routing configuration
+│   │   ├── app.component.ts/scss/html          # Root component
+│   │   ├── core/                               # Core modules & infrastructure
+│   │   │   ├── guards/                         # Route guards
+│   │   │   │   └── auth.guard.ts               # Authentication guard (future)
+│   │   │   ├── interceptors/                   # HTTP interceptors
+│   │   │   │   ├── supabase.interceptor.ts     # Auth headers, API setup
 │   │   │   │   └── error.interceptor.ts        # Global error handling
 │   │   │   ├── config/
-│   │   │   │   ├── environment.ts       # Dev environment config (dev only)
-│   │   │   │   ├── environment.prod.ts  # Prod environment config (dev only)
-│   │   │   │   └── api.config.ts        # API endpoints & constants
+│   │   │   │   ├── environment.ts              # Dev environment config (dev only)
+│   │   │   │   ├── environment.prod.ts         # Prod environment config (dev only)
+│   │   │   │   └── api.config.ts               # API endpoints & constants
 │   │   │   └── modules/
 │   │   │       └── core-feature.module.ts      # Core feature with providers
-│   │   ├── pages/                       # Full-page components (one per route)
+│   │   ├── pages/                              # Full-page components (one per route)
 │   │   │   ├── book-cover/
 │   │   │   │   ├── book-cover.component.ts
 │   │   │   │   ├── book-cover.component.html
@@ -52,18 +52,18 @@ travel-book/
 │   │   │   │   ├── world-map.component.ts
 │   │   │   │   ├── world-map.component.html
 │   │   │   │   ├── world-map.component.scss
-│   │   │   │   └── world-map.module.ts  # Lazy-loaded feature module
+│   │   │   │   └── world-map.module.ts         # Lazy-loaded feature module
 │   │   │   ├── photo-albums/
 │   │   │   │   ├── photo-albums.component.ts
 │   │   │   │   ├── photo-albums.component.html
 │   │   │   │   ├── photo-albums.component.scss
 │   │   │   │   └── photo-albums.module.ts
-│   │   │   └── statistics/               # Future feature
+│   │   │   └── statistics/                     # Future feature
 │   │   │       ├── statistics.component.ts
 │   │   │       ├── statistics.component.html
 │   │   │       ├── statistics.component.scss
 │   │   │       └── statistics.module.ts
-│   │   ├── features/                    # Feature modules (grouped by domain)
+│   │   ├── features/                           # Feature modules (grouped by domain)
 │   │   │   ├── map/
 │   │   │   │   ├── map.module.ts                              # Shared map module
 │   │   │   │   ├── components/
@@ -141,7 +141,7 @@ travel-book/
 │   │   │           ├── animation.service.ts                  # Coordinate all animations
 │   │   │           ├── page-flip.service.ts                  # Flip calculation logic
 │   │   │           └── gsap-wrapper.service.ts               # GSAP abstraction layer
-│   │   ├── shared/                      # Reusable components & utilities (across features)
+│   │   ├── shared/                             # Reusable components & utilities (across features)
 │   │   │   ├── shared.module.ts                              # Declare & export shared items
 │   │   │   ├── components/
 │   │   │   │   ├── book-page/
@@ -206,20 +206,20 @@ travel-book/
 │       │       ├── favorite-marker.svg
 │       │       └── wishlist-marker.svg
 │       └── fonts/
-│           ├── playfair-display.ttf       # Serif headers
-│           ├── roboto.ttf                 # Sans-serif body
-│           └── indie-flower.ttf           # Handwritten notes
-├── .editorconfig                         # IDE coding style consistency
-├── .gitignore                            # Git ignore rules
-├── .env.example                          # Environment variables template
-├── tsconfig.json                         # TypeScript base config
-├── tsconfig.app.json                     # TypeScript app config
-├── tsconfig.spec.json                    # TypeScript test config
-├── angular.json                          # Angular CLI config
-├── package.json                          # Dependencies & scripts
-├── package-lock.json                     # Dependency lock file
-├── README.md                             # Project overview
-├── PROJECT_SPEC.md                       # Feature specifications
-├── ARCHITECTURE.md                       # This file
-└── karma.conf.js                         # Test runner configuration
+│           ├── playfair-display.ttf            # Serif headers
+│           ├── roboto.ttf                      # Sans-serif body
+│           └── indie-flower.ttf                # Handwritten notes
+├── .editorconfig                               # IDE coding style consistency
+├── .gitignore                                  # Git ignore rules
+├── .env.example                                # Environment variables template
+├── tsconfig.json                               # TypeScript base config
+├── tsconfig.app.json                           # TypeScript app config
+├── tsconfig.spec.json                          # TypeScript test config
+├── angular.json                                # Angular CLI config
+├── package.json                                # Dependencies & scripts
+├── package-lock.json                           # Dependency lock file
+├── README.md                                   # Project overview
+├── PROJECT_SPEC.md                             # Feature specifications
+├── ARCHITECTURE.md                             # This file
+└── karma.conf.js                               # Test runner configuration
 ```
