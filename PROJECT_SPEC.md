@@ -8,14 +8,14 @@ Cover -> Index -> Map -> Albums -> Statistics -> Back Cover.
 ## Stack + Services
 
 - Angular (TypeScript), npm, GitHub Pages.
-- Supabase for markers/cities/notes (keep-alive cron every 2-3 days).
+- Supabase for markers/cities/notes (keep-alive cron every 2 days).
 - Cloudinary for photo storage.
 - Local storage for cache/session state.
 
 ## Core UX
 
 - **Book Cover**: click to open with a page flip to Index.
-- **Book Index**: table of contents for Map, Albums, Statistics (disabled).
+- **Book Index**: table of contents for Map, Albums, Statistics.
 - **World Map**:
   - Minimal map: white land, blue sea, borders by hierarchy.
   - Hierarchy selector: Country -> State/District -> optional third level.
@@ -69,7 +69,7 @@ Geographic data: hierarchy relationships, city populations, coordinates.
 4. Album feature + scrapbook layout.
 5. Bookmarks + navigation.
 6. Responsive + performance polish.
-7. Statistics (future).
+7. Statistics.
 
 ## Reference Links
 
