@@ -55,7 +55,7 @@ travel-book/
 │       │   ├── config/
 │       │   │   ├── environment.ts              # Dev environment config (dev only)
 │       │   │   ├── environment.prod.ts         # Prod environment config (dev only)
-│       │   │   └── api.config.ts               # API endpoints & constants
+│       │   │   └── constants.ts                # API endpoints & constants
 │       │   └── modules/
 │       │       └── core-feature.module.ts      # Core feature with providers
 │       ├── pages/                              # Full-page components (one per route)
