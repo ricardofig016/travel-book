@@ -77,3 +77,4 @@ Geographic data: country boundaries, city populations, coordinates (MVP - no sta
 
 - city data: https://simplemaps.com/data/world-cities
 - country boundaries:
+- country dishes: https://www.tasteatlas.com/ (data scraped with [tasteatlas-scraper](github.com/ricardofig016/tasteatlas-scraper))
