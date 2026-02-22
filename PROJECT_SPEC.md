@@ -17,10 +17,10 @@ Cover -> Index -> Map -> Albums -> Statistics -> Back Cover.
 - **Book Cover**: click to open with a page flip to Index.
 - **Book Index**: table of contents for Map, Albums, Statistics.
 - **World Map**:
-  - Minimal map: white land, blue sea, borders by hierarchy.
-  - Hierarchy selector: Country -> State/District -> optional third level.
-  - Modes: Marker mode (pins) and Area mode (fill visited regions).
-  - Click region -> searchable city list (sorted by population) -> marker form.
+  - Minimal map: white land, blue sea, country borders.
+  - Hierarchy: Country level only (MVP).
+  - Countries automatically filled based on markers.
+  - Click country -> searchable city list (sorted by population) -> marker form.
   - Marker details view with "See Album" if photos exist.
 - **Photo Albums**:
   - Scrapbook two-page spreads; taped/rotated photos; page flip navigation.
@@ -33,14 +33,14 @@ Marker object:
 
 ```
 {
-  location: { city, country, state?, lat, lng },
+  location: { city, country, lat, lng },
   status: { visited, favorite, want },
   content: { notes, dates, companions, activities, photoUrls[] },
   metadata: { createdAt, updatedAt }
 }
 ```
 
-Geographic data: hierarchy relationships, city populations, coordinates.
+Geographic data: country boundaries, city populations, coordinates (MVP - no state/district levels).
 
 ## Animations + Interaction
 
@@ -63,8 +63,8 @@ Geographic data: hierarchy relationships, city populations, coordinates.
 
 ## Build Phases
 
-1. Cover/Index/Basic map + hierarchy.
-2. Marker management + area mode.
+1. Cover/Index/Basic map + country hierarchy (MVP - no sub-levels).
+2. Marker management + dynamic country fill.
 3. Cloudinary integration.
 4. Album feature + scrapbook layout.
 5. Bookmarks + navigation.
