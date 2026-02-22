@@ -78,3 +78,4 @@ Geographic data: country boundaries, city populations, coordinates (MVP - no sta
 - city data: https://simplemaps.com/data/world-cities
 - country boundaries:
 - country dishes: https://www.tasteatlas.com/ (data scraped with [tasteatlas-scraper](github.com/ricardofig016/tasteatlas-scraper))
+- calling code (idd>root+idd>suffixes), capital, area, population, timezones, continents, name (nativeName), currencies, languages, coatOfArms(svg): https://restcountries.com/v3.1/name/{name}?fields
