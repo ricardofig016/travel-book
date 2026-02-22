@@ -19,7 +19,7 @@ Cover -> Index -> Map -> Albums -> Statistics -> Back Cover.
 - **World Map**:
   - Minimal map: white land, blue sea, country borders.
   - Hierarchy: Country level only (MVP).
-  - Countries automatically filled based on markers.
+  - Countries automatically filled based on markers (user's home country colored distinctly from visited countries).
   - Click country -> searchable city list (sorted by population) -> marker form.
   - Marker details view with "See Album" if photos exist.
 - **Photo Albums**:
@@ -48,13 +48,6 @@ Geographic data: country boundaries, city populations, coordinates (MVP - no sta
 - Block new navigation until flip completes.
 - Subtle marker pop-in; smooth modal and list transitions.
 
-## Visual Essentials
-
-- Pages: #F5F1E8, #E8DCC4; Sea: #4A90E2; Land: #FFFFFF.
-- Markers: visited #8BC34A, favorite #FF5722, wishlist #FFC107.
-- Typography: classic serif titles, readable sans body, handwritten notes.
-- Scrapbook feel: tape, rotation, soft shadows.
-
 ## Deployment + Security
 
 - GitHub Pages output: dist/travel-book/browser/, base href /travel-book/.
@@ -73,7 +66,14 @@ Geographic data: country boundaries, city populations, coordinates (MVP - no sta
 
 ## Reference Links
 
+### Design
+
 - page ideas: https://benomadpt.com/products/travel-book
 - figma: https://www.figma.com/design/fbJetSJm9PbxAsOqDnpvG7/Travel-Book?node-id=54198-66&p=f&t=hX0FHvQySuNl1V2Y-0
 - storyteller gameplay: https://www.youtube.com/watch?v=MNZFmLQBR4I
 - css flipbook tutorial: https://www.youtube.com/watch?v=W6K26i9FwZU
+
+### Data
+
+- city data: https://simplemaps.com/data/world-cities
+- country boundaries:

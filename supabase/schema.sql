@@ -55,6 +55,19 @@ CREATE INDEX idx_cities_simplemaps_id ON cities(simplemaps_id);
 CREATE INDEX idx_cities_coordinates ON cities(latitude, longitude);
 
 -- =====================================================
+-- USER PROFILES TABLE
+-- =====================================================
+CREATE TABLE user_profiles (
+  user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  home_city_id UUID REFERENCES cities(id) ON DELETE SET NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Indexes for performance
+CREATE INDEX idx_user_profiles_home_city ON user_profiles(home_city_id);
+
+-- =====================================================
 -- MARKERS TABLE
 -- =====================================================
 CREATE TABLE markers (
@@ -116,6 +129,11 @@ CREATE TRIGGER update_cities_updated_at
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
+CREATE TRIGGER update_user_profiles_updated_at
+  BEFORE UPDATE ON user_profiles
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
 CREATE TRIGGER update_markers_updated_at
   BEFORE UPDATE ON markers
   FOR EACH ROW
@@ -128,6 +146,7 @@ CREATE TRIGGER update_markers_updated_at
 -- Enable RLS on all tables
 ALTER TABLE countries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE cities ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE markers ENABLE ROW LEVEL SECURITY;
 
 -- Countries: Public read access
@@ -149,6 +168,22 @@ CREATE POLICY "Cities are viewable by everyone"
 CREATE POLICY "Cities are editable by admins only"
   ON cities FOR ALL
   USING (auth.jwt() ->> 'role' = 'admin');
+
+-- User Profiles: Users can only see their own profile
+CREATE POLICY "Users can view their own profile"
+  ON user_profiles FOR SELECT
+  USING (auth.uid() = user_id);
+
+-- User Profiles: Users can update their own profile
+CREATE POLICY "Users can update their own profile"
+  ON user_profiles FOR UPDATE
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+-- User Profiles: Users can insert their own profile
+CREATE POLICY "Users can insert their own profile"
+  ON user_profiles FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
 
 -- Markers: Users can only see their own markers
 CREATE POLICY "Users can view their own markers"
@@ -203,6 +238,7 @@ GRANT SELECT ON marker_stats_by_country TO authenticated;
 
 COMMENT ON TABLE countries IS 'Geographic country data with boundaries';
 COMMENT ON TABLE cities IS 'Cities from SimpleMaps worldcities.csv (~48k entries) with population and coordinates';
+COMMENT ON TABLE user_profiles IS 'User profile data including home city and future preferences';
 COMMENT ON TABLE markers IS 'User travel markers with status, content, and metadata';
 
 COMMENT ON COLUMN cities.simplemaps_id IS 'SimpleMaps 10-digit unique ID for data consistency across updates';
@@ -210,6 +246,7 @@ COMMENT ON COLUMN cities.name IS 'Unicode city name (e.g. Goiânia)';
 COMMENT ON COLUMN cities.name_ascii IS 'ASCII representation for search and sorting (e.g. Goiania)';
 COMMENT ON COLUMN cities.admin_name IS 'Highest level admin region (state/province) - retained for future scalability beyond country-level MVP';
 COMMENT ON COLUMN cities.population IS 'Urban population estimate (may be null for smaller cities)';
+COMMENT ON COLUMN user_profiles.home_city_id IS 'Reference to user home city (can be null if not set)';
 COMMENT ON COLUMN markers.visit_dates IS 'JSONB array of visit periods with start and end dates: [{start: "2024-01-15", end: "2024-01-20"}, ...]';
 COMMENT ON COLUMN markers.companions IS 'Array of companion names/descriptions';
 COMMENT ON COLUMN markers.activities IS 'Array of activities done at this location';
