@@ -64,6 +64,14 @@ Geographic data: country boundaries, city populations, coordinates (MVP - no sta
 6. Responsive + performance polish.
 7. Statistics.
 
+## TBA
+
+**Shareability**: Can a user share a "Read-only" link to their book with friends/family? If I can’t show off my "Travel Book," the motivation to spend hours "scrapbooking" drops significantly.
+
+**Collaboration**: Can two people (e.g., a couple) contribute to the same book?
+
+**Export/Portability**: If the service ever shuts down, can I export my book to a PDF or a physical print-on-demand service? This is a major selling point for "journaling" apps.
+
 ## Reference Links
 
 ### Design
