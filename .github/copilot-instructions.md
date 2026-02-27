@@ -49,12 +49,21 @@ Reference [ARCHITECTURE.md](../ARCHITECTURE.md) for complete structure. Key prin
 
 **Data Flow:**
 
-- Supabase for markers, cities, geographic data (via `supabase.service.ts`)
+- Supabase for all persistent data (see schema below)
 - Cloudinary for photo storage (via `cloudinary.service.ts`)
 - Keep-alive cron job hits Supabase every 2-3 days (free tier requirement)
 
+**Database Design Principles:**
+
+- **Normalized Structure**: Countries → Cities → Markers → Photos/Visits
+- **No Redundancy**: Lat/lng stored only in cities table, not markers
+- **Proper Relations**: Use foreign keys, avoid JSONB for structured data
+- **Separate Tables for Many-to-Many**: `user_tried_dishes` junction table
+- **Visit Tracking**: `marker_visits` table for multiple visit periods per marker
+- **Photo Management**: `photos` table with Cloudinary metadata (url, public_id)
+
 **Navigation Flow:**
-Cover → Index → Map → Albums → Statistics → Back Cover
+Cover → Index → Map → Country Entry (cities + dishes) → Albums → Statistics → Back Cover
 
 ## Build and Test
 
@@ -85,12 +94,6 @@ npm run build      # Production build to dist/travel-book/browser/
 
 ## Design System
 
-**Colors (from PROJECT_SPEC.md):**
-
-- Pages: `#F5F1E8`, `#E8DCC4` (aged paper)
-- Sea: `#4A90E2` | Land: `#FFFFFF`
-- Markers: visited `#8BC34A`, favorite `#FF5722`, wishlist `#FFC107`
-
 **Typography:**
 
 - Headers: Yrsa (serif) - classic book feel
@@ -105,24 +108,48 @@ npm run build      # Production build to dist/travel-book/browser/
 
 ## External Services
 
-**Supabase Configuration:**
+**Supabase Database Schema** (see `supabase/schema.sql`):
 
-- Tables: `markers`, `cities`, `countries`, `regions`
+- **Tables**: `countries`, `cities` (~48k from SimpleMaps), `user_profiles`, `dishes` (TasteAtlas), `user_tried_dishes`, `markers`, `marker_visits`, `photos`
+- **Key Relationships**: Markers → Cities → Countries; Photos → Markers; Marker Visits → Markers
 - Use environment variables from `src/app/core/config/environment.ts`
-- Implement Row Level Security (RLS) policies
+- Row Level Security (RLS) policies enforced on all tables
 - Install dependency: `@supabase/supabase-js`
 
-**Cloudinary:**
+**Cloudinary Photo Storage:**
 
+- Photos table stores: `url`, `public_id`, `date_taken`, `caption`, `uploaded_at`
 - Max upload: 10MB
 - Formats: jpg, jpeg, png, webp, gif
 - Cloud name: `dkpf6sa1o`
-- Install dependency if needed
+- Use `public_id` for delete/update operations
 
 **Animation Library:**
 
 - GSAP recommended for page flip animations
 - Wrap in `gsap-wrapper.service.ts` for testability
+
+## Database Schema Details
+
+**Core Tables:**
+
+1. **countries** - Geographic data with ISO codes and GeoJSON boundaries
+2. **cities** (~48k) - SimpleMaps data: name (Unicode + ASCII), country_id, admin_name, population, lat/lng
+3. **user_profiles** - User settings: home_city_id for home country coloring
+4. **dishes** - TasteAtlas data: name, category, location, rating, image_url, country_id
+5. **user_tried_dishes** - Junction table: user_id, dish_id, tried_at
+6. **markers** - User markers: user_id, city_id, status (visited/favorite/want), notes, companions, activities
+7. **marker_visits** - Visit periods: marker_id, start_date, end_date
+8. **photos** - Photo metadata: marker_id, url, public_id, date_taken, caption
+
+**Key Design Decisions:**
+
+- Coordinates stored ONLY in cities table (markers inherit via city_id)
+- Visit dates in separate table (not JSONB) for better queryability
+- Tried dishes in separate table (not JSONB in user_profiles)
+- Photos in separate table (not URL array in markers) - enables metadata + Cloudinary management
+- SimpleMaps ID preserved for data consistency across updates
+- Admin name stored for future scalability (currently country-level only MVP)
 
 ## Conventions
 
@@ -148,40 +175,6 @@ npm run build      # Production build to dist/travel-book/browser/
 - Static assets in `public/assets/`
 - Fonts: `fonts/indie-flower/`, `fonts/yrsa/`, `fonts/wonderling/`
 - Images: `images/book/`, `images/icons/`, `images/ribbons/`
-
-## Current Implementation Status
-
-**Phase 1** (Current): Basic skeleton exists
-
-- ✅ 5 page components (placeholder only)
-- ✅ Routing with guards configured
-- ✅ Environment config ready
-- ❌ Feature modules not implemented
-- ❌ Shared components missing
-- ❌ All services empty
-- ❌ External SDKs not installed
-
-**Next Priorities:**
-
-1. Install Supabase and Cloudinary SDKs
-2. Implement data services layer
-3. Build map feature (hierarchy selector, marker mode, area mode)
-4. Create shared UI components (book-page, modals, buttons)
-5. Implement page flip animations
-
-## Testing Strategy
-
-**Unit Tests:**
-
-- Karma + Jasmine configured
-- Test files: `*.spec.ts` alongside components
-- Mock external services (Supabase, Cloudinary)
-
-**Coverage Expectations:**
-
-- Services: 80%+ coverage
-- Components: Focus on logic, not template rendering
-- Use Angular testing utilities: `TestBed`, `ComponentFixture`
 
 ## Common Pitfalls
 
