@@ -9,6 +9,8 @@ travel-book/
 │   └── copilot-instructions.md                 # AI agent instructions
 ├── .vscode/
 │   └── settings.json                           # Workspace-specific VS Code settings
+├── supabase/
+│   └── schema.sql                              # Database schema
 ├── public/
 │   ├── assets/
 │   │   ├── icons/
@@ -78,7 +80,7 @@ travel-book/
 │       │   │   ├── components/
 │       │   │   │   ├── world-map/
 │       │   │   │   │   └── world-map.component.ts/html/scss
-│       │   │   │   ├── map-controls/           # Hierarchy selector + mode toggle
+│       │   │   │   ├── map-controls/           # Zoom, pan controls
 │       │   │   │   │   └── map-controls.component.ts/html/scss
 │       │   │   │   ├── map-canvas/
 │       │   │   │   │   └── map-canvas.component.ts/html/scss
@@ -91,14 +93,17 @@ travel-book/
 │       │   │   ├── services/
 │       │   │   │   ├── map.service.ts                          # Geographic data & state
 │       │   │   │   ├── marker.service.ts                       # Marker CRUD (Supabase)
-│       │   │   │   ├── geo-hierarchy.service.ts                # Hierarchy logic
-│       │   │   │   ├── map-display-mode.service.ts             # Markers vs Area mode
-│       │   │   │   └── city.service.ts                         # City database queries
+│       │   │   │   ├── marker-visits.service.ts                # Visit periods CRUD
+│       │   │   │   ├── city.service.ts                         # City database queries
+│       │   │   │   ├── dish.service.ts                         # Dish data queries
+│       │   │   │   ├── user-tried-dishes.service.ts            # Track tried dishes
+│       │   │   │   └── country.service.ts                      # Country data & boundaries
 │       │   │   └── models/
 │       │   │       ├── marker.model.ts
+│       │   │       ├── marker-visit.model.ts
 │       │   │       ├── city.model.ts
-│       │   │       ├── hierarchy.model.ts
-│       │   │       └── display-mode.model.ts
+│       │   │       ├── country.model.ts
+│       │   │       └── dish.model.ts
 │       │   ├── albums/
 │       │   │   ├── albums.module.ts                            # Album feature module
 │       │   │   ├── components/

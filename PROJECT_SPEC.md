@@ -20,7 +20,10 @@ Cover -> Index -> Map -> Albums -> Statistics -> Back Cover.
   - Minimal map: manually rendered country shapes from GeoJSON.
   - Hierarchy: Country level only (MVP).
   - Countries automatically filled based on markers (user's home country colored distinctly from visited countries).
-  - Click country -> searchable city list (sorted by population) -> marker form.
+  - Click country -> country entry page with:
+    - Searchable city list -> marker form
+    - Popular dishes checklist
+    - Marker list
   - Marker details view with "See Album" if photos exist.
 - **Photo Albums**:
   - Scrapbook two-page spreads; taped/rotated photos; page flip navigation.
@@ -29,18 +32,23 @@ Cover -> Index -> Map -> Albums -> Statistics -> Back Cover.
 
 ## Data Requirements
 
-Marker object:
+**Database Schema** (see `supabase/schema.sql`):
 
-```
-{
-  location: { city, country, lat, lng },
-  status: { visited, favorite, want },
-  content: { notes, dates, companions, activities, photoUrls[] },
-  metadata: { createdAt, updatedAt }
-}
-```
+- **Countries**: name, ISO codes, GeoJSON boundaries
+- **Cities** (~48k from SimpleMaps): name (Unicode + ASCII), country, admin region, population, coordinates
+- **User Profiles**: home_city_id for home country coloring
+- **Dishes** (TasteAtlas data): name, category, location, rating, image, country
+- **User Tried Dishes**: junction table tracking which dishes user has tried
+- **Markers**: user_id, city_id, status (visited/favorite/want), notes, companions, activities
+- **Marker Visits**: start_date, end_date pairs for each visit to a marker
+- **Photos**: marker_id, Cloudinary URL + public_id, date_taken, caption, uploaded_at
 
-Geographic data: country boundaries, city populations, coordinates (MVP - no state/district levels).
+**Key Relationships**:
+
+- Markers → Cities → Countries (normalized location data)
+- Photos → Markers (one-to-many)
+- Marker Visits → Markers (one-to-many for multiple visits)
+- User Tried Dishes ← Users + Dishes (many-to-many)
 
 ## Animations + Interaction
 
