@@ -60,12 +60,40 @@ CREATE INDEX idx_cities_coordinates ON cities(latitude, longitude);
 CREATE TABLE user_profiles (
   user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   home_city_id UUID REFERENCES cities(id) ON DELETE SET NULL,
+  tried_dishes JSONB DEFAULT '{}'::JSONB, -- Map of country_id -> array of dish_ids: {"country_uuid": [dish_uuid, ...], ...}
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Indexes for performance
 CREATE INDEX idx_user_profiles_home_city ON user_profiles(home_city_id);
+CREATE INDEX idx_user_profiles_tried_dishes ON user_profiles USING GIN(tried_dishes);
+
+-- =====================================================
+-- DISHES TABLE
+-- =====================================================
+CREATE TABLE dishes (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  country_id UUID NOT NULL REFERENCES countries(id) ON DELETE CASCADE,
+  name TEXT NOT NULL, -- Dish name (e.g. Manti)
+  category TEXT, -- Dish category (e.g. Dumplings, Bread, Stew)
+  location TEXT, -- Specific region/area (e.g. Belém, Portugal)
+  tasteatlas_url TEXT, -- Link to TasteAtlas page
+  image_url TEXT, -- URL to dish image
+  rating DECIMAL(3, 1), -- Rating from TasteAtlas (e.g. 4.3)
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  
+  -- Ensure dish names are unique per country
+  CONSTRAINT unique_dish_per_country UNIQUE(name, country_id)
+);
+
+-- Indexes for performance
+CREATE INDEX idx_dishes_country ON dishes(country_id);
+CREATE INDEX idx_dishes_name ON dishes(name);
+CREATE INDEX idx_dishes_category ON dishes(category);
+CREATE INDEX idx_dishes_location ON dishes(location);
+CREATE INDEX idx_dishes_rating ON dishes(rating DESC NULLS LAST);
 
 -- =====================================================
 -- MARKERS TABLE
@@ -134,6 +162,11 @@ CREATE TRIGGER update_user_profiles_updated_at
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
+CREATE TRIGGER update_dishes_updated_at
+  BEFORE UPDATE ON dishes
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
 CREATE TRIGGER update_markers_updated_at
   BEFORE UPDATE ON markers
   FOR EACH ROW
@@ -147,6 +180,7 @@ CREATE TRIGGER update_markers_updated_at
 ALTER TABLE countries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE cities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE dishes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE markers ENABLE ROW LEVEL SECURITY;
 
 -- Countries: Public read access
@@ -167,6 +201,16 @@ CREATE POLICY "Cities are viewable by everyone"
 -- Cities: Admin only write access (for seeding/maintenance)
 CREATE POLICY "Cities are editable by admins only"
   ON cities FOR ALL
+  USING (auth.jwt() ->> 'role' = 'admin');
+
+-- Dishes: Public read access
+CREATE POLICY "Dishes are viewable by everyone"
+  ON dishes FOR SELECT
+  USING (true);
+
+-- Dishes: Admin only write access (for seeding/maintenance)
+CREATE POLICY "Dishes are editable by admins only"
+  ON dishes FOR ALL
   USING (auth.jwt() ->> 'role' = 'admin');
 
 -- User Profiles: Users can only see their own profile
@@ -239,6 +283,7 @@ GRANT SELECT ON marker_stats_by_country TO authenticated;
 COMMENT ON TABLE countries IS 'Geographic country data with boundaries';
 COMMENT ON TABLE cities IS 'Cities from SimpleMaps worldcities.csv (~48k entries) with population and coordinates';
 COMMENT ON TABLE user_profiles IS 'User profile data including home city and future preferences';
+COMMENT ON TABLE dishes IS 'Signature dishes per country from TasteAtlas dataset';
 COMMENT ON TABLE markers IS 'User travel markers with status, content, and metadata';
 
 COMMENT ON COLUMN cities.simplemaps_id IS 'SimpleMaps 10-digit unique ID for data consistency across updates';
@@ -247,6 +292,14 @@ COMMENT ON COLUMN cities.name_ascii IS 'ASCII representation for search and sort
 COMMENT ON COLUMN cities.admin_name IS 'Highest level admin region (state/province) - retained for future scalability beyond country-level MVP';
 COMMENT ON COLUMN cities.population IS 'Urban population estimate (may be null for smaller cities)';
 COMMENT ON COLUMN user_profiles.home_city_id IS 'Reference to user home city (can be null if not set)';
+COMMENT ON COLUMN user_profiles.tried_dishes IS 'JSONB object mapping country_id to array of tried dish_ids: {"country_uuid": [dish_uuid1, dish_uuid2], ...}';
+COMMENT ON COLUMN dishes.country_id IS 'Reference to country where dish originates';
+COMMENT ON COLUMN dishes.name IS 'Dish name (e.g. Manti, Kabuli Palaw)';
+COMMENT ON COLUMN dishes.category IS 'Dish category (e.g. Dumplings, Rice, Bread, Stew)';
+COMMENT ON COLUMN dishes.location IS 'Specific region/area of origin (e.g. Naples, Italy or Belém, Portugal)';
+COMMENT ON COLUMN dishes.tasteatlas_url IS 'TasteAtlas page URL for the dish';
+COMMENT ON COLUMN dishes.image_url IS 'CDN image URL of the dish';
+COMMENT ON COLUMN dishes.rating IS 'TasteAtlas rating (0-5 scale)';
 COMMENT ON COLUMN markers.visit_dates IS 'JSONB array of visit periods with start and end dates: [{start: "2024-01-15", end: "2024-01-20"}, ...]';
 COMMENT ON COLUMN markers.companions IS 'Array of companion names/descriptions';
 COMMENT ON COLUMN markers.activities IS 'Array of activities done at this location';

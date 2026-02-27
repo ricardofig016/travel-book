@@ -17,7 +17,7 @@ Cover -> Index -> Map -> Albums -> Statistics -> Back Cover.
 - **Book Cover**: click to open with a page flip to Index.
 - **Book Index**: table of contents for Map, Albums, Statistics.
 - **World Map**:
-  - Minimal map: white land, blue sea, country borders.
+  - Minimal map: manually rendered country shapes from GeoJSON.
   - Hierarchy: Country level only (MVP).
   - Countries automatically filled based on markers (user's home country colored distinctly from visited countries).
   - Click country -> searchable city list (sorted by population) -> marker form.
@@ -53,16 +53,6 @@ Geographic data: country boundaries, city populations, coordinates (MVP - no sta
 - GitHub Pages output: dist/travel-book/browser/, base href /travel-book/.
 - Do not commit secrets; use Supabase RLS.
 - Supabase keep-alive GitHub Action with minimal GET.
-
-## Build Phases
-
-1. Cover/Index/Basic map + country hierarchy (MVP - no sub-levels).
-2. Marker management + dynamic country fill.
-3. Cloudinary integration.
-4. Album feature + scrapbook layout.
-5. Bookmarks + navigation.
-6. Responsive + performance polish.
-7. Statistics.
 
 ## TBA
 
