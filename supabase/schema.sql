@@ -60,14 +60,12 @@ CREATE INDEX idx_cities_coordinates ON cities(latitude, longitude);
 CREATE TABLE user_profiles (
   user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   home_city_id UUID REFERENCES cities(id) ON DELETE SET NULL,
-  tried_dishes JSONB DEFAULT '{}'::JSONB, -- Map of country_id -> array of dish_ids: {"country_uuid": [dish_uuid, ...], ...}
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Indexes for performance
 CREATE INDEX idx_user_profiles_home_city ON user_profiles(home_city_id);
-CREATE INDEX idx_user_profiles_tried_dishes ON user_profiles USING GIN(tried_dishes);
 
 -- =====================================================
 -- DISHES TABLE
@@ -96,6 +94,24 @@ CREATE INDEX idx_dishes_location ON dishes(location);
 CREATE INDEX idx_dishes_rating ON dishes(rating DESC NULLS LAST);
 
 -- =====================================================
+-- USER TRIED DISHES TABLE
+-- =====================================================
+CREATE TABLE user_tried_dishes (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  dish_id UUID NOT NULL REFERENCES dishes(id) ON DELETE CASCADE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  
+  -- Ensure one entry per user per dish
+  CONSTRAINT unique_user_dish UNIQUE(user_id, dish_id)
+);
+
+-- Indexes for performance
+CREATE INDEX idx_user_tried_dishes_user ON user_tried_dishes(user_id);
+CREATE INDEX idx_user_tried_dishes_dish ON user_tried_dishes(dish_id);
+
+-- =====================================================
 -- MARKERS TABLE
 -- =====================================================
 CREATE TABLE markers (
@@ -114,7 +130,6 @@ CREATE TABLE markers (
   
   -- Content
   notes TEXT,
-  visit_dates JSONB DEFAULT '[]'::JSONB, -- Array of visit periods: [{start: "2024-01-15", end: "2024-01-20"}, ...]
   companions TEXT[],
   activities TEXT[],
   
@@ -131,6 +146,26 @@ CREATE INDEX idx_markers_user ON markers(user_id);
 CREATE INDEX idx_markers_city ON markers(city_id);
 CREATE INDEX idx_markers_status ON markers(visited, favorite, want);
 CREATE INDEX idx_markers_created ON markers(created_at DESC);
+
+-- =====================================================
+-- MARKER VISITS TABLE
+-- =====================================================
+CREATE TABLE marker_visits (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  marker_id UUID NOT NULL REFERENCES markers(id) ON DELETE CASCADE,
+  start_date DATE NOT NULL,
+  end_date DATE NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  
+  -- Ensure end date is not before start date
+  CONSTRAINT valid_date_range CHECK (end_date >= start_date)
+);
+
+-- Indexes for performance
+CREATE INDEX idx_marker_visits_marker ON marker_visits(marker_id);
+CREATE INDEX idx_marker_visits_start_date ON marker_visits(start_date DESC);
+CREATE INDEX idx_marker_visits_end_date ON marker_visits(end_date DESC);
 
 -- =====================================================
 -- PHOTOS TABLE
@@ -191,8 +226,18 @@ CREATE TRIGGER update_dishes_updated_at
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
+CREATE TRIGGER update_user_tried_dishes_updated_at
+  BEFORE UPDATE ON user_tried_dishes
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
 CREATE TRIGGER update_markers_updated_at
   BEFORE UPDATE ON markers
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_marker_visits_updated_at
+  BEFORE UPDATE ON marker_visits
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
@@ -210,7 +255,9 @@ ALTER TABLE countries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE cities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE dishes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_tried_dishes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE markers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE marker_visits ENABLE ROW LEVEL SECURITY;
 ALTER TABLE photos ENABLE ROW LEVEL SECURITY;
 
 -- Countries: Public read access
@@ -259,6 +306,21 @@ CREATE POLICY "Users can insert their own profile"
   ON user_profiles FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+-- User Tried Dishes: Users can view their own tried dishes
+CREATE POLICY "Users can view their own tried dishes"
+  ON user_tried_dishes FOR SELECT
+  USING (auth.uid() = user_id);
+
+-- User Tried Dishes: Users can insert their own tried dishes
+CREATE POLICY "Users can insert their own tried dishes"
+  ON user_tried_dishes FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+-- User Tried Dishes: Users can delete their own tried dishes
+CREATE POLICY "Users can delete their own tried dishes"
+  ON user_tried_dishes FOR DELETE
+  USING (auth.uid() = user_id);
+
 -- Markers: Users can only see their own markers
 CREATE POLICY "Users can view their own markers"
   ON markers FOR SELECT
@@ -279,6 +341,47 @@ CREATE POLICY "Users can update their own markers"
 CREATE POLICY "Users can delete their own markers"
   ON markers FOR DELETE
   USING (auth.uid() = user_id);
+
+-- Marker Visits: Users can view visits from their own markers
+CREATE POLICY "Users can view visits from their own markers"
+  ON marker_visits FOR SELECT
+  USING (
+    marker_id IN (
+      SELECT id FROM markers WHERE user_id = auth.uid()
+    )
+  );
+
+-- Marker Visits: Users can insert visits to their own markers
+CREATE POLICY "Users can insert visits to their own markers"
+  ON marker_visits FOR INSERT
+  WITH CHECK (
+    marker_id IN (
+      SELECT id FROM markers WHERE user_id = auth.uid()
+    )
+  );
+
+-- Marker Visits: Users can update visits from their own markers
+CREATE POLICY "Users can update visits from their own markers"
+  ON marker_visits FOR UPDATE
+  USING (
+    marker_id IN (
+      SELECT id FROM markers WHERE user_id = auth.uid()
+    )
+  )
+  WITH CHECK (
+    marker_id IN (
+      SELECT id FROM markers WHERE user_id = auth.uid()
+    )
+  );
+
+-- Marker Visits: Users can delete visits from their own markers
+CREATE POLICY "Users can delete visits from their own markers"
+  ON marker_visits FOR DELETE
+  USING (
+    marker_id IN (
+      SELECT id FROM markers WHERE user_id = auth.uid()
+    )
+  );
 
 -- Photos: Users can only see photos from their own markers
 CREATE POLICY "Users can view photos from their own markers"
@@ -355,7 +458,9 @@ COMMENT ON TABLE countries IS 'Geographic country data with boundaries';
 COMMENT ON TABLE cities IS 'Cities from SimpleMaps worldcities.csv (~48k entries) with population and coordinates';
 COMMENT ON TABLE user_profiles IS 'User profile data including home city and future preferences';
 COMMENT ON TABLE dishes IS 'Signature dishes per country from TasteAtlas dataset';
+COMMENT ON TABLE user_tried_dishes IS 'Tracks which dishes each user has tried';
 COMMENT ON TABLE markers IS 'User travel markers with status, content, and metadata';
+COMMENT ON TABLE marker_visits IS 'Visit periods (start and end dates) for each marker';
 COMMENT ON TABLE photos IS 'Photos uploaded by users for their travel markers with Cloudinary metadata';
 
 COMMENT ON COLUMN cities.simplemaps_id IS 'SimpleMaps 10-digit unique ID for data consistency across updates';
@@ -364,7 +469,8 @@ COMMENT ON COLUMN cities.name_ascii IS 'ASCII representation for search and sort
 COMMENT ON COLUMN cities.admin_name IS 'Highest level admin region (state/province) - retained for future scalability beyond country-level MVP';
 COMMENT ON COLUMN cities.population IS 'Urban population estimate (may be null for smaller cities)';
 COMMENT ON COLUMN user_profiles.home_city_id IS 'Reference to user home city (can be null if not set)';
-COMMENT ON COLUMN user_profiles.tried_dishes IS 'JSONB object mapping country_id to array of tried dish_ids: {"country_uuid": [dish_uuid1, dish_uuid2], ...}';
+COMMENT ON COLUMN user_tried_dishes.user_id IS 'User who tried the dish';
+COMMENT ON COLUMN user_tried_dishes.dish_id IS 'Dish that was tried';
 COMMENT ON COLUMN dishes.country_id IS 'Reference to country where dish originates';
 COMMENT ON COLUMN dishes.name IS 'Dish name (e.g. Manti, Kabuli Palaw)';
 COMMENT ON COLUMN dishes.category IS 'Dish category (e.g. Dumplings, Rice, Bread, Stew)';
@@ -378,7 +484,9 @@ COMMENT ON COLUMN photos.public_id IS 'Cloudinary public ID for photo management
 COMMENT ON COLUMN photos.date_taken IS 'Date when the photo was taken (user-provided)';
 COMMENT ON COLUMN photos.caption IS 'User-provided caption or description for the photo';
 COMMENT ON COLUMN photos.uploaded_at IS 'Timestamp when the photo was uploaded to Cloudinary';
-COMMENT ON COLUMN markers.visit_dates IS 'JSONB array of visit periods with start and end dates: [{start: "2024-01-15", end: "2024-01-20"}, ...]';
+COMMENT ON COLUMN marker_visits.marker_id IS 'Marker this visit belongs to';
+COMMENT ON COLUMN marker_visits.start_date IS 'Start date of the visit period';
+COMMENT ON COLUMN marker_visits.end_date IS 'End date of the visit period';
 COMMENT ON COLUMN markers.companions IS 'Array of companion names/descriptions';
 COMMENT ON COLUMN markers.activities IS 'Array of activities done at this location';
 COMMENT ON COLUMN markers.photo_urls IS 'Array of Cloudinary photo URLs';
