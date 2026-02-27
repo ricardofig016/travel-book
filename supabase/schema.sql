@@ -117,7 +117,6 @@ CREATE TABLE markers (
   visit_dates JSONB DEFAULT '[]'::JSONB, -- Array of visit periods: [{start: "2024-01-15", end: "2024-01-20"}, ...]
   companions TEXT[],
   activities TEXT[],
-  photo_urls TEXT[] DEFAULT '{}'::TEXT[],
   
   -- Metadata
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -132,6 +131,31 @@ CREATE INDEX idx_markers_user ON markers(user_id);
 CREATE INDEX idx_markers_city ON markers(city_id);
 CREATE INDEX idx_markers_status ON markers(visited, favorite, want);
 CREATE INDEX idx_markers_created ON markers(created_at DESC);
+
+-- =====================================================
+-- PHOTOS TABLE
+-- =====================================================
+CREATE TABLE photos (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  marker_id UUID NOT NULL REFERENCES markers(id) ON DELETE CASCADE,
+  
+  -- Cloudinary metadata
+  url TEXT NOT NULL, -- Cloudinary CDN URL
+  public_id TEXT NOT NULL, -- Cloudinary public ID for management (delete, update)
+  
+  -- Photo metadata
+  date DATE, -- When the photo was taken
+  caption TEXT, -- User's caption for the photo
+  
+  -- Timestamps
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Indexes for performance
+CREATE INDEX idx_photos_marker ON photos(marker_id);
+CREATE INDEX idx_photos_date ON photos(date DESC NULLS LAST);
+CREATE INDEX idx_photos_public_id ON photos(public_id); -- For Cloudinary operations
 
 -- =====================================================
 -- FUNCTIONS
@@ -172,6 +196,11 @@ CREATE TRIGGER update_markers_updated_at
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
+CREATE TRIGGER update_photos_updated_at
+  BEFORE UPDATE ON photos
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
 -- =====================================================
 -- ROW LEVEL SECURITY (RLS)
 -- =====================================================
@@ -182,6 +211,7 @@ ALTER TABLE cities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE dishes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE markers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE photos ENABLE ROW LEVEL SECURITY;
 
 -- Countries: Public read access
 CREATE POLICY "Countries are viewable by everyone"
@@ -250,6 +280,47 @@ CREATE POLICY "Users can delete their own markers"
   ON markers FOR DELETE
   USING (auth.uid() = user_id);
 
+-- Photos: Users can only see photos from their own markers
+CREATE POLICY "Users can view photos from their own markers"
+  ON photos FOR SELECT
+  USING (
+    marker_id IN (
+      SELECT id FROM markers WHERE user_id = auth.uid()
+    )
+  );
+
+-- Photos: Users can insert photos to their own markers
+CREATE POLICY "Users can insert photos to their own markers"
+  ON photos FOR INSERT
+  WITH CHECK (
+    marker_id IN (
+      SELECT id FROM markers WHERE user_id = auth.uid()
+    )
+  );
+
+-- Photos: Users can update photos from their own markers
+CREATE POLICY "Users can update photos from their own markers"
+  ON photos FOR UPDATE
+  USING (
+    marker_id IN (
+      SELECT id FROM markers WHERE user_id = auth.uid()
+    )
+  )
+  WITH CHECK (
+    marker_id IN (
+      SELECT id FROM markers WHERE user_id = auth.uid()
+    )
+  );
+
+-- Photos: Users can delete photos from their own markers
+CREATE POLICY "Users can delete photos from their own markers"
+  ON photos FOR DELETE
+  USING (
+    marker_id IN (
+      SELECT id FROM markers WHERE user_id = auth.uid()
+    )
+  );
+
 -- =====================================================
 -- VIEWS
 -- =====================================================
@@ -285,6 +356,7 @@ COMMENT ON TABLE cities IS 'Cities from SimpleMaps worldcities.csv (~48k entries
 COMMENT ON TABLE user_profiles IS 'User profile data including home city and future preferences';
 COMMENT ON TABLE dishes IS 'Signature dishes per country from TasteAtlas dataset';
 COMMENT ON TABLE markers IS 'User travel markers with status, content, and metadata';
+COMMENT ON TABLE photos IS 'Photos uploaded by users for their travel markers with Cloudinary metadata';
 
 COMMENT ON COLUMN cities.simplemaps_id IS 'SimpleMaps 10-digit unique ID for data consistency across updates';
 COMMENT ON COLUMN cities.name IS 'Unicode city name (e.g. Goiânia)';
@@ -300,6 +372,12 @@ COMMENT ON COLUMN dishes.location IS 'Specific region/area of origin (e.g. Naple
 COMMENT ON COLUMN dishes.tasteatlas_url IS 'TasteAtlas page URL for the dish';
 COMMENT ON COLUMN dishes.image_url IS 'CDN image URL of the dish';
 COMMENT ON COLUMN dishes.rating IS 'TasteAtlas rating (0-5 scale)';
+COMMENT ON COLUMN photos.marker_id IS 'Reference to the marker this photo belongs to';
+COMMENT ON COLUMN photos.url IS 'Cloudinary CDN URL for the photo';
+COMMENT ON COLUMN photos.public_id IS 'Cloudinary public ID for photo management (delete, update, transformations)';
+COMMENT ON COLUMN photos.date_taken IS 'Date when the photo was taken (user-provided)';
+COMMENT ON COLUMN photos.caption IS 'User-provided caption or description for the photo';
+COMMENT ON COLUMN photos.uploaded_at IS 'Timestamp when the photo was uploaded to Cloudinary';
 COMMENT ON COLUMN markers.visit_dates IS 'JSONB array of visit periods with start and end dates: [{start: "2024-01-15", end: "2024-01-20"}, ...]';
 COMMENT ON COLUMN markers.companions IS 'Array of companion names/descriptions';
 COMMENT ON COLUMN markers.activities IS 'Array of activities done at this location';
