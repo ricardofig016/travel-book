@@ -8,6 +8,36 @@ CREATE EXTENSION IF NOT EXISTS postgis;
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- =====================================================
+-- BOOKS TABLE
+-- =====================================================
+CREATE TABLE books (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name TEXT NOT NULL,
+  is_public BOOLEAN DEFAULT false, -- True for the demo/mock book visible to all
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Index for faster lookups
+CREATE INDEX idx_books_is_public ON books(is_public);
+
+-- =====================================================
+-- BOOK MEMBERS TABLE
+-- =====================================================
+CREATE TABLE book_members (
+  book_id UUID NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  
+  -- Composite primary key: one membership per user per book
+  PRIMARY KEY (book_id, user_id)
+);
+
+-- Indexes for performance
+CREATE INDEX idx_book_members_user ON book_members(user_id);
+CREATE INDEX idx_book_members_book ON book_members(book_id);
+
+-- =====================================================
 -- COUNTRIES TABLE
 -- =====================================================
 CREATE TABLE countries (
@@ -94,22 +124,22 @@ CREATE INDEX idx_dishes_location ON dishes(location);
 CREATE INDEX idx_dishes_rating ON dishes(rating DESC NULLS LAST);
 
 -- =====================================================
--- USER TRIED DISHES TABLE
+-- BOOK TRIED DISHES TABLE
 -- =====================================================
-CREATE TABLE user_tried_dishes (
+CREATE TABLE book_tried_dishes (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  book_id UUID NOT NULL REFERENCES books(id) ON DELETE CASCADE,
   dish_id UUID NOT NULL REFERENCES dishes(id) ON DELETE CASCADE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   
-  -- Ensure one entry per user per dish
-  CONSTRAINT unique_user_dish UNIQUE(user_id, dish_id)
+  -- Ensure one entry per book per dish
+  CONSTRAINT unique_book_dish UNIQUE(book_id, dish_id)
 );
 
 -- Indexes for performance
-CREATE INDEX idx_user_tried_dishes_user ON user_tried_dishes(user_id);
-CREATE INDEX idx_user_tried_dishes_dish ON user_tried_dishes(dish_id);
+CREATE INDEX idx_book_tried_dishes_book ON book_tried_dishes(book_id);
+CREATE INDEX idx_book_tried_dishes_dish ON book_tried_dishes(dish_id);
 
 -- =====================================================
 -- MARKERS TABLE
@@ -117,8 +147,8 @@ CREATE INDEX idx_user_tried_dishes_dish ON user_tried_dishes(dish_id);
 CREATE TABLE markers (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   
-  -- User identification (will be linked to auth.users in RLS)
-  user_id UUID NOT NULL,
+  -- Book identification (all members of book can see/edit this marker)
+  book_id UUID NOT NULL REFERENCES books(id) ON DELETE CASCADE,
   
   -- Location data
   city_id UUID NOT NULL REFERENCES cities(id) ON DELETE RESTRICT,
@@ -137,12 +167,12 @@ CREATE TABLE markers (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   
-  -- Ensure one marker per city per user
-  CONSTRAINT unique_marker_per_user_city UNIQUE(user_id, city_id)
+  -- Ensure one marker per city per book
+  CONSTRAINT unique_marker_per_book_city UNIQUE(book_id, city_id)
 );
 
 -- Indexes for performance
-CREATE INDEX idx_markers_user ON markers(user_id);
+CREATE INDEX idx_markers_book ON markers(book_id);
 CREATE INDEX idx_markers_city ON markers(city_id);
 CREATE INDEX idx_markers_status ON markers(visited, favorite, want);
 CREATE INDEX idx_markers_created ON markers(created_at DESC);
@@ -226,8 +256,13 @@ CREATE TRIGGER update_dishes_updated_at
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_user_tried_dishes_updated_at
-  BEFORE UPDATE ON user_tried_dishes
+CREATE TRIGGER update_book_tried_dishes_updated_at
+  BEFORE UPDATE ON book_tried_dishes
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_books_updated_at
+  BEFORE UPDATE ON books
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
@@ -251,14 +286,37 @@ CREATE TRIGGER update_photos_updated_at
 -- =====================================================
 
 -- Enable RLS on all tables
+ALTER TABLE books ENABLE ROW LEVEL SECURITY;
+ALTER TABLE book_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE countries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE cities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE dishes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE user_tried_dishes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE book_tried_dishes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE markers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE marker_visits ENABLE ROW LEVEL SECURITY;
 ALTER TABLE photos ENABLE ROW LEVEL SECURITY;
+
+-- Books: Public books are viewable by everyone; private books only by members
+CREATE POLICY "Books are viewable by members or public"
+  ON books FOR SELECT
+  USING (
+    is_public = true
+    OR id IN (SELECT book_id FROM book_members WHERE user_id = auth.uid())
+  );
+
+-- Books: Only members can update their own books
+CREATE POLICY "Book members can update their books"
+  ON books FOR UPDATE
+  USING (id IN (SELECT book_id FROM book_members WHERE user_id = auth.uid()))
+  WITH CHECK (id IN (SELECT book_id FROM book_members WHERE user_id = auth.uid()));
+
+-- Book Members: Users can view memberships of books they're in
+CREATE POLICY "Users can view members of their books"
+  ON book_members FOR SELECT
+  USING (
+    book_id IN (SELECT book_id FROM book_members WHERE user_id = auth.uid())
+  );
 
 -- Countries: Public read access
 CREATE POLICY "Countries are viewable by everyone"
@@ -306,121 +364,159 @@ CREATE POLICY "Users can insert their own profile"
   ON user_profiles FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
--- User Tried Dishes: Users can view their own tried dishes
-CREATE POLICY "Users can view their own tried dishes"
-  ON user_tried_dishes FOR SELECT
-  USING (auth.uid() = user_id);
+-- Book Tried Dishes: Users can view tried dishes from books they're a member of
+CREATE POLICY "Users can view tried dishes in their books"
+  ON book_tried_dishes FOR SELECT
+  USING (
+    book_id IN (
+      SELECT book_id FROM book_members WHERE user_id = auth.uid()
+    )
+    OR book_id IN (SELECT id FROM books WHERE is_public = true)
+  );
 
--- User Tried Dishes: Users can insert their own tried dishes
-CREATE POLICY "Users can insert their own tried dishes"
-  ON user_tried_dishes FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
+-- Book Tried Dishes: Users can insert tried dishes in books they're a member of
+CREATE POLICY "Users can insert tried dishes in their books"
+  ON book_tried_dishes FOR INSERT
+  WITH CHECK (
+    book_id IN (SELECT book_id FROM book_members WHERE user_id = auth.uid())
+  );
 
--- User Tried Dishes: Users can delete their own tried dishes
-CREATE POLICY "Users can delete their own tried dishes"
-  ON user_tried_dishes FOR DELETE
-  USING (auth.uid() = user_id);
+-- Book Tried Dishes: Users can delete tried dishes from books they're a member of
+CREATE POLICY "Users can delete tried dishes in their books"
+  ON book_tried_dishes FOR DELETE
+  USING (
+    book_id IN (SELECT book_id FROM book_members WHERE user_id = auth.uid())
+  );
 
--- Markers: Users can only see their own markers
-CREATE POLICY "Users can view their own markers"
+-- Markers: Users can see markers from books they're in or public demo books
+CREATE POLICY "Users can view markers in their books"
   ON markers FOR SELECT
-  USING (auth.uid() = user_id);
+  USING (
+    book_id IN (
+      SELECT book_id FROM book_members WHERE user_id = auth.uid()
+    )
+    OR book_id IN (SELECT id FROM books WHERE is_public = true)
+  );
 
--- Markers: Users can insert their own markers
-CREATE POLICY "Users can insert their own markers"
+-- Markers: Users can insert markers in books they're members of
+CREATE POLICY "Users can insert markers in their books"
   ON markers FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
+  WITH CHECK (
+    book_id IN (SELECT book_id FROM book_members WHERE user_id = auth.uid())
+  );
 
--- Markers: Users can update their own markers
-CREATE POLICY "Users can update their own markers"
+-- Markers: Users can update markers in books they're members of
+CREATE POLICY "Users can update markers in their books"
   ON markers FOR UPDATE
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
+  USING (
+    book_id IN (SELECT book_id FROM book_members WHERE user_id = auth.uid())
+  )
+  WITH CHECK (
+    book_id IN (SELECT book_id FROM book_members WHERE user_id = auth.uid())
+  );
 
--- Markers: Users can delete their own markers
-CREATE POLICY "Users can delete their own markers"
+-- Markers: Users can delete markers in books they're members of
+CREATE POLICY "Users can delete markers in their books"
   ON markers FOR DELETE
-  USING (auth.uid() = user_id);
+  USING (
+    book_id IN (SELECT book_id FROM book_members WHERE user_id = auth.uid())
+  );
 
--- Marker Visits: Users can view visits from their own markers
-CREATE POLICY "Users can view visits from their own markers"
+-- Marker Visits: Users can view visits from markers in their books
+CREATE POLICY "Users can view visits from markers in their books"
   ON marker_visits FOR SELECT
   USING (
     marker_id IN (
-      SELECT id FROM markers WHERE user_id = auth.uid()
+      SELECT m.id FROM markers m
+      WHERE m.book_id IN (
+        SELECT book_id FROM book_members WHERE user_id = auth.uid()
+      )
+      OR m.book_id IN (SELECT id FROM books WHERE is_public = true)
     )
   );
 
--- Marker Visits: Users can insert visits to their own markers
-CREATE POLICY "Users can insert visits to their own markers"
+-- Marker Visits: Users can insert visits to markers in their books
+CREATE POLICY "Users can insert visits to markers in their books"
   ON marker_visits FOR INSERT
   WITH CHECK (
     marker_id IN (
-      SELECT id FROM markers WHERE user_id = auth.uid()
+      SELECT m.id FROM markers m
+      WHERE m.book_id IN (SELECT book_id FROM book_members WHERE user_id = auth.uid())
     )
   );
 
--- Marker Visits: Users can update visits from their own markers
-CREATE POLICY "Users can update visits from their own markers"
+-- Marker Visits: Users can update visits to markers in their books
+CREATE POLICY "Users can update visits to markers in their books"
   ON marker_visits FOR UPDATE
   USING (
     marker_id IN (
-      SELECT id FROM markers WHERE user_id = auth.uid()
+      SELECT m.id FROM markers m
+      WHERE m.book_id IN (SELECT book_id FROM book_members WHERE user_id = auth.uid())
     )
   )
   WITH CHECK (
     marker_id IN (
-      SELECT id FROM markers WHERE user_id = auth.uid()
+      SELECT m.id FROM markers m
+      WHERE m.book_id IN (SELECT book_id FROM book_members WHERE user_id = auth.uid())
     )
   );
 
--- Marker Visits: Users can delete visits from their own markers
-CREATE POLICY "Users can delete visits from their own markers"
+-- Marker Visits: Users can delete visits from markers in their books
+CREATE POLICY "Users can delete visits from markers in their books"
   ON marker_visits FOR DELETE
   USING (
     marker_id IN (
-      SELECT id FROM markers WHERE user_id = auth.uid()
+      SELECT m.id FROM markers m
+      WHERE m.book_id IN (SELECT book_id FROM book_members WHERE user_id = auth.uid())
     )
   );
 
--- Photos: Users can only see photos from their own markers
-CREATE POLICY "Users can view photos from their own markers"
+-- Photos: Users can view photos from markers in their books
+CREATE POLICY "Users can view photos from markers in their books"
   ON photos FOR SELECT
   USING (
     marker_id IN (
-      SELECT id FROM markers WHERE user_id = auth.uid()
+      SELECT m.id FROM markers m
+      WHERE m.book_id IN (
+        SELECT book_id FROM book_members WHERE user_id = auth.uid()
+      )
+      OR m.book_id IN (SELECT id FROM books WHERE is_public = true)
     )
   );
 
--- Photos: Users can insert photos to their own markers
-CREATE POLICY "Users can insert photos to their own markers"
+-- Photos: Users can insert photos to markers in their books
+CREATE POLICY "Users can insert photos to markers in their books"
   ON photos FOR INSERT
   WITH CHECK (
     marker_id IN (
-      SELECT id FROM markers WHERE user_id = auth.uid()
+      SELECT m.id FROM markers m
+      WHERE m.book_id IN (SELECT book_id FROM book_members WHERE user_id = auth.uid())
     )
   );
 
--- Photos: Users can update photos from their own markers
-CREATE POLICY "Users can update photos from their own markers"
+-- Photos: Users can update photos from markers in their books
+CREATE POLICY "Users can update photos from markers in their books"
   ON photos FOR UPDATE
   USING (
     marker_id IN (
-      SELECT id FROM markers WHERE user_id = auth.uid()
+      SELECT m.id FROM markers m
+      WHERE m.book_id IN (SELECT book_id FROM book_members WHERE user_id = auth.uid())
     )
   )
   WITH CHECK (
     marker_id IN (
-      SELECT id FROM markers WHERE user_id = auth.uid()
+      SELECT m.id FROM markers m
+      WHERE m.book_id IN (SELECT book_id FROM book_members WHERE user_id = auth.uid())
     )
   );
 
--- Photos: Users can delete photos from their own markers
-CREATE POLICY "Users can delete photos from their own markers"
+-- Photos: Users can delete photos from markers in their books
+CREATE POLICY "Users can delete photos from markers in their books"
   ON photos FOR DELETE
   USING (
     marker_id IN (
-      SELECT id FROM markers WHERE user_id = auth.uid()
+      SELECT m.id FROM markers m
+      WHERE m.book_id IN (SELECT book_id FROM book_members WHERE user_id = auth.uid())
     )
   );
 
@@ -428,13 +524,13 @@ CREATE POLICY "Users can delete photos from their own markers"
 -- VIEWS
 -- =====================================================
 
--- View for marker statistics by country
+-- View for marker statistics by country and book
 CREATE OR REPLACE VIEW marker_stats_by_country AS
 SELECT 
   c.id AS country_id,
   c.name AS country_name,
   c.iso_code_2,
-  m.user_id,
+  m.book_id,
   COUNT(*) AS total_markers,
   COUNT(*) FILTER (WHERE m.visited) AS visited_count,
   COUNT(*) FILTER (WHERE m.favorite) AS favorite_count,
@@ -442,7 +538,7 @@ SELECT
 FROM countries c
 INNER JOIN cities ci ON c.id = ci.country_id
 INNER JOIN markers m ON ci.id = m.city_id
-GROUP BY c.id, c.name, c.iso_code_2, m.user_id;
+GROUP BY c.id, c.name, c.iso_code_2, m.book_id;
 
 -- Apply RLS to view
 ALTER VIEW marker_stats_by_country SET (security_barrier = true);
@@ -454,14 +550,16 @@ GRANT SELECT ON marker_stats_by_country TO authenticated;
 -- COMMENTS
 -- =====================================================
 
+COMMENT ON TABLE books IS 'Travel books: containers for shared travel data';
+COMMENT ON TABLE book_members IS 'Book membership: links users to books they collaborate on';
 COMMENT ON TABLE countries IS 'Geographic country data with boundaries';
 COMMENT ON TABLE cities IS 'Cities from SimpleMaps worldcities.csv (~48k entries) with population and coordinates';
 COMMENT ON TABLE user_profiles IS 'User profile data including home city and future preferences';
 COMMENT ON TABLE dishes IS 'Signature dishes per country from TasteAtlas dataset';
-COMMENT ON TABLE user_tried_dishes IS 'Tracks which dishes each user has tried';
-COMMENT ON TABLE markers IS 'User travel markers with status, content, and metadata';
+COMMENT ON TABLE book_tried_dishes IS 'Tracks which dishes have been tried by members of a book';
+COMMENT ON TABLE markers IS 'Travel markers belonging to a book with status, content, and metadata';
 COMMENT ON TABLE marker_visits IS 'Visit periods (start and end dates) for each marker';
-COMMENT ON TABLE photos IS 'Photos uploaded by users for their travel markers with Cloudinary metadata';
+COMMENT ON TABLE photos IS 'Photos uploaded for markers in travel books with Cloudinary metadata';
 
 COMMENT ON COLUMN cities.simplemaps_id IS 'SimpleMaps 10-digit unique ID for data consistency across updates';
 COMMENT ON COLUMN cities.name IS 'Unicode city name (e.g. Goiânia)';
@@ -469,8 +567,8 @@ COMMENT ON COLUMN cities.name_ascii IS 'ASCII representation for search and sort
 COMMENT ON COLUMN cities.admin_name IS 'Highest level admin region (state/province) - retained for future scalability beyond country-level MVP';
 COMMENT ON COLUMN cities.population IS 'Urban population estimate (may be null for smaller cities)';
 COMMENT ON COLUMN user_profiles.home_city_id IS 'Reference to user home city (can be null if not set)';
-COMMENT ON COLUMN user_tried_dishes.user_id IS 'User who tried the dish';
-COMMENT ON COLUMN user_tried_dishes.dish_id IS 'Dish that was tried';
+COMMENT ON COLUMN book_tried_dishes.book_id IS 'Book whose members tried the dish';
+COMMENT ON COLUMN book_tried_dishes.dish_id IS 'Dish that was tried';
 COMMENT ON COLUMN dishes.country_id IS 'Reference to country where dish originates';
 COMMENT ON COLUMN dishes.name IS 'Dish name (e.g. Manti, Kabuli Palaw)';
 COMMENT ON COLUMN dishes.category IS 'Dish category (e.g. Dumplings, Rice, Bread, Stew)';
@@ -487,6 +585,9 @@ COMMENT ON COLUMN photos.uploaded_at IS 'Timestamp when the photo was uploaded t
 COMMENT ON COLUMN marker_visits.marker_id IS 'Marker this visit belongs to';
 COMMENT ON COLUMN marker_visits.start_date IS 'Start date of the visit period';
 COMMENT ON COLUMN marker_visits.end_date IS 'End date of the visit period';
+COMMENT ON COLUMN markers.book_id IS 'Book this marker belongs to';
 COMMENT ON COLUMN markers.companions IS 'Array of companion names/descriptions';
 COMMENT ON COLUMN markers.activities IS 'Array of activities done at this location';
-COMMENT ON COLUMN markers.photo_urls IS 'Array of Cloudinary photo URLs';
+COMMENT ON COLUMN books.is_public IS 'Whether this is the demo book visible to all (including non-authenticated users)';
+COMMENT ON COLUMN book_members.book_id IS 'Reference to the book';
+COMMENT ON COLUMN book_members.user_id IS 'User who is a member of the book';

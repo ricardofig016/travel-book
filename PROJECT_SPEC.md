@@ -14,6 +14,7 @@ Cover -> Index -> Map -> Albums -> Statistics -> Back Cover.
 
 ## Core UX
 
+- **Navbar**: Book selector dropdown (Demo Book + user's books) and Create New Book action
 - **Book Cover**: click to open with a page flip to Index.
 - **Book Index**: table of contents for Map, Albums, Statistics.
 - **World Map**:
@@ -30,25 +31,26 @@ Cover -> Index -> Map -> Albums -> Statistics -> Back Cover.
   - Back cover options: cover, index, map, restart album.
 - **Bookmarks**: persistent tabs; dynamic positioning by section.
 
-## Data Requirements
+## Collaboration Model
 
-**Database Schema** (see `supabase/schema.sql`):
+- **Books**: containers for shared travel data (name, visibility)
+- **Book Members**: users collaborating on a book (no roles, equal access)
+- **Book Creation**: specify a list of emails at creation; no ability to add/remove members after creation (MVP)
+- **Public Demo Book**: one pre-seeded book visible without login (showcase)
+- **Shared State**: all book members share dishes, markers, photos, and visits (no per-user distinction)
 
+## Database Schema (see `supabase/schema.sql`)
+
+- **Books**: name, is_public (for demo book)
+- **Book Members**: links users to books (no ownership, equal access)
 - **Countries**: name, ISO codes, GeoJSON boundaries
 - **Cities** (~48k from SimpleMaps): name (Unicode + ASCII), country, admin region, population, coordinates
 - **User Profiles**: home_city_id for home country coloring
 - **Dishes** (TasteAtlas data): name, category, location, rating, image, country
-- **User Tried Dishes**: junction table tracking which dishes user has tried
-- **Markers**: user_id, city_id, status (visited/favorite/want), notes, companions, activities
+- **Book Tried Dishes**: junction table tracking which dishes have been tried by a book's members
+- **Markers**: book_id, city_id, status (visited/favorite/want), notes, companions, activities
 - **Marker Visits**: start_date, end_date pairs for each visit to a marker
 - **Photos**: marker_id, Cloudinary URL + public_id, date_taken, caption, uploaded_at
-
-**Key Relationships**:
-
-- Markers → Cities → Countries (normalized location data)
-- Photos → Markers (one-to-many)
-- Marker Visits → Markers (one-to-many for multiple visits)
-- User Tried Dishes ← Users + Dishes (many-to-many)
 
 ## Animations + Interaction
 
@@ -65,8 +67,6 @@ Cover -> Index -> Map -> Albums -> Statistics -> Back Cover.
 ## TBA
 
 **Shareability**: Can a user share a "Read-only" link to their book with friends/family? If I can’t show off my "Travel Book," the motivation to spend hours "scrapbooking" drops significantly.
-
-**Collaboration**: Can two people (e.g., a couple) contribute to the same book?
 
 **Export/Portability**: If the service ever shuts down, can I export my book to a PDF or a physical print-on-demand service? This is a major selling point for "journaling" apps.
 
