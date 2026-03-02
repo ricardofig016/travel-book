@@ -43,7 +43,8 @@ Cover -> Index -> Map -> Albums -> Statistics -> Back Cover.
 
 - **Books**: name, is_public (for demo book)
 - **Book Members**: links users to books (no ownership, equal access)
-- **Countries**: name, ISO codes, GeoJSON boundaries
+- **Countries**: name, native name, ISO codes, capital (city ref), area, population, coordinates, landlocked, borders, continents, subregion, timezones, languages, calling codes, car info, flag data, coat of arms, GeoJSON boundaries
+- **Currencies**: country junction with ISO codes, symbols, names
 - **Cities** (~48k from SimpleMaps): name (Unicode + ASCII), country, admin region, population, coordinates
 - **User Profiles**: home_city_id for home country coloring
 - **Dishes** (TasteAtlas data): name, category, location, rating, image, country
@@ -84,4 +85,4 @@ Cover -> Index -> Map -> Albums -> Statistics -> Back Cover.
 - city data: https://simplemaps.com/data/world-cities
 - country boundaries:
 - country dishes: https://www.tasteatlas.com/ (data scraped with [tasteatlas-scraper](github.com/ricardofig016/tasteatlas-scraper))
-- calling code (idd>root+idd>suffixes), capital, area, population, timezones, continents, name (nativeName), currencies, languages, coatOfArms(svg): https://restcountries.com/v3.1/name/{name}?fields
+- country data (name, nativeName, capital, area, population, latlng, landlocked, borders, continents, subregion, timezones, languages, calling codes, car signs/side, googleMaps, coatOfArms, flag, currencies): https://restcountries.com/v3.1/name/{name}?fields

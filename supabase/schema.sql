@@ -42,17 +42,76 @@ CREATE INDEX idx_book_members_book ON book_members(book_id);
 -- =====================================================
 CREATE TABLE countries (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name TEXT NOT NULL UNIQUE,
-  iso_code_2 VARCHAR(2) NOT NULL UNIQUE, -- ISO 3166-1 alpha-2
-  iso_code_3 VARCHAR(3) NOT NULL UNIQUE, -- ISO 3166-1 alpha-3
+  name TEXT NOT NULL UNIQUE, -- Common country name (e.g., Japan)
+  native_name TEXT, -- Native common name (e.g., 日本 for Japan)
+  iso_code_2 VARCHAR(2) NOT NULL UNIQUE, -- ISO 3166-1 alpha-2 (e.g., JP)
+  iso_code_3 VARCHAR(3) NOT NULL UNIQUE, -- ISO 3166-1 alpha-3 (e.g., JPN)
+  
+  -- Geographic and demographic data
+  capital_id UUID REFERENCES cities(id) ON DELETE SET NULL, -- Reference to capital city
+  area NUMERIC(15, 2), -- Land area in km²
+  population BIGINT, -- Country population
+  latitude DECIMAL(10, 8), -- Country center latitude
+  longitude DECIMAL(11, 8), -- Country center longitude
+  landlocked BOOLEAN, -- Whether the country is landlocked
+  borders TEXT[], -- Array of bordering country ISO codes (e.g., ["BLZ", "GTM", "USA" for Mexico)
+  
+  -- Regional classification
+  continents TEXT[], -- Continents the country is on (e.g., ['Asia'])
+  subregion TEXT, -- UN demographic subregion (e.g., 'Eastern Asia')
+  
+  -- Contact and communication
+  calling_codes TEXT[], -- International dialing codes (e.g., ['+81'] for Japan)
+  languages TEXT[], -- Official languages (e.g., ['Japanese'])
+  timezones TEXT[], -- Timezone identifiers (e.g., ['UTC+09:00'])
+  
+  -- Transportation
+  car_signs TEXT[], -- Car distinguishing signs (e.g., ['J'] for Japan)
+  car_side TEXT, -- Driving side: 'left' or 'right'
+  
+  -- Links and resources
+  google_maps_url TEXT, -- Link to Google Maps
+  
+  -- Imagery
   geometry JSONB, -- GeoJSON for country boundaries (simplified for performance)
+  coat_of_arms_svg TEXT, -- URL to coat of arms SVG image
+  coat_of_arms_png TEXT, -- URL to coat of arms PNG image
+  flag_emoji TEXT, -- Flag emoji (e.g., 🇯🇵)
+  flag_svg TEXT, -- URL to flag SVG image
+  flag_png TEXT, -- URL to flag PNG image
+  flag_alt TEXT, -- Flag description for accessibility
+  
+  -- Timestamps
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Index for faster country lookups
+-- Indexes for faster country lookups
 CREATE INDEX idx_countries_name ON countries(name);
 CREATE INDEX idx_countries_iso2 ON countries(iso_code_2);
+CREATE INDEX idx_countries_iso3 ON countries(iso_code_3);
+CREATE INDEX idx_countries_capital ON countries(capital_id);
+CREATE INDEX idx_countries_subregion ON countries(subregion);
+
+-- =====================================================
+-- CURRENCIES TABLE
+-- =====================================================
+CREATE TABLE currencies (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  country_id UUID NOT NULL REFERENCES countries(id) ON DELETE CASCADE,
+  code VARCHAR(3) NOT NULL, -- ISO 4217 currency code (e.g., JPY)
+  symbol TEXT, -- Currency symbol (e.g., ¥)
+  name TEXT NOT NULL, -- Currency name (e.g., Japanese yen)
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  
+  -- Ensure one entry per country per currency
+  CONSTRAINT unique_country_currency UNIQUE(country_id, code)
+);
+
+-- Indexes for performance
+CREATE INDEX idx_currencies_country ON currencies(country_id);
+CREATE INDEX idx_currencies_code ON currencies(code);
 
 -- =====================================================
 -- CITIES TABLE
@@ -256,6 +315,11 @@ CREATE TRIGGER update_dishes_updated_at
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
+CREATE TRIGGER update_currencies_updated_at
+  BEFORE UPDATE ON currencies
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
 CREATE TRIGGER update_book_tried_dishes_updated_at
   BEFORE UPDATE ON book_tried_dishes
   FOR EACH ROW
@@ -289,6 +353,7 @@ CREATE TRIGGER update_photos_updated_at
 ALTER TABLE books ENABLE ROW LEVEL SECURITY;
 ALTER TABLE book_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE countries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE currencies ENABLE ROW LEVEL SECURITY;
 ALTER TABLE cities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE dishes ENABLE ROW LEVEL SECURITY;
@@ -346,6 +411,16 @@ CREATE POLICY "Dishes are viewable by everyone"
 -- Dishes: Admin only write access (for seeding/maintenance)
 CREATE POLICY "Dishes are editable by admins only"
   ON dishes FOR ALL
+  USING (auth.jwt() ->> 'role' = 'admin');
+
+-- Currencies: Public read access
+CREATE POLICY "Currencies are viewable by everyone"
+  ON currencies FOR SELECT
+  USING (true);
+
+-- Currencies: Admin only write access (for seeding/maintenance)
+CREATE POLICY "Currencies are editable by admins only"
+  ON currencies FOR ALL
   USING (auth.jwt() ->> 'role' = 'admin');
 
 -- User Profiles: Users can only see their own profile
@@ -552,7 +627,8 @@ GRANT SELECT ON marker_stats_by_country TO authenticated;
 
 COMMENT ON TABLE books IS 'Travel books: containers for shared travel data';
 COMMENT ON TABLE book_members IS 'Book membership: links users to books they collaborate on';
-COMMENT ON TABLE countries IS 'Geographic country data with boundaries';
+COMMENT ON TABLE countries IS 'Geographic country data with boundaries, demographics, and contact information';
+COMMENT ON TABLE currencies IS 'Currency data for each country with ISO 4217 codes and symbols';
 COMMENT ON TABLE cities IS 'Cities from SimpleMaps worldcities.csv (~48k entries) with population and coordinates';
 COMMENT ON TABLE user_profiles IS 'User profile data including home city and future preferences';
 COMMENT ON TABLE dishes IS 'Signature dishes per country from TasteAtlas dataset';
@@ -566,6 +642,33 @@ COMMENT ON COLUMN cities.name IS 'Unicode city name (e.g. Goiânia)';
 COMMENT ON COLUMN cities.name_ascii IS 'ASCII representation for search and sorting (e.g. Goiania)';
 COMMENT ON COLUMN cities.admin_name IS 'Highest level admin region (state/province) - retained for future scalability beyond country-level MVP';
 COMMENT ON COLUMN cities.population IS 'Urban population estimate (may be null for smaller cities)';
+COMMENT ON COLUMN countries.name IS 'Common country name in English (e.g., Japan)';
+COMMENT ON COLUMN countries.native_name IS 'Native common country name (e.g., 日本 for Japan)';
+COMMENT ON COLUMN countries.capital_id IS 'Reference to capital city in cities table';
+COMMENT ON COLUMN countries.area IS 'Country area in km²';
+COMMENT ON COLUMN countries.population IS 'Total country population';
+COMMENT ON COLUMN countries.latitude IS 'Country center latitude';
+COMMENT ON COLUMN countries.longitude IS 'Country center longitude';
+COMMENT ON COLUMN countries.landlocked IS 'Whether the country is landlocked';
+COMMENT ON COLUMN countries.borders IS 'Array of bordering country ISO codes';
+COMMENT ON COLUMN countries.continents IS 'Continents the country is on (e.g., [''Asia''])';
+COMMENT ON COLUMN countries.subregion IS 'UN demographic subregion (e.g., Eastern Asia)';
+COMMENT ON COLUMN countries.calling_codes IS 'International dialing codes (e.g., [''+81''] for Japan)';
+COMMENT ON COLUMN countries.languages IS 'Official/common language names (e.g., [''Japanese''])';
+COMMENT ON COLUMN countries.timezones IS 'Timezone identifiers (e.g., [''UTC+09:00''])';
+COMMENT ON COLUMN countries.car_signs IS 'Car distinguishing signs (e.g., [''J''] for Japan)';
+COMMENT ON COLUMN countries.car_side IS 'Driving side: left or right';
+COMMENT ON COLUMN countries.google_maps_url IS 'Link to Google Maps for the country';
+COMMENT ON COLUMN countries.coat_of_arms_svg IS 'URL to coat of arms SVG image';
+COMMENT ON COLUMN countries.coat_of_arms_png IS 'URL to coat of arms PNG image';
+COMMENT ON COLUMN countries.flag_emoji IS 'Flag emoji representation (e.g., 🇯🇵)';
+COMMENT ON COLUMN countries.flag_svg IS 'URL to flag SVG image';
+COMMENT ON COLUMN countries.flag_png IS 'URL to flag PNG image';
+COMMENT ON COLUMN countries.flag_alt IS 'Flag description for accessibility';
+COMMENT ON COLUMN currencies.country_id IS 'Reference to the country';
+COMMENT ON COLUMN currencies.code IS 'ISO 4217 currency code (e.g., JPY)';
+COMMENT ON COLUMN currencies.symbol IS 'Currency symbol (e.g., ¥)';
+COMMENT ON COLUMN currencies.name IS 'Currency name (e.g., Japanese yen)';
 COMMENT ON COLUMN user_profiles.home_city_id IS 'Reference to user home city (can be null if not set)';
 COMMENT ON COLUMN book_tried_dishes.book_id IS 'Book whose members tried the dish';
 COMMENT ON COLUMN book_tried_dishes.dish_id IS 'Dish that was tried';
