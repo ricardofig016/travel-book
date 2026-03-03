@@ -163,6 +163,17 @@ CREATE TABLE user_profiles (
 CREATE INDEX idx_user_profiles_home_city ON user_profiles(home_city_id);
 
 -- =====================================================
+-- ADMIN USERS TABLE
+-- =====================================================
+CREATE TABLE admin_users (
+  user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Index for faster lookups
+CREATE INDEX idx_admin_users_user ON admin_users(user_id);
+
+-- =====================================================
 -- DISHES TABLE
 -- =====================================================
 CREATE TABLE dishes (
@@ -381,6 +392,7 @@ ALTER TABLE countries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE currencies ENABLE ROW LEVEL SECURITY;
 ALTER TABLE cities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE admin_users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE dishes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE book_tried_dishes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE markers ENABLE ROW LEVEL SECURITY;
@@ -444,7 +456,7 @@ CREATE POLICY "Countries are viewable by everyone"
 -- Countries: Admin only write access (for seeding/maintenance)
 CREATE POLICY "Countries are editable by admins only"
   ON countries FOR ALL
-  USING (auth.jwt() ->> 'role' = 'admin');
+  USING (EXISTS (SELECT 1 FROM admin_users WHERE user_id = auth.uid()));
 
 -- Cities: Public read access
 CREATE POLICY "Cities are viewable by everyone"
@@ -454,7 +466,7 @@ CREATE POLICY "Cities are viewable by everyone"
 -- Cities: Admin only write access (for seeding/maintenance)
 CREATE POLICY "Cities are editable by admins only"
   ON cities FOR ALL
-  USING (auth.jwt() ->> 'role' = 'admin');
+  USING (EXISTS (SELECT 1 FROM admin_users WHERE user_id = auth.uid()));
 
 -- Dishes: Public read access
 CREATE POLICY "Dishes are viewable by everyone"
@@ -464,7 +476,7 @@ CREATE POLICY "Dishes are viewable by everyone"
 -- Dishes: Admin only write access (for seeding/maintenance)
 CREATE POLICY "Dishes are editable by admins only"
   ON dishes FOR ALL
-  USING (auth.jwt() ->> 'role' = 'admin');
+  USING (EXISTS (SELECT 1 FROM admin_users WHERE user_id = auth.uid()));
 
 -- Currencies: Public read access
 CREATE POLICY "Currencies are viewable by everyone"
@@ -474,7 +486,7 @@ CREATE POLICY "Currencies are viewable by everyone"
 -- Currencies: Admin only write access (for seeding/maintenance)
 CREATE POLICY "Currencies are editable by admins only"
   ON currencies FOR ALL
-  USING (auth.jwt() ->> 'role' = 'admin');
+  USING (EXISTS (SELECT 1 FROM admin_users WHERE user_id = auth.uid()));
 
 -- User Profiles: Users can only see their own profile
 CREATE POLICY "Users can view their own profile"
@@ -491,6 +503,16 @@ CREATE POLICY "Users can update their own profile"
 CREATE POLICY "Users can insert their own profile"
   ON user_profiles FOR INSERT
   WITH CHECK (auth.uid() = user_id);
+
+-- Admin Users: Only admins can read the admin users table
+CREATE POLICY "Admins can view admin users"
+  ON admin_users FOR SELECT
+  USING (EXISTS (SELECT 1 FROM admin_users WHERE user_id = auth.uid()));
+
+-- Admin Users: Admin users can manage admin users
+CREATE POLICY "Admin users can manage admin users"
+  ON admin_users FOR ALL
+  USING (EXISTS (SELECT 1 FROM admin_users WHERE user_id = auth.uid()));
 
 -- Book Tried Dishes: Users can view tried dishes from books they're a member of
 CREATE POLICY "Users can view tried dishes in their books"
@@ -684,6 +706,7 @@ COMMENT ON TABLE countries IS 'Geographic country data with boundaries, demograp
 COMMENT ON TABLE currencies IS 'Currency data for each country with ISO 4217 codes and symbols';
 COMMENT ON TABLE cities IS 'Cities from SimpleMaps worldcities.csv (~48k entries) with population and coordinates';
 COMMENT ON TABLE user_profiles IS 'User profile data including home city and future preferences';
+COMMENT ON TABLE admin_users IS 'Admin user access control for seeding and maintaining reference data';
 COMMENT ON TABLE dishes IS 'Signature dishes per country from TasteAtlas dataset';
 COMMENT ON TABLE book_tried_dishes IS 'Tracks which dishes have been tried by members of a book';
 COMMENT ON TABLE markers IS 'Travel markers belonging to a book with status, content, and metadata';
