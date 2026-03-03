@@ -299,6 +299,25 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Function to auto-create user profile when added to a book
+CREATE OR REPLACE FUNCTION create_user_profile_on_book_member_insert()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Insert a user profile if it doesn't already exist
+  INSERT INTO user_profiles (user_id)
+  VALUES (NEW.user_id)
+  ON CONFLICT (user_id) DO NOTHING;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger to auto-create user profile on book membership
+CREATE TRIGGER create_user_profile_on_book_member_insert
+  AFTER INSERT ON book_members
+  FOR EACH ROW
+  EXECUTE FUNCTION create_user_profile_on_book_member_insert();
+
 -- Apply updated_at trigger to all tables
 CREATE TRIGGER update_countries_updated_at
   BEFORE UPDATE ON countries
