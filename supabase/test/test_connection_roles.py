@@ -77,8 +77,13 @@ class RoleConnectionTestSet:
         data = response.data or []
         if expect_admin:
             self._assert(len(data) == 1, "Admin user could not read own row in admin_users")
+            # Also get total admin count for visibility
+            total_response = client.table("admin_users").select("user_id", count="exact").execute()
+            total_count = total_response.count or 0
+            return total_count
         else:
             self._assert(len(data) == 0, "Non-admin user should not read rows from admin_users")
+            return None
 
     def _run_books_access_smoke_test(self, client: Client):
         books = client.table("books").select("id", count="exact").limit(1).execute()
@@ -124,8 +129,11 @@ class RoleConnectionTestSet:
             role_ok = False
 
         try:
-            self._run_admin_users_visibility_test(client, user_id, creds.expect_admin)
-            print("✓ admin_users visibility check")
+            admin_count = self._run_admin_users_visibility_test(client, user_id, creds.expect_admin)
+            if admin_count is not None:
+                print(f"✓ admin_users visibility check (total admins: {admin_count})")
+            else:
+                print("✓ admin_users visibility check (non-admin blocked)")
             self.total_passed += 1
         except Exception as exc:
             print(f"✗ admin_users visibility check: {exc}")

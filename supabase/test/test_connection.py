@@ -86,6 +86,23 @@ class SupabaseHealthCheck:
                 print(f"{status} {table_name:<20} Rows: {count:>6}")
                 self.passed += 1
 
+        # Additional RLS validation: admin_users must be 0 for anon access
+        print()
+        print("RLS VALIDATION:")
+        admin_result = self.results.get("admin_users")
+        if admin_result and admin_result["error"] is None:
+            if admin_result["count"] == 0:
+                print("✓ admin_users blocks anon access (0 rows visible)")
+                self.passed += 1
+            else:
+                print(f"✗ admin_users RLS BREACH: anon saw {admin_result['count']} rows (expected 0)")
+                self.failed += 1
+                all_passed = False
+        else:
+            print("✗ admin_users test failed, cannot validate RLS")
+            self.failed += 1
+            all_passed = False
+
         print()
         print("=" * 70)
         print(f"SUMMARY: {self.passed} passed, {self.failed} failed")
