@@ -50,6 +50,21 @@ python seed_currencies.py
 - Links to countries via country_id lookup
 - Handles formatting and validation
 
+### Dishes
+
+`dishes_seed.json` already exists in `../data`.
+
+**Seed to Supabase**
+
+```bash
+python seed_dishes.py
+```
+
+- Inserts or updates dishes in `dishes` table
+- Resolves `country_id` by matching country names from `countries` table
+- Uses upsert on `(name, country_id)` for idempotent re-runs
+- Logs unmatched countries and skipped rows
+
 ## Available Scripts
 
 | Script                | Purpose                                    | Input                           | Output                 |
@@ -58,6 +73,7 @@ python seed_currencies.py
 | `fetch_currencies.py` | Extract currencies from country data       | `countries_seed.json`           | `currencies_seed.json` |
 | `seed_countries.py`   | Insert countries into Supabase             | `countries_seed.json` + `.env`  | Database               |
 | `seed_currencies.py`  | Insert currencies into Supabase            | `currencies_seed.json` + `.env` | Database               |
+| `seed_dishes.py`      | Insert/update dishes into Supabase         | `dishes_seed.json` + `.env`     | Database               |
 
 ## Requirements
 
@@ -119,7 +135,5 @@ fetch_currencies.py → currencies_seed.json → seed_currencies.py → Supabase
 
 ## Future Scripts
 
-- `fetch_dishes.py` – Extract from `country_dishes.json`
 - `fetch_cities.py` – Parse `worldcities.csv`
-- `seed_dishes.py` – Insert dishes with country lookups
 - `seed_cities.py` – Insert cities with country lookups
