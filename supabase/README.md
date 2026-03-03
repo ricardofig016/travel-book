@@ -15,14 +15,18 @@ supabase/
 ├── data/                   # Seed data files (JSON/CSV)
 │   ├── countries_seed.json        # 250 countries from REST Countries API
 │   ├── currencies_seed.json       # 268 currencies extracted from countries
-│   ├── country_dishes.json        # Dishes from TasteAtlas (not yet seeded)
-│   └── worldcities.csv            # ~48k cities from SimpleMaps (not yet seeded)
+│   ├── cities_seed.json           # ~48k cities from SimpleMaps worldcities.csv
+│   ├── dishes_seed.json           # Dishes from TasteAtlas
+│   └── worldcities.csv            # ~48k cities from SimpleMaps (source data)
 │
 ├── scripts/                # Python fetch & seed scripts
 │   ├── fetch_countries.py         # Fetch countries from REST Countries API
+│   ├── fetch_cities.py            # Extract cities from worldcities.csv
 │   ├── fetch_currencies.py        # Fetch currencies from REST Countries API
 │   ├── seed_countries.py          # Insert countries into Supabase
+│   ├── seed_cities.py             # Insert cities into Supabase
 │   ├── seed_currencies.py         # Insert currencies into Supabase
+│   ├── seed_dishes.py             # Insert dishes into Supabase
 │   └── README.md                  # Script usage guide
 │
 ├── test/                   # Test suite for database health checks
@@ -60,10 +64,17 @@ python scripts/fetch_currencies.py  # If needed to regenerate
 python scripts/seed_currencies.py
 ```
 
-#### Cities & Dishes (TODO)
+#### Cities
 
 ```bash
-# Coming soon: scripts for cities and dishes
+python scripts/fetch_cities.py
+python scripts/seed_cities.py
+```
+
+#### Dishes
+
+```bash
+python scripts/seed_dishes.py
 ```
 
 ### Schema Deployment
@@ -83,19 +94,6 @@ To manually apply fixes to production:
 - **Cities**: [SimpleMaps worldcities.csv](https://simplemaps.com/data/world-cities)
 - **Dishes**: Local `country_dishes.json` (from TasteAtlas)
 - **Currency Symbols & Names**: Extracted from REST Countries API
-
-## Status
-
-| Table      | Rows | Status         |
-| ---------- | ---- | -------------- |
-| countries  | 250  | ✓ Seeded       |
-| currencies | 268  | ✓ Seeded       |
-| cities     | 0    | ⏳ TODO        |
-| dishes     | 0    | ⏳ TODO        |
-| books      | 0    | (User-created) |
-| markers    | 0    | (User-created) |
-| photos     | 0    | (User-created) |
-| Other      | 0    | (Various)      |
 
 ## Notes
 
