@@ -611,7 +611,7 @@ CREATE POLICY "Users can delete photos from markers in their books"
 -- =====================================================
 
 -- View for marker statistics by country and book
-CREATE OR REPLACE VIEW marker_stats_by_country AS
+CREATE OR REPLACE VIEW marker_stats_by_country WITH (security_invoker) AS
 SELECT 
   c.id AS country_id,
   c.name AS country_name,
@@ -626,7 +626,7 @@ INNER JOIN cities ci ON c.id = ci.country_id
 INNER JOIN markers m ON ci.id = m.city_id
 GROUP BY c.id, c.name, c.iso_code_2, m.book_id;
 
--- Apply RLS to view
+-- Apply security barrier for safe predicate handling
 ALTER VIEW marker_stats_by_country SET (security_barrier = true);
 
 -- Grant access to authenticated users
