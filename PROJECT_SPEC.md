@@ -30,7 +30,7 @@ Cover -> Index -> Map -> Albums -> Statistics -> Back Cover.
   - Marker details view with "See Album" if photos exist.
 - **Photo Albums**:
   - Scrapbook two-page spreads; taped/rotated photos; page flip navigation.
-  - Back cover options: cover, index, map, restart album.
+  - Each page is selected from one of the template layouts. There's layouts for pages with 2 and 3 photos. Layouts have designated areas for photos, captions, doodles, etc. Photo rotation is random within a small angle range to create a casual, scrapbook feel.
 - **Bookmarks**: persistent tabs; dynamic positioning by section.
 
 ## Collaboration Model
