@@ -14,7 +14,9 @@ Cover -> Index -> Map -> Albums -> Statistics -> Back Cover.
 
 ## Core UX
 
-- **Navbar**: Book selector dropdown (Demo Book + user's books) and Create New Book action
+- **Navbar**:
+  - Book selector dropdown (Demo Book + user's books) and Create New Book action
+  - Export Button: generates a PDF copy of the entire book including cover, map, albums, and statistics.
 - **Book Cover**: click to open with a page flip to Index.
 - **Book Index**: table of contents for Map, Albums, Statistics.
 - **World Map**:
@@ -64,10 +66,6 @@ Cover -> Index -> Map -> Albums -> Statistics -> Back Cover.
 - GitHub Pages output: dist/travel-book/browser/, base href /travel-book/.
 - Do not commit secrets; use Supabase RLS.
 - Supabase keep-alive GitHub Action with minimal GET.
-
-## TBA
-
-**Export/Portability**: If the service ever shuts down, can I export my book to a PDF or a physical print-on-demand service? This is a major selling point for "journaling" apps.
 
 ## Reference Links
 
