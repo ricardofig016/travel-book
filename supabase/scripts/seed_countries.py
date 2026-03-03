@@ -14,7 +14,7 @@ from supabase import create_client
 
 def load_countries() -> list[dict]:
     """Load countries from JSON file."""
-    json_file = Path(__file__).parent / "countries_seed.json"
+    json_file = Path(__file__).parent.parent / "data" / "countries_seed.json"
     if not json_file.exists():
         print(f"✗ File not found: {json_file}")
         print("  Run fetch_countries.py first")

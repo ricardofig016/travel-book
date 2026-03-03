@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Optional, Any
 
 BASE_URL = "https://restcountries.com/v3.1"
-OUTPUT_FILE = Path(__file__).parent / "countries_seed.json"
+OUTPUT_FILE = Path(__file__).parent.parent / "data" / "countries_seed.json"
 
 # Rate limiting: 60 requests per minute
 RATE_LIMIT_DELAY = 0.1  # seconds
