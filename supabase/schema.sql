@@ -53,7 +53,6 @@ CREATE TABLE countries (
   iso_code_3 VARCHAR(3) NOT NULL UNIQUE, -- ISO 3166-1 alpha-3 (e.g., JPN)
   
   -- Geographic and demographic data
-  capital_id UUID REFERENCES cities(id) ON DELETE SET NULL, -- Reference to capital city
   area NUMERIC(15, 2), -- Land area in km²
   population BIGINT, -- Country population
   latitude DECIMAL(10, 8), -- Country center latitude
@@ -95,7 +94,6 @@ CREATE TABLE countries (
 CREATE INDEX idx_countries_name ON countries(name);
 CREATE INDEX idx_countries_iso2 ON countries(iso_code_2);
 CREATE INDEX idx_countries_iso3 ON countries(iso_code_3);
-CREATE INDEX idx_countries_capital ON countries(capital_id);
 CREATE INDEX idx_countries_subregion ON countries(subregion);
 
 -- =====================================================
@@ -128,6 +126,7 @@ CREATE TABLE cities (
   name TEXT NOT NULL, -- Unicode city name (e.g. Goiânia)
   name_ascii TEXT, -- ASCII representation for search/sorting (e.g. Goiania)
   country_id UUID NOT NULL REFERENCES countries(id) ON DELETE CASCADE,
+  is_capital BOOLEAN NOT NULL DEFAULT false, -- Whether this city is the country's capital
   admin_name TEXT, -- Highest level admin region (state/province) - for future scalability
   population INTEGER, -- Urban population estimate (may be null for smaller cities)
   latitude DECIMAL(10, 8) NOT NULL,
@@ -141,6 +140,7 @@ CREATE TABLE cities (
 
 -- Indexes for performance
 CREATE INDEX idx_cities_country ON cities(country_id);
+CREATE INDEX idx_cities_country_capital ON cities(country_id, is_capital);
 CREATE INDEX idx_cities_admin ON cities(admin_name); -- For state/province filtering
 CREATE INDEX idx_cities_population ON cities(population DESC NULLS LAST);
 CREATE INDEX idx_cities_name ON cities(name);
@@ -647,7 +647,7 @@ COMMENT ON COLUMN cities.admin_name IS 'Highest level admin region (state/provin
 COMMENT ON COLUMN cities.population IS 'Urban population estimate (may be null for smaller cities)';
 COMMENT ON COLUMN countries.name IS 'Common country name in English (e.g., Japan)';
 COMMENT ON COLUMN countries.native_name IS 'Native common country name (e.g., 日本 for Japan)';
-COMMENT ON COLUMN countries.capital_id IS 'Reference to capital city in cities table';
+COMMENT ON COLUMN cities.is_capital IS 'Whether this city is the country capital';
 COMMENT ON COLUMN countries.area IS 'Country area in km²';
 COMMENT ON COLUMN countries.population IS 'Total country population';
 COMMENT ON COLUMN countries.latitude IS 'Country center latitude';
