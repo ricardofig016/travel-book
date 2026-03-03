@@ -1,207 +1,103 @@
-# Travel Book - AI Agent Instructions
+# Travel Book - Workspace Instructions
 
-A digital travel journal using Angular 19 and a physical book metaphor. See [PROJECT_SPEC.md](../PROJECT_SPEC.md) for features and [ARCHITECTURE.md](../ARCHITECTURE.md) for structure.
+Digital travel journal built with Angular 19 and a physical-book UI metaphor.
+
+Use these docs as source of truth for product intent and planned structure:
+
+- `PROJECT_SPEC.md`
+- `ARCHITECTURE.md`
+- `supabase/schema.sql`
 
 ## Code Style
 
-**Angular 19 Modern Patterns:**
+Angular standards for new code:
 
-- Use standalone components (`standalone: true`) - NO NgModules except for lazy-loaded feature modules
-- Prefer `inject()` function over constructor injection for new code
-- Use signals (`signal()`, `computed()`, `effect()`) for state management
-- Apply OnPush change detection strategy: `changeDetection: ChangeDetectionStrategy.OnPush`
-- Use `styleUrl` (singular) not deprecated `styleUrls`
+- Use standalone components (`standalone: true`).
+- Prefer `inject()` over constructor injection in newly written or refactored code.
+- Use signals (`signal`, `computed`, `effect`) for local reactive state.
+- Use `ChangeDetectionStrategy.OnPush` for non-trivial components.
+- Use `styleUrl` (singular) and SCSS.
 
-**TypeScript:**
+TypeScript standards:
 
-- Strict mode enabled - honor all type safety rules
-- Target ES2022
-- Avoid `any` - use proper typing or `unknown`
+- Keep strict typing (`strict` is enabled in `tsconfig.json`).
+- Avoid `any`; use concrete types or `unknown` and narrow.
+- Keep ES2022-compatible code.
 
-**Component Organization:**
+Naming conventions:
 
-- **Pages** (`src/app/pages/`): Full-page route components
-- **Features** (`src/app/features/`): Domain-specific modules (map, albums, navigation, animations)
-- **Shared** (`src/app/shared/`): Reusable cross-feature components, pipes, directives
-- **Services** (`src/app/services/`): Data layer (storage, supabase, cloudinary) and utilities
-
-**Naming Conventions:**
-
-- Component selector prefix: `app-`
-- File naming: kebab-case (`book-cover.component.ts`)
-- Class names: PascalCase (`BookCoverComponent`)
-- Methods/variables: camelCase (`openBook()`)
+- Selector prefix: `app-`
+- File names: kebab-case (example: `book-cover.component.ts`)
+- Class names: PascalCase
+- Methods/variables: camelCase
 
 ## Architecture
 
-Reference [ARCHITECTURE.md](../ARCHITECTURE.md) for complete structure. Key principles:
+Current implementation is an early scaffold:
 
-**Lazy Loading:**
+- Routes and page shells live in `src/app/pages/`.
+- Root app setup is in `src/app/app.config.ts`, `src/app/app.routes.ts`, and `src/app/app.component.ts`.
+- Config/constants live in `src/app/core/config/`.
+- Data service folders exist at `src/app/services/` but are mostly not implemented yet.
 
-- Feature modules (map, albums, statistics) should be lazy-loaded
-- Keep initial bundle under 500KB (warning threshold)
+Target architecture (documented, partially not yet implemented):
 
-**State Management:**
+- Feature areas under `src/app/features/`.
+- Shared reusable UI/utilities under `src/app/shared/`.
+- Service layer for storage/Supabase/Cloudinary under `src/app/services/`.
 
-- Use Angular signals for component state
-- Services for shared state across features
-- LocalStorage for persistence (use `storage.service.ts`)
+When adding new features:
 
-**Data Flow:**
+- Follow documented boundaries from `ARCHITECTURE.md`.
+- Prefer lazy-loaded route areas for larger features.
+- Keep data flow normalized around Supabase schema (countries -> cities -> markers -> visits/photos).
 
-- Supabase for all persistent data (see schema below)
-- Cloudinary for photo storage (via `cloudinary.service.ts`)
-- Keep-alive cron job hits Supabase every 2-3 days (free tier requirement)
+## Build And Test
 
-**Database Design Principles:**
+Use these npm scripts:
 
-- **Normalized Structure**: Countries → Cities → Markers → Photos/Visits
-- **No Redundancy**: Lat/lng stored only in cities table, not markers
-- **Proper Relations**: Use foreign keys, avoid JSONB for structured data
-- **Separate Tables for Many-to-Many**: `user_tried_dishes` junction table
-- **Visit Tracking**: `marker_visits` table for multiple visit periods per marker
-- **Photo Management**: `photos` table with Cloudinary metadata (url, public_id)
+- `npm start` -> Angular dev server (`ng serve`)
+- `npm run watch` -> dev build watch mode
+- `npm run build` -> production build
+- `npm test` -> Karma/Jasmine tests
 
-**Navigation Flow:**
-Cover → Index → Map → Country Entry (cities + dishes) → Albums → Statistics → Back Cover
+Deployment details:
 
-## Build and Test
-
-**Development:**
-
-```bash
-npm start          # Start dev server at localhost:4200
-npm run watch      # Build with watch mode
-```
-
-**Testing:**
-
-```bash
-npm test           # Run Karma/Jasmine tests
-```
-
-**Production:**
-
-```bash
-npm run build      # Production build to dist/travel-book/browser/
-```
-
-**Deployment:**
-
-- GitHub Pages via `.github/workflows/deploy.yml`
-- Base href MUST be `/travel-book/`
-- Output directory: `dist/travel-book/browser/`
-
-## Design System
-
-**Typography:**
-
-- Headers: Yrsa (serif) - classic book feel
-- Body: Roboto (sans-serif) - readability
-- Notes: Indie Flower (handwritten) - personal touch
-
-**Styling:**
-
-- SCSS only - partials in `src/styles/` (variables, typography, reset, animations, utilities)
-- Scrapbook aesthetic: tape effects, photo rotation, soft shadows
-- Budget: 4KB warning, 8KB error per component style
-
-## External Services
-
-**Supabase Database Schema** (see `supabase/schema.sql`):
-
-- **Tables**: `countries`, `cities` (~48k from SimpleMaps), `user_profiles`, `dishes` (TasteAtlas), `user_tried_dishes`, `markers`, `marker_visits`, `photos`
-- **Key Relationships**: Markers → Cities → Countries; Photos → Markers; Marker Visits → Markers
-- Use environment variables from `src/app/core/config/environment.ts`
-- Row Level Security (RLS) policies enforced on all tables
-- Install dependency: `@supabase/supabase-js`
-
-**Cloudinary Photo Storage:**
-
-- Photos table stores: `url`, `public_id`, `date_taken`, `caption`, `uploaded_at`
-- Max upload: 10MB
-- Formats: jpg, jpeg, png, webp, gif
-- Cloud name: `dkpf6sa1o`
-- Use `public_id` for delete/update operations
-
-**Animation Library:**
-
-- GSAP recommended for page flip animations
-- Wrap in `gsap-wrapper.service.ts` for testability
-
-## Database Schema Details
-
-**Core Tables:**
-
-1. **countries** - Geographic data with ISO codes and GeoJSON boundaries
-2. **cities** (~48k) - SimpleMaps data: name (Unicode + ASCII), country_id, admin_name, population, lat/lng
-3. **user_profiles** - User settings: home_city_id for home country coloring
-4. **dishes** - TasteAtlas data: name, category, location, rating, image_url, country_id
-5. **user_tried_dishes** - Junction table: user_id, dish_id, tried_at
-6. **markers** - User markers: user_id, city_id, status (visited/favorite/want), notes, companions, activities
-7. **marker_visits** - Visit periods: marker_id, start_date, end_date
-8. **photos** - Photo metadata: marker_id, url, public_id, date_taken, caption
-
-**Key Design Decisions:**
-
-- Coordinates stored ONLY in cities table (markers inherit via city_id)
-- Visit dates in separate table (not JSONB) for better queryability
-- Tried dishes in separate table (not JSONB in user_profiles)
-- Photos in separate table (not URL array in markers) - enables metadata + Cloudinary management
-- SimpleMaps ID preserved for data consistency across updates
-- Admin name stored for future scalability (currently country-level only MVP)
+- GitHub Pages workflow: `.github/workflows/deploy.yml`
+- Production build for pages must use base href `/travel-book/`
+- Deployed artifact path: `dist/travel-book/browser`
 
 ## Conventions
 
-**Page Flip Animation:**
+Routing and UX flow:
 
-- Required for: section transitions, album navigation
-- Block new navigation until flip completes
-- Use directive for reusability: `page-flip.directive.ts`
+- Preserve navigation flow: Cover -> Index -> Map -> Albums -> Statistics (expand toward full spec flow as features are added).
+- For page-flip transitions, block competing navigation until animation completes.
 
-**Environment Files:**
+Data and integration:
 
-- `environment.ts` - Development config (NOT committed with secrets)
-- `environment.prod.ts` - Production config (file replacement in angular.json)
-- Use `.env.example` for documenting required variables
+- Use `src/app/core/config/environment.ts` and `src/app/core/config/environment.prod.ts` for environment config.
+- Keep constants in `src/app/core/config/constants.ts`.
+- Supabase is the persistent data source; Cloudinary is for photo storage metadata + asset lifecycle.
 
-**Constants:**
+Database modeling rules:
 
-- Define in `src/app/core/config/constants.ts`
-- Includes: API endpoints, table names, cache expiry, storage keys, error messages
+- Do not duplicate city coordinates on markers.
+- Keep many-to-many data in join tables (example: `user_tried_dishes`).
+- Keep visit periods in `marker_visits`, not JSON blobs.
+- Keep photo metadata in `photos` with Cloudinary `public_id`.
 
-**Asset Organization:**
+## Pitfalls
 
-- Static assets in `public/assets/`
-- Fonts: `fonts/indie-flower/`, `fonts/yrsa/`, `fonts/wonderling/`
-- Images: `images/book/`, `images/icons/`, `images/ribbons/`
+- GitHub Pages routing breaks if base href is not `/travel-book/` in production build.
+- Angular bundle budgets are strict (`500kB` warning / `1MB` error initial, `4kB` warning / `8kB` error component style).
+- Supabase free tier can sleep; handle wake-up latency gracefully.
+- Avoid unnecessary signals/RxJS mixing; use interop helpers when crossing boundaries.
 
-## Common Pitfalls
+## Key References
 
-**GitHub Pages Deployment:**
-
-- Always use `/travel-book/` base href in production builds
-- Path references must be relative or absolute with base href
-
-**Supabase Free Tier:**
-
-- Database pauses after inactivity - keep-alive workflow required
-- Implement graceful handling of wake-up delays
-
-**Bundle Size:**
-
-- Be cautious with third-party libraries
-- Lazy load features to stay under budget
-- Use tree-shakeable imports
-
-**Angular Signals:**
-
-- Don't mix signals with RxJS observables unnecessarily
-- Use `toSignal()` and `toObservable()` for interop
-
-## Reference Files
-
-- [PROJECT_SPEC.md](../PROJECT_SPEC.md) - Feature requirements and visual design
-- [ARCHITECTURE.md](../ARCHITECTURE.md) - Complete file structure and component organization
-- [README.md](../README.md) - Project overview
-- [.github/workflows/deploy.yml](workflows/deploy.yml) - Deployment automation
+- `PROJECT_SPEC.md`
+- `ARCHITECTURE.md`
+- `README.md`
+- `.github/workflows/deploy.yml`
+- `supabase/schema.sql`
