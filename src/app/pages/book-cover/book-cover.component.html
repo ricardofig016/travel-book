@@ -1,2 +1,24 @@
 <h1>cover</h1>
 <button type="button" (click)="openBook()">go to index</button>
+
+<!-- Supabase Connection Status -->
+@if (connectionStatus(); as status) {
+  <div
+    style="
+      margin-top: 2rem;
+      padding: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    "
+  >
+    @if (status.ok) {
+      <p style="color: green">✓ Connected to Supabase</p>
+      <p>
+        Countries loaded: <strong>{{ status.countriesCount }}</strong>
+      </p>
+    } @else {
+      <p style="color: red">✗ Database connection failed</p>
+      <p>{{ status.error }}</p>
+    }
+  </div>
+}
