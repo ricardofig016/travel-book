@@ -67,8 +67,6 @@ Cover -> Index -> Map -> Albums -> Statistics -> Back Cover.
 
 ## TBA
 
-**Shareability**: Can a user share a "Read-only" link to their book with friends/family? If I can’t show off my "Travel Book," the motivation to spend hours "scrapbooking" drops significantly.
-
 **Export/Portability**: If the service ever shuts down, can I export my book to a PDF or a physical print-on-demand service? This is a major selling point for "journaling" apps.
 
 ## Reference Links
