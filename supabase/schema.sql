@@ -273,7 +273,7 @@ CREATE TABLE photos (
   public_id TEXT NOT NULL, -- Cloudinary public ID for management (delete, update)
   
   -- Photo metadata
-  date DATE, -- When the photo was taken
+  date_taken DATE, -- When the photo was taken
   caption TEXT, -- User's caption for the photo
   
   -- Timestamps
@@ -283,7 +283,7 @@ CREATE TABLE photos (
 
 -- Indexes for performance
 CREATE INDEX idx_photos_marker ON photos(marker_id);
-CREATE INDEX idx_photos_date ON photos(date DESC NULLS LAST);
+CREATE INDEX idx_photos_date_taken ON photos(date_taken DESC NULLS LAST);
 CREATE INDEX idx_photos_public_id ON photos(public_id); -- For Cloudinary operations
 
 -- =====================================================
@@ -689,7 +689,6 @@ COMMENT ON COLUMN photos.url IS 'Cloudinary CDN URL for the photo';
 COMMENT ON COLUMN photos.public_id IS 'Cloudinary public ID for photo management (delete, update, transformations)';
 COMMENT ON COLUMN photos.date_taken IS 'Date when the photo was taken (user-provided)';
 COMMENT ON COLUMN photos.caption IS 'User-provided caption or description for the photo';
-COMMENT ON COLUMN photos.uploaded_at IS 'Timestamp when the photo was uploaded to Cloudinary';
 COMMENT ON COLUMN marker_visits.marker_id IS 'Marker this visit belongs to';
 COMMENT ON COLUMN marker_visits.start_date IS 'Start date of the visit period';
 COMMENT ON COLUMN marker_visits.end_date IS 'End date of the visit period';
