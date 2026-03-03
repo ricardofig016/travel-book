@@ -36,7 +36,7 @@ Cover -> Index -> Map -> Albums -> Statistics -> Back Cover.
 - **Books**: containers for shared travel data (name, visibility)
 - **Book Members**: users collaborating on a book (no roles, equal access)
 - **Book Creation**: specify a list of emails at creation; no ability to add/remove members after creation (MVP)
-- **Public Demo Book**: one pre-seeded book visible without login (showcase)
+- **Public Demo Book**: one pre-seeded showcase book with fake data, visible without login (is_public = true); all other books are private (is_public = false)
 - **Shared State**: all book members share dishes, markers, photos, and visits (no per-user distinction)
 
 ## Database Schema (see `supabase/schema.sql`)

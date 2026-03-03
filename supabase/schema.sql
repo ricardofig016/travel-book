@@ -13,13 +13,18 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE books (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   name TEXT NOT NULL,
-  is_public BOOLEAN DEFAULT false, -- True for the demo/mock book visible to all
+  is_public BOOLEAN DEFAULT false, -- Reserved for the single seeded demo/showcase book only
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Index for faster lookups
 CREATE INDEX idx_books_is_public ON books(is_public);
+
+-- Enforce exactly one public/demo book at most
+CREATE UNIQUE INDEX idx_books_single_public_book
+  ON books(is_public)
+  WHERE is_public = true;
 
 -- =====================================================
 -- BOOK MEMBERS TABLE
@@ -362,8 +367,8 @@ ALTER TABLE markers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE marker_visits ENABLE ROW LEVEL SECURITY;
 ALTER TABLE photos ENABLE ROW LEVEL SECURITY;
 
--- Books: Public books are viewable by everyone; private books only by members
-CREATE POLICY "Books are viewable by members or public"
+-- Books: The single public demo book is viewable by everyone; private books only by members
+CREATE POLICY "Books are viewable by members or single demo public book"
   ON books FOR SELECT
   USING (
     is_public = true
@@ -691,6 +696,6 @@ COMMENT ON COLUMN marker_visits.end_date IS 'End date of the visit period';
 COMMENT ON COLUMN markers.book_id IS 'Book this marker belongs to';
 COMMENT ON COLUMN markers.companions IS 'Array of companion names/descriptions';
 COMMENT ON COLUMN markers.activities IS 'Array of activities done at this location';
-COMMENT ON COLUMN books.is_public IS 'Whether this is the demo book visible to all (including non-authenticated users)';
+COMMENT ON COLUMN books.is_public IS 'Reserved flag for the single seeded demo/showcase book visible to all (including non-authenticated users); not a user share-link flag';
 COMMENT ON COLUMN book_members.book_id IS 'Reference to the book';
 COMMENT ON COLUMN book_members.user_id IS 'User who is a member of the book';
