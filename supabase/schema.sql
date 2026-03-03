@@ -14,6 +14,7 @@ CREATE TABLE books (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   name TEXT NOT NULL,
   is_public BOOLEAN DEFAULT false, -- Reserved for the single seeded demo/showcase book only
+  created_by UUID NOT NULL REFERENCES auth.users(id) ON DELETE RESTRICT, -- Track creator for initial member setup
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -400,12 +401,13 @@ CREATE POLICY "Book members can update their books"
   USING (id IN (SELECT book_id FROM book_members WHERE user_id = auth.uid()))
   WITH CHECK (id IN (SELECT book_id FROM book_members WHERE user_id = auth.uid()));
 
--- Books: Authenticated users can create private books (demo/public book remains restricted)
+-- Books: Authenticated users can create private books (created_by must be the current user)
 CREATE POLICY "Authenticated users can insert private books"
   ON books FOR INSERT
   WITH CHECK (
     auth.uid() IS NOT NULL
     AND is_public = false
+    AND created_by = auth.uid()
   );
 
 -- Book Members: Users can view only their own memberships
@@ -414,11 +416,13 @@ CREATE POLICY "Users can view their own memberships"
   USING (user_id = auth.uid());
 
 -- Book Members: Authenticated users can be added as book members
--- (The app layer must validate that the user is invited/authorized to join the book)
-CREATE POLICY "Authenticated users can be added as book members"
+-- Only the book creator can add members (during book creation)
+CREATE POLICY "Book creator can add members at creation"
   ON book_members FOR INSERT
   WITH CHECK (
-    auth.uid() IS NOT NULL
+    auth.uid() IN (
+      SELECT created_by FROM books WHERE id = book_id
+    )
   );
 
 -- Book Members: Users can remove themselves from books
@@ -740,5 +744,6 @@ COMMENT ON COLUMN markers.book_id IS 'Book this marker belongs to';
 COMMENT ON COLUMN markers.companions IS 'Array of companion names/descriptions';
 COMMENT ON COLUMN markers.activities IS 'Array of activities done at this location';
 COMMENT ON COLUMN books.is_public IS 'Reserved flag for the single seeded demo/showcase book visible to all (including non-authenticated users); not a user share-link flag';
+COMMENT ON COLUMN books.created_by IS 'User who created the book; used for RLS to allow creator to set initial members during book creation';
 COMMENT ON COLUMN book_members.book_id IS 'Reference to the book';
 COMMENT ON COLUMN book_members.user_id IS 'User who is a member of the book';
