@@ -324,6 +324,17 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Function to check if a user is an admin (SECURITY DEFINER to avoid RLS recursion)
+CREATE OR REPLACE FUNCTION is_admin(user_uid UUID)
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM admin_users 
+    WHERE user_id = user_uid
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 -- Trigger to auto-create user profile on book membership
 CREATE TRIGGER create_user_profile_on_book_member_insert
   AFTER INSERT ON book_members
@@ -456,7 +467,7 @@ CREATE POLICY "Countries are viewable by everyone"
 -- Countries: Admin only write access (for seeding/maintenance)
 CREATE POLICY "Countries are editable by admins only"
   ON countries FOR ALL
-  USING (EXISTS (SELECT 1 FROM admin_users WHERE user_id = auth.uid()));
+  USING (is_admin(auth.uid()));
 
 -- Cities: Public read access
 CREATE POLICY "Cities are viewable by everyone"
@@ -466,7 +477,7 @@ CREATE POLICY "Cities are viewable by everyone"
 -- Cities: Admin only write access (for seeding/maintenance)
 CREATE POLICY "Cities are editable by admins only"
   ON cities FOR ALL
-  USING (EXISTS (SELECT 1 FROM admin_users WHERE user_id = auth.uid()));
+  USING (is_admin(auth.uid()));
 
 -- Dishes: Public read access
 CREATE POLICY "Dishes are viewable by everyone"
@@ -476,7 +487,7 @@ CREATE POLICY "Dishes are viewable by everyone"
 -- Dishes: Admin only write access (for seeding/maintenance)
 CREATE POLICY "Dishes are editable by admins only"
   ON dishes FOR ALL
-  USING (EXISTS (SELECT 1 FROM admin_users WHERE user_id = auth.uid()));
+  USING (is_admin(auth.uid()));
 
 -- Currencies: Public read access
 CREATE POLICY "Currencies are viewable by everyone"
@@ -486,7 +497,7 @@ CREATE POLICY "Currencies are viewable by everyone"
 -- Currencies: Admin only write access (for seeding/maintenance)
 CREATE POLICY "Currencies are editable by admins only"
   ON currencies FOR ALL
-  USING (EXISTS (SELECT 1 FROM admin_users WHERE user_id = auth.uid()));
+  USING (is_admin(auth.uid()));
 
 -- User Profiles: Users can only see their own profile
 CREATE POLICY "Users can view their own profile"
@@ -507,12 +518,12 @@ CREATE POLICY "Users can insert their own profile"
 -- Admin Users: Only admins can read the admin users table
 CREATE POLICY "Admins can view admin users"
   ON admin_users FOR SELECT
-  USING (EXISTS (SELECT 1 FROM admin_users WHERE user_id = auth.uid()));
+  USING (is_admin(auth.uid()));
 
 -- Admin Users: Admin users can manage admin users
 CREATE POLICY "Admin users can manage admin users"
   ON admin_users FOR ALL
-  USING (EXISTS (SELECT 1 FROM admin_users WHERE user_id = auth.uid()));
+  USING (is_admin(auth.uid()));
 
 -- Book Tried Dishes: Users can view tried dishes from books they're a member of
 CREATE POLICY "Users can view tried dishes in their books"
