@@ -381,6 +381,14 @@ CREATE POLICY "Book members can update their books"
   USING (id IN (SELECT book_id FROM book_members WHERE user_id = auth.uid()))
   WITH CHECK (id IN (SELECT book_id FROM book_members WHERE user_id = auth.uid()));
 
+-- Books: Authenticated users can create private books (demo/public book remains restricted)
+CREATE POLICY "Authenticated users can insert private books"
+  ON books FOR INSERT
+  WITH CHECK (
+    auth.uid() IS NOT NULL
+    AND is_public = false
+  );
+
 -- Book Members: Users can view only their own memberships
 CREATE POLICY "Users can view their own memberships"
   ON book_members FOR SELECT
