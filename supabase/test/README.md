@@ -4,6 +4,19 @@ Automated tests for verifying Supabase database connectivity and health.
 
 ## Usage
 
+### Run All Tests
+
+Execute all test suites at once:
+
+```bash
+cd supabase/test
+python run_all_tests.py
+```
+
+This runs both the anon connection tests and role-based tests, providing a combined summary.
+
+---
+
 ### Connection Health Check
 
 Test all tables for read access and row count:
