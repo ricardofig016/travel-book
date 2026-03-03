@@ -381,12 +381,10 @@ CREATE POLICY "Book members can update their books"
   USING (id IN (SELECT book_id FROM book_members WHERE user_id = auth.uid()))
   WITH CHECK (id IN (SELECT book_id FROM book_members WHERE user_id = auth.uid()));
 
--- Book Members: Users can view memberships of books they're in
-CREATE POLICY "Users can view members of their books"
+-- Book Members: Users can view only their own memberships
+CREATE POLICY "Users can view their own memberships"
   ON book_members FOR SELECT
-  USING (
-    book_id IN (SELECT book_id FROM book_members WHERE user_id = auth.uid())
-  );
+  USING (user_id = auth.uid());
 
 -- Countries: Public read access
 CREATE POLICY "Countries are viewable by everyone"
