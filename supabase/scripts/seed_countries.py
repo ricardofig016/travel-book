@@ -44,8 +44,8 @@ def seed_countries(supabase_client, countries: list[dict]) -> bool:
 
 
 def main():
-    # Load .env file from parent directory (project root)
-    env_path = Path(__file__).parent.parent / ".env"
+    # Load .env file from project root
+    env_path = Path(__file__).parent.parent.parent / ".env"
     load_dotenv(env_path)
 
     # Get Supabase credentials from environment
