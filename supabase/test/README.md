@@ -13,6 +13,34 @@ cd supabase/test
 python test_connection.py
 ```
 
+### Role-Based Connection Test Set (Admin + Owner)
+
+Test Supabase access using authenticated role credentials:
+
+```bash
+cd supabase/test
+python test_connection_roles.py
+```
+
+Required `.env` values (at project root):
+
+- `SUPABASE_URL`
+- `SUPABASE_ADMIN_EMAIL`
+- `SUPABASE_ADMIN_PASSWORD`
+- `SUPABASE_OWNER_EMAIL`
+- `SUPABASE_OWNER_PASSWORD`
+
+Optional:
+
+- `SUPABASE_ANON_KEY` (falls back to current publishable key if omitted)
+
+What this test set validates:
+
+- Login succeeds for each configured role.
+- Public reference data is readable when authenticated.
+- `is_admin` RPC matches expected role behavior.
+- `admin_users` table visibility matches admin/non-admin policy.
+
 **Output:**
 
 - ✓ All tables accessible
