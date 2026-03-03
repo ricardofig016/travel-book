@@ -413,6 +413,25 @@ CREATE POLICY "Users can view their own memberships"
   ON book_members FOR SELECT
   USING (user_id = auth.uid());
 
+-- Book Members: Authenticated users can be added as book members
+-- (The app layer must validate that the user is invited/authorized to join the book)
+CREATE POLICY "Authenticated users can be added as book members"
+  ON book_members FOR INSERT
+  WITH CHECK (
+    auth.uid() IS NOT NULL
+  );
+
+-- Book Members: Users can remove themselves from books
+CREATE POLICY "Users can remove themselves from books"
+  ON book_members FOR DELETE
+  USING (user_id = auth.uid());
+
+-- Book Members: Users cannot modify existing memberships (user_id and book_id are immutable)
+CREATE POLICY "Book members cannot be updated"
+  ON book_members FOR UPDATE
+  USING (false)
+  WITH CHECK (false);
+
 -- Countries: Public read access
 CREATE POLICY "Countries are viewable by everyone"
   ON countries FOR SELECT
