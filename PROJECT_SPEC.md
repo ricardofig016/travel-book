@@ -16,6 +16,9 @@ Cover -> Index -> Map -> Albums -> Statistics -> Back Cover.
 
 - **Navbar**:
   - Book selector dropdown (Demo Book + user's books) and Create New Book action
+    - Demo Book has a "Hide Demo Book" button visible only in the dropdown (small icon/button next to the book name)
+    - When clicked, hides the demo book from the user's book list (preference stored in user_profiles.hide_demo_book)
+    - Non-authenticated users always see the demo book
   - Export Button: generates a PDF copy of the entire book including cover, map, albums, and statistics.
 - **Book Cover**: click to open with a page flip to Index.
 - **Book Index**: table of contents for Map, Albums, Statistics.

@@ -152,6 +152,7 @@ CREATE INDEX idx_cities_coordinates ON cities(latitude, longitude);
 CREATE TABLE user_profiles (
   user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   home_city_id UUID REFERENCES cities(id) ON DELETE SET NULL,
+  hide_demo_book BOOLEAN DEFAULT false, -- User preference to hide the public demo book from their book list
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -754,6 +755,7 @@ COMMENT ON COLUMN currencies.code IS 'ISO 4217 currency code (e.g., JPY)';
 COMMENT ON COLUMN currencies.symbol IS 'Currency symbol (e.g., ¥)';
 COMMENT ON COLUMN currencies.name IS 'Currency name (e.g., Japanese yen)';
 COMMENT ON COLUMN user_profiles.home_city_id IS 'Reference to user home city (can be null if not set)';
+COMMENT ON COLUMN user_profiles.hide_demo_book IS 'User preference to hide the public demo book from their personal book list (does not affect non-authenticated users)';
 COMMENT ON COLUMN book_tried_dishes.book_id IS 'Book whose members tried the dish';
 COMMENT ON COLUMN book_tried_dishes.dish_id IS 'Dish that was tried';
 COMMENT ON COLUMN dishes.country_id IS 'Reference to country where dish originates';
