@@ -1,1 +1,25 @@
+<!-- Supabase Connection Status -->
+@if (connectionStatus(); as status) {
+  <div
+    style="
+      margin: 1rem;
+      padding: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background-color: #f8f8f8;
+    "
+  >
+    @if (status.ok) {
+      <p style="color: green; margin: 0">
+        ✓ Connected to Supabase —
+        <strong>{{ status.countriesCount }}</strong> countries loaded
+      </p>
+    } @else {
+      <p style="color: red; margin: 0">
+        ✗ Connection failed: {{ status.error }}
+      </p>
+    }
+  </div>
+}
+
 <router-outlet />

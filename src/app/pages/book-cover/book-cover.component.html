@@ -3,25 +3,3 @@
   <button type="button" (click)="navigatePrev()">&lt;</button>
   <button type="button" (click)="navigateNext()">&gt;</button>
 </div>
-
-<!-- Supabase Connection Status -->
-@if (connectionStatus(); as status) {
-  <div
-    style="
-      margin-top: 2rem;
-      padding: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    "
-  >
-    @if (status.ok) {
-      <p style="color: green">✓ Connected to Supabase</p>
-      <p>
-        Countries loaded: <strong>{{ status.countriesCount }}</strong>
-      </p>
-    } @else {
-      <p style="color: red">✗ Database connection failed</p>
-      <p>{{ status.error }}</p>
-    }
-  </div>
-}
