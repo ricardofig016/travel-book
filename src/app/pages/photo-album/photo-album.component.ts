@@ -2,14 +2,14 @@ import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
 
 @Component({
-  selector: 'app-photo-albums',
+  selector: 'app-photo-album',
   standalone: true,
   imports: [],
-  templateUrl: './photo-albums.component.html',
-  styleUrl: './photo-albums.component.scss',
+  templateUrl: './photo-album.component.html',
+  styleUrl: './photo-album.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class PhotoAlbumsComponent {
+export class PhotoAlbumComponent {
   private router = inject(Router);
 
   navigatePrev(): void {

@@ -15,7 +15,7 @@ travel-book/
 │   ├── assets/
 │   │   ├── icons/
 │   │   │   ├── map-icon.svg
-│   │   │   ├── albums-icon.svg
+│   │   │   ├── album-icon.svg
 │   │   │   ├── stats-icon.svg
 │   │   │   └── compass-icon.svg
 │   │   ├── images/
@@ -68,9 +68,9 @@ travel-book/
 │       │   ├── world-map/
 │       │   │   ├── world-map.component.ts/html/scss
 │       │   │   └── world-map.module.ts         # Lazy-loaded feature module
-│       │   ├── photo-albums/
-│       │   │   ├── photo-albums.component.ts/html/scss
-│       │   │   └── photo-albums.module.ts
+│       │   ├── photo-album/
+│       │   │   ├── photo-album.component.ts/html/scss
+│       │   │   └── photo-album.module.ts
 │       │   └── statistics/
 │       │       ├── statistics.component.ts/html/scss
 │       │       └── statistics.module.ts
@@ -104,8 +104,8 @@ travel-book/
 │       │   │       ├── city.model.ts
 │       │   │       ├── country.model.ts
 │       │   │       └── dish.model.ts
-│       │   ├── albums/
-│       │   │   ├── albums.module.ts                            # Album feature module
+│       │   ├── album/
+│       │   │   ├── album.module.ts                            # Album feature module
 │       │   │   ├── components/
 │       │   │   │   ├── photo-album/                            # Main album container
 │       │   │   │   │   └── photo-album.component.ts/html/scss

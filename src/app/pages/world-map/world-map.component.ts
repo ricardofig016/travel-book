@@ -17,6 +17,6 @@ export class WorldMapComponent {
   }
 
   navigateNext(): void {
-    this.router.navigate(['/albums']);
+    this.router.navigate(['/album']);
   }
 }

@@ -13,7 +13,7 @@ export class StatisticsComponent {
   private router = inject(Router);
 
   navigatePrev(): void {
-    this.router.navigate(['/albums']);
+    this.router.navigate(['/album']);
   }
 
   navigateNext(): void {

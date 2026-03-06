@@ -3,7 +3,7 @@
 ## Overview
 
 Personal travel journal web app using a physical book metaphor. Navigation flow:
-Cover -> Index -> Map -> Albums -> Statistics -> Back Cover.
+Cover -> Index -> Map -> Album -> Statistics -> Back Cover.
 
 ## Stack + Services
 
@@ -19,9 +19,9 @@ Cover -> Index -> Map -> Albums -> Statistics -> Back Cover.
     - Demo Book has a "Hide Demo Book" button visible only in the dropdown (small icon/button next to the book name)
     - When clicked, hides the demo book from the user's book list (preference stored in user_profiles.hide_demo_book)
     - Non-authenticated users always see the demo book
-  - Export Button: generates a PDF copy of the entire book including cover, map, albums, and statistics.
+  - Export Button: generates a PDF copy of the entire book including cover, map, album, and statistics.
 - **Book Cover**: click to open with a page flip to Index.
-- **Book Index**: table of contents for Map, Albums, Statistics.
+- **Book Index**: table of contents for Map, Album, Statistics.
 - **World Map**:
   - Minimal map: manually rendered country shapes from GeoJSON.
   - Hierarchy: Country level only (MVP).
@@ -31,10 +31,10 @@ Cover -> Index -> Map -> Albums -> Statistics -> Back Cover.
     - Popular dishes checklist
     - Marker list
   - Marker details view with "See Album" if photos exist.
-- **Photo Albums**:
+- **Photo Album**:
   - Scrapbook two-page spreads; taped/rotated photos; page flip navigation.
   - Each page is selected from one of the template layouts. There's layouts for pages with 2 and 3 photos. Layouts have designated areas for photos, captions, doodles, etc. Photo rotation is random within a small angle range to create a casual, scrapbook feel.
-  - Albums are sorted by country name, then city name.
+  - Album are sorted by country name, then city name.
   - Photos on a city's marker are sorted by date taken.
   - Photo page layouts are selected randomly at render time, with constraints to ensure that the last photo page of a city album:
     - has a free photo slot to add new photos

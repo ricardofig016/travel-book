@@ -71,7 +71,7 @@ Deployment details:
 
 Routing and UX flow:
 
-- Preserve navigation flow: Cover -> Index -> Map -> Albums -> Statistics (expand toward full spec flow as features are added).
+- Preserve navigation flow: Cover -> Index -> Map -> Album -> Statistics (expand toward full spec flow as features are added).
 - For page-flip transitions, block competing navigation until animation completes.
 
 Data and integration:
@@ -181,7 +181,7 @@ When adding domain services (e.g., `marker.service.ts`, `city.service.ts`):
 
 This project is in **early scaffold**:
 
-- **Pages**: 5 route shells exist (cover, index, map, albums, statistics) but are mostly placeholder (only book-cover is non-trivial).
+- **Pages**: 5 route shells exist (cover, index, map, album, statistics) but are mostly placeholder (only book-cover is non-trivial).
 - **Services**: Only `SupabaseService` exists; all domain services need implementation (map, marker, city, country, dish, etc.).
 - **Core infrastructure**: No auth guards, no HTTP interceptors, no core feature module.
 - **Features**: Directories `src/app/features/` and `src/app/shared/` do not exist yet.
