@@ -1,4 +1,10 @@
-import { Component, OnInit, signal, inject, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  signal,
+  inject,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { Router } from '@angular/router';
 import { SupabaseService } from '../../services/data/supabase.service';
 
@@ -26,7 +32,11 @@ export class BookCoverComponent implements OnInit {
     this.connectionStatus.set(status);
   }
 
-  openBook(): void {
+  navigatePrev(): void {
+    this.router.navigate(['/statistics']);
+  }
+
+  navigateNext(): void {
     this.router.navigate(['/index']);
   }
 }

@@ -5,3 +5,5 @@
 - [ ] data: seed cloudinary with demo photos for the demo book
 - [ ] schema: make sure the user can leave/hide the demo book if they want to
 - [ ] data: seed countries with GeoJSON boundaries
+- [ ] data: create the gh action for the supabase keepalive ping
+- [ ] chore: rename albums/ route to album/
