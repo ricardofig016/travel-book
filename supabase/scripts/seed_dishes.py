@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Seed dishes from dishes_seed.json into Supabase.
-Loads SUPABASE_URL and SUPABASE_KEY from .env file.
+Loads SUPABASE_URL and SUPABASE_SECRET_KEY from .env file.
 """
 
 import json
@@ -185,11 +185,11 @@ def upsert_dishes(supabase_client, dishes: list[dict], batch_size: int = 500) ->
 
 def main() -> int:
     supabase_url = os.getenv("SUPABASE_URL")
-    supabase_key = os.getenv("SUPABASE_KEY")
+    supabase_key = os.getenv("SUPABASE_SECRET_KEY")
 
     if not supabase_url or not supabase_key:
         print("✗ Missing environment variables in .env:")
-        print("  SUPABASE_URL and SUPABASE_KEY")
+        print("  SUPABASE_URL and SUPABASE_SECRET_KEY")
         print(f"\nLooking for .env at: {ENV_PATH}")
         return 1
 

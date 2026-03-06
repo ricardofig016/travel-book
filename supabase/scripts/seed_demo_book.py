@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Seed demo book with markers and visits from demo_book_seed.json into Supabase.
-Loads SUPABASE_URL and SUPABASE_KEY from .env file.
+Loads SUPABASE_URL and SUPABASE_SECRET_KEY from .env file.
 
 This script:
 1. Deletes the existing public demo book (cascade deletes markers, visits, members)
@@ -312,11 +312,11 @@ def main():
 
     # Get Supabase credentials from environment
     supabase_url = os.getenv("SUPABASE_URL")
-    supabase_key = os.getenv("SUPABASE_KEY")
+    supabase_key = os.getenv("SUPABASE_SECRET_KEY")
 
     if not supabase_url or not supabase_key:
         print("✗ Missing environment variables in .env:")
-        print("  SUPABASE_URL and SUPABASE_KEY")
+        print("  SUPABASE_URL and SUPABASE_SECRET_KEY")
         print(f"\nLooking for .env at: {env_path}")
         return 1
 

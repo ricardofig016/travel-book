@@ -10,7 +10,7 @@ from supabase import create_client
 env_path = Path(".") / ".env"
 load_dotenv(env_path)
 
-supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_KEY"))
+supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SECRET_KEY"))
 
 # Map of target cities to find
 targets = {"Japan": ["Tokyo", "Kyoto", "Osaka"], "Portugal": ["Lisbon", "Porto"], "France": ["Paris", "Lyon"], "Italy": ["Rome", "Venice"], "Brazil": ["Rio de Janeiro", "Salvador", "Sao Paulo"]}

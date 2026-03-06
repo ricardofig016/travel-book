@@ -137,11 +137,11 @@ def upsert_cities(supabase_client: Client, rows: list[dict[str, Any]], batch_siz
 
 def main() -> int:
     supabase_url = os.getenv("SUPABASE_URL")
-    supabase_key = os.getenv("SUPABASE_KEY")
+    supabase_key = os.getenv("SUPABASE_SECRET_KEY")
 
     if not supabase_url or not supabase_key:
         print("✗ Missing environment variables in .env:")
-        print("  SUPABASE_URL and SUPABASE_KEY")
+        print("  SUPABASE_URL and SUPABASE_SECRET_KEY")
         print(f"\nLooking for .env at: {ENV_PATH}")
         return 1
 

@@ -119,10 +119,10 @@ All scripts require `.env` in the project root with:
 
 ```
 SUPABASE_URL=https://xxx.supabase.co
-SUPABASE_KEY=sb_secret_xxx
+SUPABASE_SECRET_KEY=sb_secret_xxx
 ```
 
-The service role key (`SUPABASE_KEY`) is needed for write operations.
+The service role key (`SUPABASE_SECRET_KEY`) is needed for write operations.
 
 ## Troubleshooting
 
