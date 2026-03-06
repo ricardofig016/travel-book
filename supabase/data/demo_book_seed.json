@@ -1,0 +1,185 @@
+{
+  "book": {
+    "name": "Around the World (Demo Book)",
+    "description": "A curated demonstration travel book showcasing the project and ways to use it. This book includes a mix of visited and unvisited cities across various countries, with detailed notes, activities, and companions for each location."
+  },
+  "markers": [
+    {
+      "country_name": "Japan",
+      "city_name": "Tokyo",
+      "visited": true,
+      "favorite": true,
+      "want": false,
+      "notes": "Amazing food, incredible energy, must return",
+      "companions": ["Sarah", "Alex"],
+      "activities": ["Temple visit", "Karaoke", "Street food tour"],
+      "visits": [
+        {
+          "start_date": "2026-03-15",
+          "end_date": "2026-03-22"
+        }
+      ]
+    },
+    {
+      "country_name": "Japan",
+      "city_name": "Kyoto",
+      "visited": true,
+      "favorite": true,
+      "want": false,
+      "notes": "Serene temples and traditional gardens",
+      "companions": [],
+      "activities": ["Temple exploration", "Garden walks"],
+      "visits": [
+        {
+          "start_date": "2026-03-23",
+          "end_date": "2026-03-26"
+        }
+      ]
+    },
+    {
+      "country_name": "Japan",
+      "city_name": "Osaka",
+      "visited": false,
+      "favorite": false,
+      "want": true,
+      "notes": "Planning to visit next year",
+      "companions": [],
+      "activities": [],
+      "visits": []
+    },
+    {
+      "country_name": "Portugal",
+      "city_name": "Lisbon",
+      "visited": true,
+      "favorite": true,
+      "want": false,
+      "notes": "Charming city with great food and culture",
+      "companions": ["Maria"],
+      "activities": ["Pastéis de Nata tasting", "Tram ride", "Castle visit"],
+      "visits": [
+        {
+          "start_date": "2026-05-10",
+          "end_date": "2026-05-18"
+        }
+      ]
+    },
+    {
+      "country_name": "Portugal",
+      "city_name": "Porto",
+      "visited": true,
+      "favorite": false,
+      "want": false,
+      "notes": "Beautiful riverside city, wine tasting was memorable",
+      "companions": ["Maria", "John"],
+      "activities": ["Wine tasting", "Bridge walk"],
+      "visits": [
+        {
+          "start_date": "2026-05-19",
+          "end_date": "2026-05-22"
+        }
+      ]
+    },
+    {
+      "country_name": "France",
+      "city_name": "Paris",
+      "visited": true,
+      "favorite": true,
+      "want": false,
+      "notes": "The City of Light lives up to its name",
+      "companions": ["Sophie"],
+      "activities": ["Eiffel Tower", "Louvre", "Cafes"],
+      "visits": [
+        {
+          "start_date": "2026-06-01",
+          "end_date": "2026-06-10"
+        }
+      ]
+    },
+    {
+      "country_name": "France",
+      "city_name": "Lyon",
+      "visited": false,
+      "favorite": false,
+      "want": true,
+      "notes": "Culinary capital, want to explore food scene",
+      "companions": [],
+      "activities": [],
+      "visits": []
+    },
+    {
+      "country_name": "Italy",
+      "city_name": "Rome",
+      "visited": true,
+      "favorite": true,
+      "want": false,
+      "notes": "History everywhere, incredible pasta",
+      "companions": ["Sophie", "Marco"],
+      "activities": ["Colosseum tour", "Vatican", "Gelato crawl"],
+      "visits": [
+        {
+          "start_date": "2026-07-02",
+          "end_date": "2026-07-09"
+        }
+      ]
+    },
+    {
+      "country_name": "Italy",
+      "city_name": "Venice",
+      "visited": true,
+      "favorite": false,
+      "want": false,
+      "notes": "Magical but crowded, worth seeing once",
+      "companions": ["Sophie"],
+      "activities": ["Gondola ride", "Basilica visit"],
+      "visits": [
+        {
+          "start_date": "2026-07-10",
+          "end_date": "2026-07-12"
+        }
+      ]
+    },
+    {
+      "country_name": "Brazil",
+      "city_name": "Rio de Janeiro",
+      "visited": true,
+      "favorite": true,
+      "want": false,
+      "notes": "Breathtaking beaches and vibrant culture",
+      "companions": ["Lucas", "Ana"],
+      "activities": ["Christ statue hike", "Beach time", "Carnival atmosphere"],
+      "visits": [
+        {
+          "start_date": "2026-08-15",
+          "end_date": "2026-08-25"
+        }
+      ]
+    },
+    {
+      "country_name": "Brazil",
+      "city_name": "Salvador",
+      "visited": false,
+      "favorite": false,
+      "want": true,
+      "notes": "Historic colonial city, want to experience Afro-Brazilian culture",
+      "companions": [],
+      "activities": [],
+      "visits": []
+    },
+    {
+      "country_name": "Brazil",
+      "city_name": "Sao Paulo",
+      "visited": true,
+      "favorite": false,
+      "want": false,
+      "notes": "Big city energy, good food scene",
+      "companions": ["Lucas"],
+      "activities": ["Street art tour", "Restaurants"],
+      "visits": [
+        {
+          "start_date": "2026-08-26",
+          "end_date": "2026-08-29"
+        }
+      ]
+    }
+  ]
+}
