@@ -1,0 +1,22 @@
+name: Supabase Keepalive Ping
+
+on:
+  schedule:
+    # Run every 2 days at 12:00 UTC to prevent Supabase free tier from sleeping
+    - cron: "0 12 */2 * *"
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    name: Keep Supabase alive
+    steps:
+      - name: Ping Supabase
+        run: |
+          curl -s "${{ secrets.SUPABASE_URL }}/rest/v1/countries?limit=1" \
+            -H "apikey: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}" \
+            -H "Accept: application/json" \
+            -o /dev/null -w "HTTP Status: %{http_code}\n"
+
+      - name: Log success
+        run: echo "✓ Supabase keepalive ping completed"
