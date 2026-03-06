@@ -1,5 +1,73 @@
-<h1>map</h1>
-<div style="display: flex; gap: 1rem; margin-top: 1rem;">
-  <button type="button" (click)="navigatePrev()">&lt;</button>
-  <button type="button" (click)="navigateNext()">&gt;</button>
-</div>
+<section class="map-page">
+  <h1>Map Preview</h1>
+
+  <div class="transform-selector">
+    <label for="transform-select">Transformation:</label>
+    <select id="transform-select" [value]="selectedTransform()" (change)="onTransformChange($event)">
+      @for (transform of availableTransforms(); track transform) {
+        <option [value]="transform">{{ transform }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="map-controls">
+    <button type="button" (click)="zoomOut()">-</button>
+    <button type="button" (click)="resetZoom()">Reset</button>
+    <button type="button" (click)="resetView()">Reset View</button>
+    <button type="button" (click)="zoomIn()">+</button>
+    <span>Zoom: {{ zoom() }}x</span>
+  </div>
+
+  <div
+    class="map-canvas"
+    [class.is-dragging]="isDragging()"
+    (wheel)="onWheel($event)"
+    (pointerdown)="onPointerDown($event)"
+    (pointermove)="onPointerMove($event)"
+    (pointerup)="onPointerUp($event)"
+    (pointercancel)="onPointerUp($event)"
+    (pointerleave)="onPointerUp($event)"
+  >
+    <svg
+      class="country-map"
+      [attr.viewBox]="viewBox()"
+      [style.transform]="mapTransform()"
+    >
+      <!-- Grid: Meridians -->
+      @for (path of gridPaths().meridians; track $index) {
+        <path
+          [attr.d]="path"
+          fill="none"
+          stroke="#ddd"
+          stroke-width="0.4"
+          vector-effect="non-scaling-stroke"
+        ></path>
+      }
+      <!-- Grid: Parallels -->
+      @for (path of gridPaths().parallels; track $index) {
+        <path
+          [attr.d]="path"
+          fill="none"
+          stroke="#ddd"
+          stroke-width="0.4"
+          vector-effect="non-scaling-stroke"
+        ></path>
+      }
+      <!-- Country boundaries -->
+      @for (path of paths(); track $index) {
+        <path
+          [attr.d]="path"
+          fill="none"
+          stroke="#000"
+          stroke-width="0.65"
+          vector-effect="non-scaling-stroke"
+        ></path>
+      }
+    </svg>
+  </div>
+
+  <div class="nav-controls">
+    <button type="button" (click)="navigatePrev()">&lt;</button>
+    <button type="button" (click)="navigateNext()">&gt;</button>
+  </div>
+</section>
