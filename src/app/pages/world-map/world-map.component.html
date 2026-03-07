@@ -3,7 +3,11 @@
 
   <div class="transform-selector">
     <label for="transform-select">Transformation:</label>
-    <select id="transform-select" [value]="selectedTransform()" (change)="onTransformChange($event)">
+    <select
+      id="transform-select"
+      [value]="selectedTransform()"
+      (change)="onTransformChange($event)"
+    >
       @for (transform of availableTransforms(); track transform) {
         <option [value]="transform">{{ transform }}</option>
       }
@@ -32,6 +36,8 @@
       class="country-map"
       [attr.viewBox]="viewBox()"
       [style.transform]="mapTransform()"
+      (pointermove)="onSvgPointerMove($event)"
+      (pointerleave)="onSvgPointerLeave()"
     >
       <!-- Grid: Meridians -->
       @for (path of gridPaths().meridians; track $index) {
@@ -40,6 +46,7 @@
           fill="none"
           stroke="#ddd"
           stroke-width="0.4"
+          pointer-events="none"
           vector-effect="non-scaling-stroke"
         ></path>
       }
@@ -50,18 +57,30 @@
           fill="none"
           stroke="#ddd"
           stroke-width="0.4"
+          pointer-events="none"
           vector-effect="non-scaling-stroke"
         ></path>
       }
-      <!-- Country boundaries -->
-      @for (path of paths(); track $index) {
-        <path
-          [attr.d]="path"
-          fill="none"
-          stroke="#000"
-          stroke-width="0.65"
-          vector-effect="non-scaling-stroke"
-        ></path>
+      <!-- Country boundaries and hover fill -->
+      @for (country of countries(); track country.id) {
+        <g
+          class="country-shape"
+          [attr.data-country-id]="country.id"
+          [attr.aria-label]="country.name"
+        >
+          @for (path of country.paths; track $index) {
+            <path
+              class="country-path"
+              [attr.d]="path"
+              [attr.fill]="
+                hoveredCountryId() === country.id ? '#f2df95' : 'transparent'
+              "
+              stroke="#000"
+              stroke-width="0.65"
+              vector-effect="non-scaling-stroke"
+            ></path>
+          }
+        </g>
       }
     </svg>
   </div>

@@ -52,3 +52,8 @@
   height: 100%;
   transform-origin: center center;
 }
+
+.country-path {
+  pointer-events: all;
+  transition: fill 120ms ease-in-out;
+}

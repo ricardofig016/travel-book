@@ -19,7 +19,20 @@ interface GeoJsonFeatureCollection {
 
 interface GeoJsonFeature {
   type: 'Feature';
+  properties?: GeoJsonProperties;
   geometry: GeoJsonGeometry | null;
+}
+
+interface GeoJsonProperties {
+  name?: string;
+  'ISO3166-1-Alpha-3'?: string;
+  'ISO3166-1-Alpha-2'?: string;
+}
+
+interface CountryShape {
+  id: string;
+  name: string;
+  paths: string[];
 }
 
 type GeoJsonGeometry =
@@ -37,19 +50,22 @@ type GeoJsonGeometry =
 export class WorldMapComponent implements OnInit {
   private router = inject(Router);
   private http = inject(HttpClient);
+  private readonly hoverDebugEnabled = true;
 
   protected readonly mapWidth = 1200;
   protected readonly mapHeight = 600;
-  protected readonly minZoom = 0.6;
-  protected readonly maxZoom = 6;
+  protected readonly minZoom = 1;
+  protected readonly maxZoom = 12;
   protected readonly zoomStep = 0.2;
+  protected readonly defaultZoom = 2;
 
-  protected readonly paths = signal<string[]>([]);
+  protected readonly countries = signal<CountryShape[]>([]);
   protected readonly gridPaths = signal<{
     meridians: string[];
     parallels: string[];
   }>({ meridians: [], parallels: [] });
-  protected readonly zoom = signal(1);
+  protected readonly hoveredCountryId = signal<string | null>(null);
+  protected readonly zoom = signal(this.defaultZoom);
   protected readonly panX = signal(0);
   protected readonly panY = signal(0);
   protected readonly isDragging = signal(false);
@@ -88,11 +104,11 @@ export class WorldMapComponent implements OnInit {
   }
 
   resetZoom(): void {
-    this.zoom.set(1);
+    this.zoom.set(this.defaultZoom);
   }
 
   resetView(): void {
-    this.zoom.set(1);
+    this.zoom.set(this.defaultZoom);
     this.panX.set(0);
     this.panY.set(0);
   }
@@ -147,6 +163,63 @@ export class WorldMapComponent implements OnInit {
     this.isDragging.set(false);
   }
 
+  onSvgPointerMove(event: PointerEvent): void {
+    if (this.isDragging()) {
+      this.setHoveredCountry(null, 'dragging');
+      return;
+    }
+
+    const target = event.target as SVGElement;
+    const pathElement = target.closest('path');
+    if (!pathElement) {
+      this.setHoveredCountry(null, 'no-path-target');
+      return;
+    }
+
+    const group = pathElement.closest(
+      '[data-country-id]',
+    ) as SVGGElement | null;
+    if (!group) {
+      this.setHoveredCountry(null, 'non-country-path');
+      return;
+    }
+
+    const countryId = group.getAttribute('data-country-id');
+    this.setHoveredCountry(countryId, 'country-path');
+  }
+
+  onSvgPointerLeave(): void {
+    this.setHoveredCountry(null, 'svg-leave');
+  }
+
+  private setHoveredCountry(countryId: string | null, source: string): void {
+    const previous = this.hoveredCountryId();
+    if (previous === countryId) {
+      return;
+    }
+
+    this.hoveredCountryId.set(countryId);
+
+    if (!this.hoverDebugEnabled) {
+      return;
+    }
+
+    const previousName = this.getCountryName(previous);
+    const nextName = this.getCountryName(countryId);
+    console.debug(
+      `[WorldMap hover] ${source}: ${previousName} (${previous ?? 'none'}) -> ${nextName} (${countryId ?? 'none'})`,
+    );
+  }
+
+  private getCountryName(countryId: string | null): string {
+    if (!countryId) {
+      return 'none';
+    }
+
+    const match = this.countries().find((country) => country.id === countryId);
+    return match?.name ?? 'unknown';
+  }
+
   private setZoom(value: number): void {
     const next = Math.min(this.maxZoom, Math.max(this.minZoom, value));
     this.zoom.set(Number(next.toFixed(2)));
@@ -186,11 +259,11 @@ export class WorldMapComponent implements OnInit {
       const data = await firstValueFrom(
         this.http.get<GeoJsonFeatureCollection>(path),
       );
-      this.paths.set(this.buildPaths(data));
+      this.countries.set(this.buildCountries(data));
       this.gridPaths.set(this.buildGridPaths());
     } catch (error) {
       console.error('Failed to load countries GeoJSON for map preview', error);
-      this.paths.set([]);
+      this.countries.set([]);
     }
   }
 
@@ -222,7 +295,7 @@ export class WorldMapComponent implements OnInit {
     return { meridians, parallels };
   }
 
-  private buildPaths(collection: GeoJsonFeatureCollection): string[] {
+  private buildCountries(collection: GeoJsonFeatureCollection): CountryShape[] {
     const project = (point: Position): Position => {
       const [lon, lat] = point;
       const px = ((lon + 180) / 360) * (this.mapWidth - 40) + 20;
@@ -230,11 +303,15 @@ export class WorldMapComponent implements OnInit {
       return [px, py];
     };
 
-    const paths: string[] = [];
-    for (const feature of collection.features) {
+    const countries: CountryShape[] = [];
+    let uniqueIndex = 0;
+
+    for (const [index, feature] of collection.features.entries()) {
       if (!feature.geometry) {
         continue;
       }
+
+      const countryPaths: string[] = [];
 
       if (feature.geometry.type === 'Polygon') {
         const path = this.buildPolygonPath(
@@ -242,7 +319,7 @@ export class WorldMapComponent implements OnInit {
           project,
         );
         if (path) {
-          paths.push(path);
+          countryPaths.push(path);
         }
       }
 
@@ -250,13 +327,29 @@ export class WorldMapComponent implements OnInit {
         for (const polygon of feature.geometry.coordinates) {
           const path = this.buildPolygonPath(polygon, project);
           if (path) {
-            paths.push(path);
+            countryPaths.push(path);
           }
         }
       }
+
+      if (countryPaths.length === 0) {
+        continue;
+      }
+
+      const baseId =
+        feature.properties?.['ISO3166-1-Alpha-3'] ??
+        feature.properties?.['ISO3166-1-Alpha-2'] ??
+        feature.properties?.name ??
+        `country-${index}`;
+
+      countries.push({
+        id: `${baseId}-${uniqueIndex++}`,
+        name: feature.properties?.name ?? baseId,
+        paths: countryPaths,
+      });
     }
 
-    return paths;
+    return countries;
   }
 
   private buildPolygonPath(
