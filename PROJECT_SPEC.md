@@ -23,7 +23,7 @@ Cover -> Index -> Map -> Album -> Statistics -> Back Cover.
 - **Book Cover**: click to open with a page flip to Index.
 - **Book Index**: table of contents for Map, Album, Statistics.
 - **World Map**:
-  - Minimal map: manually rendered country shapes from GeoJSON.
+  - Minimal map: manually rendered country shapes from static file `visvalingam-weighted_1.8pct_keepshapes_clean.geojson`.
   - Hierarchy: Country level only (MVP).
   - Countries automatically filled based on markers (user's home country colored distinctly from visited countries).
   - Click country -> country entry page with:
@@ -54,6 +54,7 @@ Cover -> Index -> Map -> Album -> Statistics -> Back Cover.
 - **Books**: name, is_public (for demo book)
 - **Book Members**: links users to books (no ownership, equal access)
 - **Countries**: name, native name, ISO codes, capital (city ref), area, population, coordinates, landlocked, borders, continents, subregion, timezones, languages, calling codes, car info, flag data, coat of arms, GeoJSON boundaries
+  - `countries.geometry` can be populated from `supabase/data/visvalingam-weighted_1.8pct_keepshapes_clean.geojson` via `supabase/scripts/seed_country_shapes.py`
 - **Currencies**: country junction with ISO codes, symbols, names
 - **Cities** (~48k from SimpleMaps): name (Unicode + ASCII), country, admin region, population, coordinates
 - **User Profiles**: home_city_id for home country coloring
@@ -87,6 +88,6 @@ Cover -> Index -> Map -> Album -> Statistics -> Back Cover.
 ### Data
 
 - city data: https://simplemaps.com/data/world-cities
-- country boundaries:
+- country boundaries: https://datahub.io/core/geo-countries
 - country dishes: https://www.tasteatlas.com/ (data scraped with [tasteatlas-scraper](github.com/ricardofig016/tasteatlas-scraper))
 - country data (name, nativeName, capital, area, population, latlng, landlocked, borders, continents, subregion, timezones, languages, calling codes, car signs/side, googleMaps, coatOfArms, flag, currencies): https://restcountries.com/v3.1/name/{name}?fields

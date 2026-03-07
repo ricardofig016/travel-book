@@ -90,6 +90,7 @@ If a table fails:
 
 1. **Check RLS policies** - Ensure `CREATE POLICY` statements ran successfully
 2. **Check data** - Verify seeding scripts completed
+   - If country boundaries are missing, run `python supabase/scripts/seed_country_shapes.py`
 3. **Check schema** - Ensure all `CREATE TABLE` statements completed
 
 Run the connection test to diagnose errors without touching the schema.

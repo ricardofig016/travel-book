@@ -27,6 +27,20 @@ python seed_countries.py
 - Inserts 250 countries into `countries` table
 - Uses service role key from `.env`
 
+### Country Shapes
+
+`visvalingam-weighted_1.8pct_keepshapes_clean.geojson` already exists in `../data`.
+
+**Seed to Supabase**
+
+```bash
+python seed_country_shapes.py
+```
+
+- Updates `countries.geometry` (JSONB) using feature geometries from GeoJSON
+- Matches rows by ISO3 first, then ISO2, then country name
+- Prints match and update summary, including unmatched feature sample
+
 ### Cities
 
 **Step 1: Fetch cities from world-cities dataset**
@@ -90,15 +104,16 @@ python seed_dishes.py
 
 ## Available Scripts
 
-| Script                | Purpose                                    | Input                           | Output                 |
-| --------------------- | ------------------------------------------ | ------------------------------- | ---------------------- |
-| `fetch_countries.py`  | Query REST Countries API for all countries | (API)                           | `countries_seed.json`  |
-| `fetch_cities.py`     | Extract cities from world-cities dataset   | `worldcities.csv`               | `cities_seed.json`     |
-| `fetch_currencies.py` | Extract currencies from country data       | `countries_seed.json`           | `currencies_seed.json` |
-| `seed_countries.py`   | Insert countries into Supabase             | `countries_seed.json` + `.env`  | Database               |
-| `seed_cities.py`      | Insert cities into Supabase                | `cities_seed.json` + `.env`     | Database               |
-| `seed_currencies.py`  | Insert currencies into Supabase            | `currencies_seed.json` + `.env` | Database               |
-| `seed_dishes.py`      | Insert/update dishes into Supabase         | `dishes_seed.json` + `.env`     | Database               |
+| Script                   | Purpose                                    | Input                                                           | Output                 |
+| ------------------------ | ------------------------------------------ | --------------------------------------------------------------- | ---------------------- |
+| `fetch_countries.py`     | Query REST Countries API for all countries | (API)                                                           | `countries_seed.json`  |
+| `fetch_cities.py`        | Extract cities from world-cities dataset   | `worldcities.csv`                                               | `cities_seed.json`     |
+| `fetch_currencies.py`    | Extract currencies from country data       | `countries_seed.json`                                           | `currencies_seed.json` |
+| `seed_countries.py`      | Insert countries into Supabase             | `countries_seed.json` + `.env`                                  | Database               |
+| `seed_country_shapes.py` | Update `countries.geometry` from GeoJSON   | `visvalingam-weighted_1.8pct_keepshapes_clean.geojson` + `.env` | Database               |
+| `seed_cities.py`         | Insert cities into Supabase                | `cities_seed.json` + `.env`                                     | Database               |
+| `seed_currencies.py`     | Insert currencies into Supabase            | `currencies_seed.json` + `.env`                                 | Database               |
+| `seed_dishes.py`         | Insert/update dishes into Supabase         | `dishes_seed.json` + `.env`                                     | Database               |
 
 ## Requirements
 
@@ -147,6 +162,8 @@ The scripts respect API rate limits (60 req/min). If hitting issues:
 REST Countries API
     ↓
 fetch_countries.py → countries_seed.json → seed_countries.py → Supabase
+    ↓
+visvalingam-weighted_1.8pct_keepshapes_clean.geojson → seed_country_shapes.py → countries.geometry
     ↓
 fetch_currencies.py → currencies_seed.json → seed_currencies.py → Supabase
     ↓
