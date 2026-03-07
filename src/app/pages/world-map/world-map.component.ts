@@ -1,11 +1,15 @@
 import { HttpClient } from '@angular/common/http';
 import {
+  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
   computed,
+  ElementRef,
   inject,
+  OnDestroy,
   OnInit,
   signal,
+  ViewChild,
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -50,10 +54,12 @@ type GeoJsonGeometry =
   styleUrl: './world-map.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class WorldMapComponent implements OnInit {
+export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
+  @ViewChild('mapCanvas') mapCanvas!: ElementRef<HTMLDivElement>;
   private router = inject(Router);
   private http = inject(HttpClient);
   private readonly hoverDebugEnabled = true;
+  private boundWheelHandler: ((event: WheelEvent) => void) | null = null;
 
   protected readonly mapWidth = 1200;
   protected readonly mapHeight = 600;
@@ -80,8 +86,6 @@ export class WorldMapComponent implements OnInit {
   protected readonly panX = signal(0);
   protected readonly panY = signal(0);
   protected readonly isDragging = signal(false);
-  protected readonly selectedTransform = signal<string>('original');
-  protected readonly availableTransforms = signal<string[]>(['original']);
   protected readonly mapTransform = computed(
     () => `translate(${this.panX()}px, ${this.panY()}px) scale(${this.zoom()})`,
   );
@@ -95,7 +99,32 @@ export class WorldMapComponent implements OnInit {
 
   ngOnInit(): void {
     void this.loadMap();
-    void this.loadAvailableTransforms();
+  }
+
+  ngAfterViewInit(): void {
+    // Create and bind the wheel handler
+    this.boundWheelHandler = (event: WheelEvent) => {
+      event.preventDefault();
+      const zoomDirection = event.deltaY < 0 ? 1 : -1;
+      this.setZoom(this.zoom() + zoomDirection * this.zoomStep);
+    };
+
+    // Attach with { passive: false } to allow preventDefault()
+    this.mapCanvas.nativeElement.addEventListener(
+      'wheel',
+      this.boundWheelHandler,
+      { passive: false },
+    );
+  }
+
+  ngOnDestroy(): void {
+    // Clean up the event listener
+    if (this.boundWheelHandler && this.mapCanvas?.nativeElement) {
+      this.mapCanvas.nativeElement.removeEventListener(
+        'wheel',
+        this.boundWheelHandler,
+      );
+    }
   }
 
   navigatePrev(): void {
@@ -122,19 +151,6 @@ export class WorldMapComponent implements OnInit {
     this.zoom.set(this.defaultZoom);
     this.panX.set(0);
     this.panY.set(0);
-  }
-
-  onTransformChange(event: Event): void {
-    const select = event.target as HTMLSelectElement;
-    this.selectedTransform.set(select.value);
-    void this.loadMap();
-  }
-
-  onWheel(event: WheelEvent): void {
-    event.preventDefault();
-    this.setZoom(
-      this.zoom() + (event.deltaY < 0 ? this.zoomStep : -this.zoomStep),
-    );
   }
 
   onPointerDown(event: PointerEvent): void {
@@ -236,39 +252,12 @@ export class WorldMapComponent implements OnInit {
     this.zoom.set(Number(next.toFixed(2)));
   }
 
-  private async loadAvailableTransforms(): Promise<void> {
-    // Manually list available transformations
-    // Add new transformation filenames here as you create them
-    const transforms = [
-      'original',
-      'dp_15pct',
-      'dp_5pct',
-      'dp_1pct',
-      'visvalingam_15pct',
-      'visvalingam_5pct',
-      'visvalingam_1pct',
-      'visvalingam-weighted_15pct',
-      'visvalingam-weighted_5pct',
-      'visvalingam-weighted_5pct_keepshapes_clean',
-      'visvalingam-weighted_2pct_keepshapes_clean',
-      'visvalingam-weighted_1.5pct_keepshapes_clean',
-      'visvalingam-weighted_1pct_keepshapes_clean',
-      'default_1.5pct_keepshapes_clean',
-      'dp-planar_1.5pct_keepshapes_clean',
-    ];
-    this.availableTransforms.set(transforms);
-  }
-
   private async loadMap(): Promise<void> {
     try {
-      const transform = this.selectedTransform();
-      const path =
-        transform === 'original'
-          ? 'assets/data/geo/countries.geojson'
-          : `assets/data/geo/transformed/${transform}.geojson`;
-
       const data = await firstValueFrom(
-        this.http.get<GeoJsonFeatureCollection>(path),
+        this.http.get<GeoJsonFeatureCollection>(
+          'assets/data/geo/visvalingam-weighted_1.8pct_keepshapes_clean.geojson',
+        ),
       );
       this.countries.set(this.buildCountries(data));
       this.gridPaths.set(this.buildGridPaths());

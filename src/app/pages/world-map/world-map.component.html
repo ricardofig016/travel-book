@@ -1,19 +1,6 @@
 <section class="map-page">
   <h1>Map Preview</h1>
 
-  <div class="transform-selector">
-    <label for="transform-select">Transformation:</label>
-    <select
-      id="transform-select"
-      [value]="selectedTransform()"
-      (change)="onTransformChange($event)"
-    >
-      @for (transform of availableTransforms(); track transform) {
-        <option [value]="transform">{{ transform }}</option>
-      }
-    </select>
-  </div>
-
   <div class="map-controls">
     <button type="button" (click)="zoomOut()">-</button>
     <button type="button" (click)="resetZoom()">Reset</button>
@@ -35,9 +22,9 @@
   </div>
 
   <div
+    #mapCanvas
     class="map-canvas"
     [class.is-dragging]="isDragging()"
-    (wheel)="onWheel($event)"
     (pointerdown)="onPointerDown($event)"
     (pointermove)="onPointerMove($event)"
     (pointerup)="onPointerUp($event)"

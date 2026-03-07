@@ -5,24 +5,6 @@
   padding: 1rem;
 }
 
-.transform-selector {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-
-  label {
-    font-weight: 500;
-  }
-
-  select {
-    padding: 0.25rem 0.5rem;
-    border: 1px solid #222;
-    border-radius: 4px;
-    background: white;
-    cursor: pointer;
-  }
-}
-
 .map-controls,
 .nav-controls {
   display: flex;
@@ -46,7 +28,7 @@
   max-width: 100%;
   height: 72vh;
   min-height: 340px;
-  overflow: auto;
+  overflow: hidden;
   border: 1px solid #222;
   background: #fff;
   cursor: grab;
