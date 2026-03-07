@@ -30,6 +30,17 @@
   gap: 0.5rem;
 }
 
+.hover-metadata {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #222;
+  background: #faf7ea;
+  font-size: 0.9rem;
+}
+
 .map-canvas {
   width: 100%;
   max-width: 100%;

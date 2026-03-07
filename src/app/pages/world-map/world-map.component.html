@@ -22,6 +22,18 @@
     <span>Zoom: {{ zoom() }}x</span>
   </div>
 
+  <div class="hover-metadata">
+    <strong>Hovered Country:</strong>
+    @if (hoveredCountry(); as country) {
+      <span>{{ country.name }}</span>
+      <span>ISO2: {{ country.iso2 }}</span>
+      <span>ISO3: {{ country.iso3 }}</span>
+      <span>Parts: {{ country.parts }}</span>
+    } @else {
+      <span>None</span>
+    }
+  </div>
+
   <div
     class="map-canvas"
     [class.is-dragging]="isDragging()"

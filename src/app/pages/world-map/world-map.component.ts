@@ -32,6 +32,9 @@ interface GeoJsonProperties {
 interface CountryShape {
   id: string;
   name: string;
+  iso2: string;
+  iso3: string;
+  parts: number;
   paths: string[];
 }
 
@@ -65,6 +68,14 @@ export class WorldMapComponent implements OnInit {
     parallels: string[];
   }>({ meridians: [], parallels: [] });
   protected readonly hoveredCountryId = signal<string | null>(null);
+  protected readonly hoveredCountry = computed(() => {
+    const hoveredId = this.hoveredCountryId();
+    if (!hoveredId) {
+      return null;
+    }
+
+    return this.countries().find((country) => country.id === hoveredId) ?? null;
+  });
   protected readonly zoom = signal(this.defaultZoom);
   protected readonly panX = signal(0);
   protected readonly panY = signal(0);
@@ -345,6 +356,9 @@ export class WorldMapComponent implements OnInit {
       countries.push({
         id: `${baseId}-${uniqueIndex++}`,
         name: feature.properties?.name ?? baseId,
+        iso2: feature.properties?.['ISO3166-1-Alpha-2'] ?? 'N/A',
+        iso3: feature.properties?.['ISO3166-1-Alpha-3'] ?? 'N/A',
+        parts: countryPaths.length,
         paths: countryPaths,
       });
     }
