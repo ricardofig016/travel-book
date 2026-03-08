@@ -1,3 +1,36 @@
+<!-- Navbar -->
+<nav class="navbar">
+  <div class="navbar-content">
+    <!-- Book Selector -->
+    <div class="book-selector">
+      <label for="book-select">Book:</label>
+      <select id="book-select" (change)="onBookChange($event)" [value]="selectedBook()?.id || ''">
+        @for (book of books(); track book.id) {
+          <option [value]="book.id">
+            {{ book.name }}
+            @if (book.is_public) {
+              (Demo)
+            }
+          </option>
+        }
+        @empty {
+          <option value="">No books available</option>
+        }
+      </select>
+      @if (selectedBook()?.is_public && isAuthenticated()) {
+        <button class="hide-demo-btn" (click)="onHideDemoBook()">
+          Hide Demo Book
+        </button>
+      }
+    </div>
+    
+    <!-- Export Button -->
+    <button class="export-btn" disabled (click)="onExportBook()">
+      Export Book [TODO]
+    </button>
+  </div>
+</nav>
+
 <!-- Supabase Connection Status -->
 @if (connectionStatus(); as status) {
   <div
