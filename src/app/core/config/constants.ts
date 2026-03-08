@@ -27,13 +27,6 @@ export const API_CONFIG = {
     citiesExpiry: 86400000, // 24 hours in milliseconds
     countriesExpiry: 604800000, // 7 days in milliseconds
   },
-
-  // Map configuration
-  map: {
-    defaultZoom: 2,
-    maxZoom: 18,
-    minZoom: 1,
-  },
 } as const;
 
 // Storage keys for local storage
