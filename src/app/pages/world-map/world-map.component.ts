@@ -105,8 +105,41 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
     // Create and bind the wheel handler
     this.boundWheelHandler = (event: WheelEvent) => {
       event.preventDefault();
+
+      // Get pointer position relative to canvas element
+      const canvasRect = this.mapCanvas.nativeElement.getBoundingClientRect();
+      const pointerX = event.clientX - canvasRect.left;
+      const pointerY = event.clientY - canvasRect.top;
+
+      // Canvas/SVG center (transform-origin is center center)
+      const centerX = canvasRect.width / 2;
+      const centerY = canvasRect.height / 2;
+
+      // Calculate which point in the original SVG space is under the cursor
+      // Transform: translate(panX, panY) scale(zoom) with origin at center
+      // Screen position = (svgPoint - center) * zoom + pan + center
+      // Therefore: svgPoint = (screenPos - pan - center) / zoom + center
+      const oldZoom = this.zoom();
+      const oldPanX = this.panX();
+      const oldPanY = this.panY();
+      const svgPointX = (pointerX - oldPanX - centerX) / oldZoom + centerX;
+      const svgPointY = (pointerY - oldPanY - centerY) / oldZoom + centerY;
+
+      // Apply zoom
       const zoomDirection = event.deltaY < 0 ? 1 : -1;
-      this.setZoom(this.zoom() + zoomDirection * this.zoomStep);
+      const newZoom = Math.min(
+        this.maxZoom,
+        Math.max(this.minZoom, oldZoom + zoomDirection * this.zoomStep),
+      );
+      this.zoom.set(Number(newZoom.toFixed(2)));
+
+      // Calculate new pan to keep svgPoint at the same screen position
+      // pointerX = (svgPointX - centerX) * newZoom + newPanX + centerX
+      // newPanX = pointerX - (svgPointX - centerX) * newZoom - centerX
+      const newPanX = pointerX - (svgPointX - centerX) * newZoom - centerX;
+      const newPanY = pointerY - (svgPointY - centerY) * newZoom - centerY;
+      this.panX.set(newPanX);
+      this.panY.set(newPanY);
     };
 
     // Attach with { passive: false } to allow preventDefault()
