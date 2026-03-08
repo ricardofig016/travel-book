@@ -142,8 +142,9 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
       // newPanX = pointerX - (svgPointX - centerX) * newZoom - centerX
       const newPanX = pointerX - (svgPointX - centerX) * newZoom - centerX;
       const newPanY = pointerY - (svgPointY - centerY) * newZoom - centerY;
-      this.panX.set(newPanX);
-      this.panY.set(newPanY);
+      const clampedPan = this.clampPan(newPanX, newPanY, newZoom);
+      this.panX.set(clampedPan.x);
+      this.panY.set(clampedPan.y);
     };
 
     // Attach with { passive: false } to allow preventDefault()
@@ -181,7 +182,7 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   resetZoom(): void {
-    this.zoom.set(this.defaultZoom);
+    this.setZoom(this.defaultZoom);
   }
 
   resetView(): void {
@@ -210,8 +211,9 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
     const dx = event.clientX - this.lastPointerX;
     const dy = event.clientY - this.lastPointerY;
 
-    this.panX.set(this.panX() + dx);
-    this.panY.set(this.panY() + dy);
+    const clampedPan = this.clampPan(this.panX() + dx, this.panY() + dy);
+    this.panX.set(clampedPan.x);
+    this.panY.set(clampedPan.y);
 
     this.lastPointerX = event.clientX;
     this.lastPointerY = event.clientY;
@@ -287,6 +289,35 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
   private setZoom(value: number): void {
     const next = Math.min(this.maxZoom, Math.max(this.minZoom, value));
     this.zoom.set(Number(next.toFixed(2)));
+
+    const clampedPan = this.clampPan(this.panX(), this.panY(), next);
+    this.panX.set(clampedPan.x);
+    this.panY.set(clampedPan.y);
+  }
+
+  private clampPan(
+    x: number,
+    y: number,
+    zoomValue = this.zoom(),
+  ): { x: number; y: number } {
+    if (!this.mapCanvas?.nativeElement) {
+      return { x, y };
+    }
+
+    const canvasRect = this.mapCanvas.nativeElement.getBoundingClientRect();
+    const maxPanX = Math.max(
+      0,
+      (canvasRect.width * zoomValue - canvasRect.width) / 2,
+    );
+    const maxPanY = Math.max(
+      0,
+      (canvasRect.height * zoomValue - canvasRect.height) / 2,
+    );
+
+    return {
+      x: Math.min(maxPanX, Math.max(-maxPanX, x)),
+      y: Math.min(maxPanY, Math.max(-maxPanY, y)),
+    };
   }
 
   private async loadMap(): Promise<void> {
