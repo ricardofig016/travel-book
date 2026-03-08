@@ -3,8 +3,8 @@
 - [ ] test: add supabase tests of authenticated, non-admin users
 - [ ] data: setup cloudinary
 - [ ] data: seed cloudinary with demo photos for the demo book
-- [ ] map: zoom should be centered on the cursor position, not the center of the screen
-- [ ] map: sync map zoom constants in world-map.component.ts and constants.ts
+- [x] map: sync map zoom constants in world-map.component.ts and constants.ts
+- [x] map: zoom should be centered on the cursor position, not the center of the screen
 - [x] data: seed countries table with GeoJSON boundaries
 - [x] map: choose geojson transformation
 - [x] data: create the gh action for the supabase keepalive ping

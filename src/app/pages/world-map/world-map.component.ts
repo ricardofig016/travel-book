@@ -64,8 +64,9 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
   protected readonly mapWidth = 1200;
   protected readonly mapHeight = 600;
   protected readonly minZoom = 1;
-  protected readonly maxZoom = 12;
+  protected readonly maxZoom = 15;
   protected readonly zoomStep = 0.2;
+  protected readonly ctrlZoomMultiplier = 3;
   protected readonly defaultZoom = 2;
 
   protected readonly countries = signal<CountryShape[]>([]);
@@ -127,9 +128,12 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
       // Apply zoom
       const zoomDirection = event.deltaY < 0 ? 1 : -1;
+      const zoomAmount = event.ctrlKey
+        ? this.zoomStep * this.ctrlZoomMultiplier
+        : this.zoomStep;
       const newZoom = Math.min(
         this.maxZoom,
-        Math.max(this.minZoom, oldZoom + zoomDirection * this.zoomStep),
+        Math.max(this.minZoom, oldZoom + zoomDirection * zoomAmount),
       );
       this.zoom.set(Number(newZoom.toFixed(2)));
 
