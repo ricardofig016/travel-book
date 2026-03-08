@@ -14,7 +14,7 @@ export class BookIndexComponent {
   private router = inject(Router);
 
   navigatePrev(): void {
-    this.router.navigate(['/cover']);
+    this.router.navigate(['/account']);
   }
 
   navigateNext(): void {

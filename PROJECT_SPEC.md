@@ -3,7 +3,7 @@
 ## Overview
 
 Personal travel journal web app using a physical book metaphor. Navigation flow:
-Cover -> Index -> Map -> Album -> Statistics -> Back Cover.
+Cover -> Account -> Index -> Map -> Album -> Statistics -> Back Cover.
 
 ## Stack + Services
 
@@ -20,7 +20,8 @@ Cover -> Index -> Map -> Album -> Statistics -> Back Cover.
     - When clicked, hides the demo book from the user's book list (preference stored in user_profiles.hide_demo_book)
     - Non-authenticated users always see the demo book
   - Export Button: generates a PDF copy of the entire book including cover, map, album, and statistics.
-- **Book Cover**: click to open with a page flip to Index.
+- **Book Cover**: click to open with a page flip to Account.
+- **Account**: user account/authentication page on the back of the front cover, with a passport where the user can sign up, sign in, sign out and view their profile information.
 - **Book Index**: table of contents for Map, Album, Statistics.
 - **World Map**:
   - Minimal map: manually rendered country shapes from static file `visvalingam-weighted_1.8pct_keepshapes_clean.geojson`.

@@ -17,6 +17,6 @@ export class BookCoverComponent {
   }
 
   navigateNext(): void {
-    this.router.navigate(['/index']);
+    this.router.navigate(['/account']);
   }
 }
