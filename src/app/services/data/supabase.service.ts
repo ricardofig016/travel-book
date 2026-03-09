@@ -32,6 +32,12 @@ export interface CitySearchResult {
   country: string;
 }
 
+export interface UserLookupResult {
+  user_id: string;
+  email: string;
+  name: string | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class SupabaseService {
   private readonly client: SupabaseClient = createClient(
@@ -343,7 +349,21 @@ export class SupabaseService {
     }
   }
 
-  async createBook(name: string): Promise<Book> {
+  async lookupUserByEmail(email: string): Promise<UserLookupResult | null> {
+    const { data, error } = await this.client.rpc('lookup_user_by_email', {
+      lookup_email: email,
+    });
+
+    if (error) {
+      console.error('Error looking up user by email:', error);
+      throw error;
+    }
+
+    if (!data || data.length === 0) return null;
+    return data[0] as UserLookupResult;
+  }
+
+  async createBook(name: string, memberUserIds: string[] = []): Promise<Book> {
     const {
       data: { session },
     } = await this.client.auth.getSession();
@@ -368,16 +388,19 @@ export class SupabaseService {
     if (bookError) throw bookError;
     if (!bookData) throw new Error('Book creation returned no data');
 
-    // Add current user as a book member (creator)
+    // Build member rows: creator + any additional members (deduplicated)
+    const uniqueMemberIds = new Set([userId, ...memberUserIds]);
+    const memberRows = Array.from(uniqueMemberIds).map((uid) => ({
+      book_id: bookData.id,
+      user_id: uid,
+    }));
+
     const { error: memberError } = await this.client
       .from('book_members')
-      .insert({
-        book_id: bookData.id,
-        user_id: userId,
-      });
+      .insert(memberRows);
 
     if (memberError) {
-      console.error('Error adding user to book members:', memberError);
+      console.error('Error adding members to book:', memberError);
       throw memberError;
     }
 

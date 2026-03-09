@@ -74,4 +74,12 @@
   </div>
 }
 
+<!-- Create Book Dialog -->
+@if (showCreateDialog()) {
+  <app-create-book-dialog
+    (confirm)="onCreateBookConfirm($event)"
+    (cancel)="onCreateBookCancel()"
+  />
+}
+
 <router-outlet />

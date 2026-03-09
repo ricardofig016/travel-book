@@ -320,7 +320,7 @@ BEGIN
   
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- Function to auto-create user profile on auth signup and seed home city from metadata
 CREATE OR REPLACE FUNCTION create_user_profile_on_auth_signup()
@@ -338,6 +338,23 @@ BEGIN
   );
 
   RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, auth;
+
+-- Function to look up a user ID by email (for adding book members)
+-- Returns the user_id if found, NULL otherwise. Only callable by authenticated users.
+CREATE OR REPLACE FUNCTION lookup_user_by_email(lookup_email TEXT)
+RETURNS TABLE(user_id UUID, email TEXT, name TEXT) AS $$
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RETURN;
+  END IF;
+
+  RETURN QUERY
+  SELECT u.id AS user_id, u.email::TEXT AS email, (u.raw_user_meta_data->>'name')::TEXT AS name
+  FROM auth.users u
+  WHERE u.email = lookup_email
+  LIMIT 1;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, auth;
 

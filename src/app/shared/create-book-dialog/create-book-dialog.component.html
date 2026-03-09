@@ -1,0 +1,84 @@
+<!-- Backdrop -->
+<div class="dialog-backdrop" (click)="onCancel()"></div>
+
+<!-- Dialog -->
+<div class="dialog">
+  <h3>Create New Book</h3>
+
+  <!-- Book Name -->
+  <div class="field">
+    <label for="book-name">Book Name</label>
+    <input
+      id="book-name"
+      type="text"
+      [ngModel]="bookName()"
+      (ngModelChange)="bookName.set($event)"
+      placeholder="Enter book name"
+    />
+  </div>
+
+  <!-- Add Members -->
+  <div class="field">
+    <label for="member-email">Add Members (by email)</label>
+    <div class="email-row">
+      <input
+        id="member-email"
+        type="email"
+        [ngModel]="memberEmail()"
+        (ngModelChange)="memberEmail.set($event)"
+        (keydown.enter)="onLookupEmail()"
+        placeholder="user@example.com"
+        [disabled]="lookupLoading()"
+      />
+      <button
+        type="button"
+        class="add-btn"
+        (click)="onLookupEmail()"
+        [disabled]="lookupLoading() || !memberEmail().trim()"
+      >
+        {{ lookupLoading() ? "..." : "Add" }}
+      </button>
+    </div>
+    @if (lookupError()) {
+      <p class="lookup-error">{{ lookupError() }}</p>
+    }
+  </div>
+
+  <!-- Member List -->
+  @if (members().length > 0) {
+    <div class="member-list">
+      <label>Members to add:</label>
+      <ul>
+        @for (member of members(); track member.user_id) {
+          <li>
+            <span>{{
+              member.name ? member.name + " | " + member.email : member.email
+            }}</span>
+            <button
+              type="button"
+              class="remove-btn"
+              (click)="onRemoveMember(member.user_id)"
+            >
+              ×
+            </button>
+          </li>
+        }
+      </ul>
+    </div>
+  }
+
+  <!-- Actions -->
+  <div class="dialog-actions">
+    <button type="button" class="cancel-btn" (click)="onCancel()">
+      Cancel
+    </button>
+    <button
+      type="button"
+      class="confirm-btn"
+      (click)="onConfirm()"
+      [disabled]="!bookName().trim()"
+    >
+      Create Book
+    </button>
+  </div>
+</div>

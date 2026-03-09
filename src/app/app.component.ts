@@ -9,10 +9,14 @@ import {
 import { RouterOutlet, Router } from '@angular/router';
 import { SupabaseService, Book } from './services/data/supabase.service';
 import { CommonModule } from '@angular/common';
+import {
+  CreateBookDialogComponent,
+  CreateBookResult,
+} from './shared/create-book-dialog/create-book-dialog.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, CommonModule],
+  imports: [RouterOutlet, CommonModule, CreateBookDialogComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -33,6 +37,7 @@ export class AppComponent implements OnInit {
   isAuthenticated = signal<boolean>(false);
   error = signal<string | null>(null);
   isCreatingBook = signal<boolean>(false);
+  showCreateDialog = signal<boolean>(false);
 
   constructor() {
     effect(() => {
@@ -99,23 +104,31 @@ export class AppComponent implements OnInit {
       await this.router.navigate(['/account']);
       return;
     }
+    this.showCreateDialog.set(true);
+  }
 
-    const bookName = prompt('Enter book name:');
-    if (!bookName || bookName.trim().length === 0) {
-      return; // User cancelled
-    }
-
+  async onCreateBookConfirm(result: CreateBookResult): Promise<void> {
+    this.showCreateDialog.set(false);
     this.isCreatingBook.set(true);
     this.error.set(null);
 
     try {
-      const newBook = await this.supabase.createBook(bookName.trim());
+      const newBook = await this.supabase.createBook(
+        result.name,
+        result.memberUserIds,
+      );
       await this.loadBooks();
       this.selectedBook.set(newBook);
-    } catch (err: any) {
-      this.error.set(err?.message ?? 'Failed to create book');
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : 'Failed to create book';
+      this.error.set(message);
     } finally {
       this.isCreatingBook.set(false);
     }
+  }
+
+  onCreateBookCancel(): void {
+    this.showCreateDialog.set(false);
   }
 }

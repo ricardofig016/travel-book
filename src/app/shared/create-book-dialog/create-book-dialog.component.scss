@@ -1,0 +1,44 @@
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+}
+
+.dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 1.5rem;
+  min-width: 320px;
+  z-index: 1001;
+  border: 1px solid;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+}
+
+.email-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.member-list ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.member-list li {
+  display: flex;
+  justify-content: space-between;
+}
+
+.dialog-actions {
+  display: flex;
+  gap: 0.5rem;
+}
