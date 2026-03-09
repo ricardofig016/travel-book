@@ -193,10 +193,6 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.setZoom(this.zoom() - this.zoomStep);
   }
 
-  resetZoom(): void {
-    this.setZoom(this.defaultZoom);
-  }
-
   resetView(): void {
     this.zoom.set(this.defaultZoom);
     this.panX.set(0);

@@ -1,9 +1,12 @@
-<section class="map-page">
-  <h1>Map Preview</h1>
+<h1>map</h1>
+<div style="display: flex; gap: 1rem; margin-top: 1rem">
+  <button type="button" (click)="navigatePrev()">&lt;</button>
+  <button type="button" (click)="navigateNext()">&gt;</button>
+</div>
 
+<section class="map-page">
   <div class="map-controls">
     <button type="button" (click)="zoomOut()">-</button>
-    <button type="button" (click)="resetZoom()">Reset</button>
     <button type="button" (click)="resetView()">Reset View</button>
     <button type="button" (click)="zoomIn()">+</button>
     <span>Zoom: {{ zoom() }}x</span>
@@ -94,10 +97,5 @@
         </g>
       }
     </svg>
-  </div>
-
-  <div class="nav-controls">
-    <button type="button" (click)="navigatePrev()">&lt;</button>
-    <button type="button" (click)="navigateNext()">&gt;</button>
   </div>
 </section>
