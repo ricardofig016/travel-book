@@ -286,21 +286,52 @@ export class SupabaseService {
       const profile = await this.getUserProfile();
       const hideDemoBook = profile?.hide_demo_book ?? false;
 
-      // Fetch books user is a member of
-      const { data, error } = await this.client
-        .from('books')
-        .select('*')
-        .or(
-          `id.in.(select book_id from book_members where user_id=${user.id}),is_public.eq.true`,
-        );
+      // Fetch memberships first, then load member books + demo book.
+      const { data: memberships, error: membershipsError } = await this.client
+        .from('book_members')
+        .select('book_id')
+        .eq('user_id', user.id);
 
-      if (error) {
-        console.error('Error fetching user books:', error);
+      if (membershipsError) {
+        console.error('Error fetching user memberships:', membershipsError);
         return [];
       }
 
+      const memberBookIds = (memberships ?? []).map(
+        (membership) => membership.book_id,
+      );
+
+      const { data: publicBooks, error: publicBooksError } = await this.client
+        .from('books')
+        .select('*')
+        .eq('is_public', true);
+
+      if (publicBooksError) {
+        console.error('Error fetching public books:', publicBooksError);
+        return [];
+      }
+
+      let memberBooks: Book[] = [];
+      if (memberBookIds.length > 0) {
+        const { data: fetchedMemberBooks, error: memberBooksError } =
+          await this.client.from('books').select('*').in('id', memberBookIds);
+
+        if (memberBooksError) {
+          console.error('Error fetching member books:', memberBooksError);
+          return [];
+        }
+
+        memberBooks = fetchedMemberBooks ?? [];
+      }
+
+      // Merge and de-duplicate by id.
+      const booksById = new Map<string, Book>();
+      for (const book of [...memberBooks, ...(publicBooks ?? [])]) {
+        booksById.set(book.id, book);
+      }
+
       // Filter out demo book if user has hidden it
-      const books = data || [];
+      const books = Array.from(booksById.values());
       if (hideDemoBook) {
         return books.filter((book) => !book.is_public);
       }
