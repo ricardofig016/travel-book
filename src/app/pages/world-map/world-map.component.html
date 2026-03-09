@@ -10,6 +10,14 @@
   </div>
 
   <div class="hover-metadata">
+    <strong>Home Country:</strong>
+    @if (homeCountry(); as home) {
+      <span>{{ home.name }}</span>
+      <span>ISO2: {{ home.iso2 }}</span>
+    } @else {
+      <span>Not set</span>
+    }
+
     <strong>Hovered Country:</strong>
     @if (hoveredCountry(); as country) {
       <span>{{ country.name }}</span>
@@ -72,7 +80,11 @@
               class="country-path"
               [attr.d]="path"
               [attr.fill]="
-                hoveredCountryId() === country.id ? '#f2df95' : 'transparent'
+                hoveredCountryId() === country.id
+                  ? '#f2df95'
+                  : homeCountryIso2() === country.iso2
+                    ? '#cfe8ff'
+                    : 'transparent'
               "
               stroke="#000"
               stroke-width="0.65"

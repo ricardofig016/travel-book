@@ -13,6 +13,7 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
+import { SupabaseService } from '../../services/data/supabase.service';
 
 type Position = [number, number];
 
@@ -58,6 +59,7 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('mapCanvas') mapCanvas!: ElementRef<HTMLDivElement>;
   private router = inject(Router);
   private http = inject(HttpClient);
+  private supabase = inject(SupabaseService);
   private readonly hoverDebugEnabled = true;
   private boundWheelHandler: ((event: WheelEvent) => void) | null = null;
 
@@ -75,6 +77,15 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
     parallels: string[];
   }>({ meridians: [], parallels: [] });
   protected readonly hoveredCountryId = signal<string | null>(null);
+  protected readonly homeCountryIso2 = signal<string | null>(null);
+  protected readonly homeCountry = computed(() => {
+    const iso2 = this.homeCountryIso2();
+    if (!iso2) {
+      return null;
+    }
+
+    return this.countries().find((country) => country.iso2 === iso2) ?? null;
+  });
   protected readonly hoveredCountry = computed(() => {
     const hoveredId = this.hoveredCountryId();
     if (!hoveredId) {
@@ -100,6 +111,7 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnInit(): void {
     void this.loadMap();
+    void this.loadHomeCountry();
   }
 
   ngAfterViewInit(): void {
@@ -332,6 +344,36 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
     } catch (error) {
       console.error('Failed to load countries GeoJSON for map preview', error);
       this.countries.set([]);
+    }
+  }
+
+  private async loadHomeCountry(): Promise<void> {
+    try {
+      const profile = await this.supabase.getUserProfile();
+      if (!profile?.home_city_id) {
+        this.homeCountryIso2.set(null);
+        return;
+      }
+
+      const { data, error } = await this.supabase
+        .getClient()
+        .from('cities')
+        .select('countries(iso_code_2)')
+        .eq('id', profile.home_city_id)
+        .single();
+
+      if (error) {
+        console.error('Failed to resolve home country from home city', error);
+        this.homeCountryIso2.set(null);
+        return;
+      }
+
+      const iso2 = (data as { countries?: { iso_code_2?: string } | null })
+        ?.countries?.iso_code_2;
+      this.homeCountryIso2.set(iso2?.toUpperCase() ?? null);
+    } catch (err) {
+      console.error('Failed to load user home country', err);
+      this.homeCountryIso2.set(null);
     }
   }
 
