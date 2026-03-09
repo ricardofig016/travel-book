@@ -72,7 +72,7 @@ export class AccountComponent {
   }
 
   navigatePrev(): void {
-    this.router.navigate(['/']);
+    this.router.navigate(['/cover']);
   }
 
   navigateNext(): void {

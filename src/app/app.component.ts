@@ -34,15 +34,14 @@ export class AppComponent implements OnInit {
 
   books = signal<Book[]>([]);
   selectedBook = signal<Book | null>(null);
-  isAuthenticated = signal<boolean>(false);
+  readonly isAuthenticated = this.supabase.isAuthenticated;
   error = signal<string | null>(null);
   isCreatingBook = signal<boolean>(false);
   showCreateDialog = signal<boolean>(false);
 
   constructor() {
     effect(() => {
-      const authenticated = this.supabase.isAuthenticated();
-      this.isAuthenticated.set(authenticated);
+      this.supabase.isAuthenticated(); // track auth changes to reload books
       void this.loadBooks();
     });
   }
