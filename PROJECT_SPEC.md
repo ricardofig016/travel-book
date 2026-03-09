@@ -19,6 +19,7 @@ Cover -> Account -> Index -> Map -> Album -> Statistics -> Back Cover.
     - Demo Book has a "Hide Demo Book" button visible only in the dropdown (small icon/button next to the book name)
     - When clicked, hides the demo book from the user's book list (preference stored in user_profiles.hide_demo_book)
     - Non-authenticated users always see the demo book
+  - Create book button: visible if authenticated; creates new book with name and members and auto-selects it
   - Export Button: generates a PDF copy of the entire book including cover, map, album, and statistics.
 - **Book Cover**: click to open with a page flip to Account.
 - **Account**:

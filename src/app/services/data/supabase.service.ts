@@ -342,4 +342,45 @@ export class SupabaseService {
       return [];
     }
   }
+
+  async createBook(name: string): Promise<Book> {
+    const {
+      data: { session },
+    } = await this.client.auth.getSession();
+
+    if (!session?.user) {
+      throw new Error('Auth session invalid or expired. Please sign in again.');
+    }
+
+    const userId = session.user.id;
+
+    // Create the book (INSERT + RETURNING requires both INSERT and SELECT policies)
+    const { data: bookData, error: bookError } = await this.client
+      .from('books')
+      .insert({
+        name,
+        is_public: false,
+        created_by: userId,
+      })
+      .select('*')
+      .single();
+
+    if (bookError) throw bookError;
+    if (!bookData) throw new Error('Book creation returned no data');
+
+    // Add current user as a book member (creator)
+    const { error: memberError } = await this.client
+      .from('book_members')
+      .insert({
+        book_id: bookData.id,
+        user_id: userId,
+      });
+
+    if (memberError) {
+      console.error('Error adding user to book members:', memberError);
+      throw memberError;
+    }
+
+    return bookData as Book;
+  }
 }

@@ -24,12 +24,31 @@
       }
     </div>
 
-    <!-- Export Button -->
-    <button class="export-btn" disabled (click)="onExportBook()">
-      Export Book [TODO]
-    </button>
+    <!-- Create and Export Buttons -->
+    <div class="navbar-actions">
+      @if (isAuthenticated()) {
+        <button
+          class="create-btn"
+          (click)="onCreateBook()"
+          [disabled]="isCreatingBook()"
+        >
+          {{ isCreatingBook() ? "Creating..." : "Create New Book" }}
+        </button>
+      }
+      <button class="export-btn" disabled (click)="onExportBook()">
+        Export Book [TODO]
+      </button>
+    </div>
   </div>
 </nav>
+
+<!-- Error Message -->
+@if (error()) {
+  <div class="error-banner">
+    {{ error() }}
+    <button type="button" (click)="error.set(null)">×</button>
+  </div>
+}
 
 <!-- Supabase Connection Status -->
 @if (connectionStatus(); as status) {

@@ -6,7 +6,7 @@ import {
   ChangeDetectionStrategy,
   effect,
 } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { RouterOutlet, Router } from '@angular/router';
 import { SupabaseService, Book } from './services/data/supabase.service';
 import { CommonModule } from '@angular/common';
 
@@ -20,6 +20,7 @@ import { CommonModule } from '@angular/common';
 export class AppComponent implements OnInit {
   title = 'travel-book';
   private supabase = inject(SupabaseService);
+  private router = inject(Router);
 
   connectionStatus = signal<{
     ok: boolean;
@@ -30,6 +31,8 @@ export class AppComponent implements OnInit {
   books = signal<Book[]>([]);
   selectedBook = signal<Book | null>(null);
   isAuthenticated = signal<boolean>(false);
+  error = signal<string | null>(null);
+  isCreatingBook = signal<boolean>(false);
 
   constructor() {
     effect(() => {
@@ -60,7 +63,9 @@ export class AppComponent implements OnInit {
       return;
     }
 
-    const stillExists = userBooks.some((book) => book.id === currentSelectedBookId);
+    const stillExists = userBooks.some(
+      (book) => book.id === currentSelectedBookId,
+    );
     if (!stillExists) {
       this.selectedBook.set(userBooks[0]);
     }
@@ -80,11 +85,37 @@ export class AppComponent implements OnInit {
   }
 
   async onHideDemoBook(): Promise<void> {
+    this.error.set(null);
     const success = await this.supabase.setHideDemoBook(true);
     if (success) {
       await this.loadBooks();
     } else {
-      console.error('Failed to hide demo book');
+      this.error.set('Failed to hide demo book');
+    }
+  }
+
+  async onCreateBook(): Promise<void> {
+    if (!this.isAuthenticated()) {
+      await this.router.navigate(['/account']);
+      return;
+    }
+
+    const bookName = prompt('Enter book name:');
+    if (!bookName || bookName.trim().length === 0) {
+      return; // User cancelled
+    }
+
+    this.isCreatingBook.set(true);
+    this.error.set(null);
+
+    try {
+      const newBook = await this.supabase.createBook(bookName.trim());
+      await this.loadBooks();
+      this.selectedBook.set(newBook);
+    } catch (err: any) {
+      this.error.set(err?.message ?? 'Failed to create book');
+    } finally {
+      this.isCreatingBook.set(false);
     }
   }
 }

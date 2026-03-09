@@ -433,11 +433,12 @@ ALTER TABLE markers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE marker_visits ENABLE ROW LEVEL SECURITY;
 ALTER TABLE photos ENABLE ROW LEVEL SECURITY;
 
--- Books: The single public demo book is viewable by everyone; private books only by members
-CREATE POLICY "Books are viewable by members or single demo public book"
+-- Books: The single public demo book is viewable by everyone; private books viewable by members or creator
+CREATE POLICY "Books are viewable by members or creator or single demo public book"
   ON books FOR SELECT
   USING (
     is_public = true
+    OR created_by = auth.uid()
     OR id IN (SELECT book_id FROM book_members WHERE user_id = auth.uid())
   );
 
