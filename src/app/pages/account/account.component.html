@@ -3,3 +3,181 @@
   <button type="button" (click)="navigatePrev()">&lt;</button>
   <button type="button" (click)="navigateNext()">&gt;</button>
 </div>
+
+<div class="account-container">
+  <!-- Sign In Mode -->
+  @if (mode() === "signin") {
+    <div class="auth-form">
+      <h2>Sign In</h2>
+
+      @if (error()) {
+        <div class="error">{{ error() }}</div>
+      }
+
+      <form (ngSubmit)="onSignIn()">
+        <div class="form-field">
+          <label for="signin-email">Email</label>
+          <input
+            id="signin-email"
+            type="email"
+            [(ngModel)]="signinEmail"
+            name="email"
+            required
+            [disabled]="loading()"
+          />
+        </div>
+
+        <div class="form-field">
+          <label for="signin-password">Password</label>
+          <input
+            id="signin-password"
+            type="password"
+            [(ngModel)]="signinPassword"
+            name="password"
+            required
+            [disabled]="loading()"
+          />
+        </div>
+
+        <button type="submit" [disabled]="loading()">
+          {{ loading() ? "Signing in..." : "Sign In" }}
+        </button>
+      </form>
+
+      <p class="switch-mode">
+        Don't have an account?
+        <button type="button" (click)="switchToSignUp()" [disabled]="loading()">
+          Sign Up
+        </button>
+      </p>
+    </div>
+  }
+
+  <!-- Sign Up Mode -->
+  @if (mode() === "signup") {
+    <div class="auth-form">
+      <h2>Sign Up</h2>
+
+      @if (error()) {
+        <div class="error">{{ error() }}</div>
+      }
+
+      <form (ngSubmit)="onSignUp()">
+        <div class="form-field">
+          <label for="signup-name">Name</label>
+          <input
+            id="signup-name"
+            type="text"
+            [(ngModel)]="signupName"
+            name="name"
+            required
+            [disabled]="loading()"
+          />
+        </div>
+
+        <div class="form-field">
+          <label for="signup-email">Email</label>
+          <input
+            id="signup-email"
+            type="email"
+            [(ngModel)]="signupEmail"
+            name="email"
+            required
+            [disabled]="loading()"
+          />
+        </div>
+
+        <div class="form-field">
+          <label for="signup-password">Password</label>
+          <input
+            id="signup-password"
+            type="password"
+            [(ngModel)]="signupPassword"
+            name="password"
+            required
+            [disabled]="loading()"
+          />
+        </div>
+
+        <div class="form-field">
+          <label for="signup-confirm-password">Confirm Password</label>
+          <input
+            id="signup-confirm-password"
+            type="password"
+            [(ngModel)]="signupConfirmPassword"
+            name="confirmPassword"
+            required
+            [disabled]="loading()"
+          />
+        </div>
+
+        <div class="form-field city-search">
+          <label for="city-search">Home City</label>
+          <input
+            id="city-search"
+            type="text"
+            [(ngModel)]="citySearchTerm"
+            (ngModelChange)="onCitySearchInput()"
+            name="citySearch"
+            placeholder="Start typing city name..."
+            required
+            [disabled]="loading()"
+          />
+
+          @if (showCityDropdown()) {
+            <div class="city-dropdown">
+              @for (city of citySearchResults(); track city.id) {
+                <div class="city-option" (click)="selectCity(city)">
+                  {{ city.name }}, {{ city.country }}
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <button type="submit" [disabled]="loading() || !selectedCity()">
+          {{ loading() ? "Signing up..." : "Sign Up" }}
+        </button>
+      </form>
+
+      <p class="switch-mode">
+        Already have an account?
+        <button type="button" (click)="switchToSignIn()" [disabled]="loading()">
+          Sign In
+        </button>
+      </p>
+    </div>
+  }
+
+  <!-- Authenticated Mode -->
+  @if (mode() === "authenticated") {
+    <div class="profile">
+      <h2>Profile</h2>
+
+      @if (error()) {
+        <div class="error">{{ error() }}</div>
+      }
+
+      <div class="profile-info">
+        <div class="profile-field">
+          <strong>Name:</strong>
+          <span>{{ userName() }}</span>
+        </div>
+
+        <div class="profile-field">
+          <strong>Email:</strong>
+          <span>{{ userEmail() }}</span>
+        </div>
+
+        <div class="profile-field">
+          <strong>Home City:</strong>
+          <span>{{ homeCity() }}</span>
+        </div>
+      </div>
+
+      <button type="button" (click)="onSignOut()" [disabled]="loading()">
+        {{ loading() ? "Signing out..." : "Sign Out" }}
+      </button>
+    </div>
+  }
+</div>

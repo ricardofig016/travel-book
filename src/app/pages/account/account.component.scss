@@ -1,0 +1,35 @@
+form {
+  display: flex;
+  flex-direction: column;
+  width: 300px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+
+  label {
+    display: block;
+  }
+}
+
+.city-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  border: 1px solid;
+  background: white;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.city-option {
+  cursor: pointer;
+}
+
+.profile-info {
+  display: flex;
+  flex-direction: column;
+}

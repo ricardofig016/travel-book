@@ -4,6 +4,7 @@ import {
   signal,
   inject,
   ChangeDetectionStrategy,
+  effect,
 } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { SupabaseService, Book } from './services/data/supabase.service';
@@ -30,21 +31,37 @@ export class AppComponent implements OnInit {
   selectedBook = signal<Book | null>(null);
   isAuthenticated = signal<boolean>(false);
 
+  constructor() {
+    effect(() => {
+      const authenticated = this.supabase.isAuthenticated();
+      this.isAuthenticated.set(authenticated);
+      void this.loadBooks();
+    });
+  }
+
   async ngOnInit(): Promise<void> {
     // Check Supabase connection on app init
     const status = await this.supabase.checkConnection();
     this.connectionStatus.set(status);
+  }
 
-    // Check authentication status
-    const authenticated = await this.supabase.isAuthenticated();
-    this.isAuthenticated.set(authenticated);
-
-    // Load books
+  private async loadBooks(): Promise<void> {
     const userBooks = await this.supabase.getUserBooks();
     this.books.set(userBooks);
 
-    // Select first book by default
-    if (userBooks.length > 0) {
+    if (userBooks.length === 0) {
+      this.selectedBook.set(null);
+      return;
+    }
+
+    const currentSelectedBookId = this.selectedBook()?.id;
+    if (!currentSelectedBookId) {
+      this.selectedBook.set(userBooks[0]);
+      return;
+    }
+
+    const stillExists = userBooks.some((book) => book.id === currentSelectedBookId);
+    if (!stillExists) {
       this.selectedBook.set(userBooks[0]);
     }
   }
@@ -65,16 +82,7 @@ export class AppComponent implements OnInit {
   async onHideDemoBook(): Promise<void> {
     const success = await this.supabase.setHideDemoBook(true);
     if (success) {
-      // Reload books to reflect the change
-      const userBooks = await this.supabase.getUserBooks();
-      this.books.set(userBooks);
-
-      // If the selected book was the demo book, select the first available book
-      if (this.selectedBook()?.is_public && userBooks.length > 0) {
-        this.selectedBook.set(userBooks[0]);
-      } else if (userBooks.length === 0) {
-        this.selectedBook.set(null);
-      }
+      await this.loadBooks();
     } else {
       console.error('Failed to hide demo book');
     }
