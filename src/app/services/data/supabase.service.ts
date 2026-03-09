@@ -107,6 +107,7 @@ export class SupabaseService {
       options: {
         data: {
           name,
+          home_city_id: homeCityId,
         },
       },
     });
@@ -120,7 +121,7 @@ export class SupabaseService {
       throw new Error('Sign up failed: no user returned');
     }
 
-    // Create/update user profile with home_city_id
+    // Best-effort profile write
     try {
       const { error: profileError } = await this.client
         .from('user_profiles')
@@ -131,11 +132,10 @@ export class SupabaseService {
         });
 
       if (profileError) {
-        console.error('Error creating user profile:', profileError);
-        // Don't throw - profile creation is non-critical for signup success
+        console.warn('Profile write deferred to DB trigger:', profileError);
       }
     } catch (err) {
-      console.error('Exception creating user profile:', err);
+      console.warn('Profile write skipped (handled by DB trigger):', err);
     }
 
     return data.user;

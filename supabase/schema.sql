@@ -322,6 +322,25 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Function to auto-create user profile on auth signup and seed home city from metadata
+CREATE OR REPLACE FUNCTION create_user_profile_on_auth_signup()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO user_profiles (user_id, home_city_id)
+  VALUES (
+    NEW.id,
+    NULLIF(NEW.raw_user_meta_data->>'home_city_id', '')::UUID
+  )
+  ON CONFLICT (user_id) DO UPDATE
+  SET home_city_id = COALESCE(
+    user_profiles.home_city_id,
+    NULLIF(NEW.raw_user_meta_data->>'home_city_id', '')::UUID
+  );
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, auth;
+
 -- Function to check if a user is an admin (SECURITY DEFINER to avoid RLS recursion)
 CREATE OR REPLACE FUNCTION is_admin(user_uid UUID)
 RETURNS BOOLEAN AS $$
@@ -338,6 +357,12 @@ CREATE TRIGGER create_user_profile_on_book_member_insert
   AFTER INSERT ON book_members
   FOR EACH ROW
   EXECUTE FUNCTION create_user_profile_on_book_member_insert();
+
+-- Trigger to auto-create/sync profile immediately when auth user is created
+CREATE TRIGGER create_user_profile_on_auth_signup
+  AFTER INSERT ON auth.users
+  FOR EACH ROW
+  EXECUTE FUNCTION create_user_profile_on_auth_signup();
 
 -- Apply updated_at trigger to all tables
 CREATE TRIGGER update_countries_updated_at
