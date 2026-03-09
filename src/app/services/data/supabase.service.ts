@@ -1,5 +1,5 @@
-import { Injectable } from '@angular/core';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { Injectable, signal, computed } from '@angular/core';
+import { createClient, SupabaseClient, User } from '@supabase/supabase-js';
 
 import { environment } from '../../core/config/environment';
 
@@ -26,6 +26,12 @@ export interface UserProfile {
   updated_at: string;
 }
 
+export interface CitySearchResult {
+  id: string;
+  name: string;
+  country: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class SupabaseService {
   private readonly client: SupabaseClient = createClient(
@@ -40,19 +46,138 @@ export class SupabaseService {
     },
   );
 
+  // Auth state signals
+  private readonly currentUserSignal = signal<User | null>(null);
+  readonly currentUser = this.currentUserSignal.asReadonly();
+  readonly isAuthenticated = computed(() => this.currentUserSignal() !== null);
+
+  constructor() {
+    this.initAuthListener();
+  }
+
+  private async initAuthListener(): Promise<void> {
+    // Get initial session
+    const {
+      data: { user },
+    } = await this.client.auth.getUser();
+    this.currentUserSignal.set(user);
+
+    // Listen for auth state changes
+    this.client.auth.onAuthStateChange((_event, session) => {
+      this.currentUserSignal.set(session?.user ?? null);
+    });
+  }
+
   getClient(): SupabaseClient {
     return this.client;
   }
 
-  async isAuthenticated(): Promise<boolean> {
+  getCurrentUser(): User | null {
+    return this.currentUserSignal();
+  }
+
+  async signIn(email: string, password: string): Promise<User> {
+    const { data, error } = await this.client.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      console.error('Sign in error:', error);
+      throw error;
+    }
+
+    if (!data.user) {
+      throw new Error('Sign in failed: no user returned');
+    }
+
+    return data.user;
+  }
+
+  async signUp(
+    name: string,
+    email: string,
+    password: string,
+    homeCityId: string,
+  ): Promise<User> {
+    // Sign up with user metadata
+    const { data, error } = await this.client.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          name,
+        },
+      },
+    });
+
+    if (error) {
+      console.error('Sign up error:', error);
+      throw error;
+    }
+
+    if (!data.user) {
+      throw new Error('Sign up failed: no user returned');
+    }
+
+    // Create/update user profile with home_city_id
     try {
-      const {
-        data: { user },
-      } = await this.client.auth.getUser();
-      return user !== null;
+      const { error: profileError } = await this.client
+        .from('user_profiles')
+        .upsert({
+          user_id: data.user.id,
+          home_city_id: homeCityId,
+          hide_demo_book: false,
+        });
+
+      if (profileError) {
+        console.error('Error creating user profile:', profileError);
+        // Don't throw - profile creation is non-critical for signup success
+      }
     } catch (err) {
-      console.error('Error checking authentication:', err);
-      return false;
+      console.error('Exception creating user profile:', err);
+    }
+
+    return data.user;
+  }
+
+  async signOut(): Promise<void> {
+    const { error } = await this.client.auth.signOut();
+
+    if (error) {
+      console.error('Sign out error:', error);
+      throw error;
+    }
+  }
+
+  async searchCities(term: string): Promise<CitySearchResult[]> {
+    if (term.length < 2) {
+      return [];
+    }
+
+    try {
+      const { data, error } = await this.client
+        .from('cities')
+        .select('id, name, name_ascii, countries(name)')
+        .or(`name.ilike.%${term}%,name_ascii.ilike.%${term}%`)
+        .limit(10);
+
+      if (error) {
+        console.error('Error searching cities:', error);
+        return [];
+      }
+
+      // Format results as "city, country"
+      return (
+        data?.map((city: any) => ({
+          id: city.id,
+          name: city.name,
+          country: city.countries?.name || 'Unknown',
+        })) || []
+      );
+    } catch (err) {
+      console.error('Exception searching cities:', err);
+      return [];
     }
   }
 

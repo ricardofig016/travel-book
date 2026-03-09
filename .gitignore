@@ -37,6 +37,7 @@ settings.json
 /libpeerconnection.log
 testem.log
 /typings
+PLAN.md
 
 # System files
 .DS_Store
