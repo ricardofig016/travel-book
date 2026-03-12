@@ -44,6 +44,12 @@ export interface CountryIsoLookup {
   byName: Record<string, string>;
 }
 
+export interface BookVisitedLandAreaStats {
+  visitedArea: number;
+  totalArea: number;
+  visitedPercent: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class SupabaseService {
   private readonly client: SupabaseClient = createClient(
@@ -470,21 +476,15 @@ export class SupabaseService {
         iso_code_3: string | null;
       }>) {
         const iso2 = row.iso_code_2?.trim().toUpperCase();
-        if (!iso2 || !/^[A-Z]{2}$/.test(iso2)) {
-          continue;
-        }
+        if (!iso2 || !/^[A-Z]{2}$/.test(iso2)) continue;
 
         byIso2[iso2] = iso2;
 
         const iso3 = row.iso_code_3?.trim().toUpperCase();
-        if (iso3 && /^[A-Z]{3}$/.test(iso3)) {
-          byIso3[iso3] = iso2;
-        }
+        if (iso3 && /^[A-Z]{3}$/.test(iso3)) byIso3[iso3] = iso2;
 
         const name = row.name?.trim().toLowerCase();
-        if (name) {
-          byName[name] = iso2;
-        }
+        if (name) byName[name] = iso2;
       }
 
       return {
@@ -499,6 +499,88 @@ export class SupabaseService {
         byIso2: {},
         byName: {},
       };
+    }
+  }
+
+  async getBookVisitedLandAreaStats(
+    bookId: string,
+  ): Promise<BookVisitedLandAreaStats> {
+    try {
+      const { data: markerRows, error: markersError } = await this.client
+        .from('markers')
+        .select('cities(country_id)')
+        .eq('book_id', bookId)
+        .eq('visited', true);
+
+      if (markersError) {
+        console.error(
+          'Error fetching visited marker country ids:',
+          markersError,
+        );
+        return { visitedArea: 0, totalArea: 0, visitedPercent: 0 };
+      }
+
+      const visitedCountryIds = new Set<string>();
+      for (const marker of markerRows ?? []) {
+        const countryId = (
+          marker as { cities?: { country_id?: string | null } | null }
+        )?.cities?.country_id;
+
+        if (countryId) visitedCountryIds.add(countryId);
+      }
+
+      let visitedArea = 0;
+      if (visitedCountryIds.size > 0) {
+        const { data: visitedCountries, error: visitedCountriesError } =
+          await this.client
+            .from('countries')
+            .select('area')
+            .in('id', Array.from(visitedCountryIds));
+
+        if (visitedCountriesError) {
+          console.error(
+            'Error fetching visited country areas:',
+            visitedCountriesError,
+          );
+          return { visitedArea: 0, totalArea: 0, visitedPercent: 0 };
+        }
+
+        visitedArea = (visitedCountries ?? []).reduce((sum, row) => {
+          const area = Number((row as { area?: number | string | null }).area);
+          if (!Number.isFinite(area) || area <= 0) return sum;
+
+          return sum + area;
+        }, 0);
+      }
+
+      const { data: allCountries, error: allCountriesError } = await this.client
+        .from('countries')
+        .select('area');
+
+      if (allCountriesError) {
+        console.error('Error fetching total country area:', allCountriesError);
+        return { visitedArea: 0, totalArea: 0, visitedPercent: 0 };
+      }
+
+      const totalArea = (allCountries ?? []).reduce((sum, row) => {
+        const area = Number((row as { area?: number | string | null }).area);
+        if (!Number.isFinite(area) || area <= 0) return sum;
+
+        return sum + area;
+      }, 0);
+
+      if (totalArea <= 0)
+        return { visitedArea, totalArea: 0, visitedPercent: 0 };
+
+      const visitedPercent = (visitedArea / totalArea) * 100;
+      return {
+        visitedArea,
+        totalArea,
+        visitedPercent,
+      };
+    } catch (err) {
+      console.error('Exception calculating visited land area stats:', err);
+      return { visitedArea: 0, totalArea: 0, visitedPercent: 0 };
     }
   }
 }

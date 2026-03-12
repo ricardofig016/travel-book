@@ -77,7 +77,7 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
   constructor() {
     effect(() => {
       const bookId = this.bookState.selectedBook()?.id ?? null;
-      void this.loadVisitedCountries(bookId);
+      void this.loadVisitedMetadata(bookId);
     });
   }
 
@@ -97,6 +97,10 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
   protected readonly hoveredCountryId = signal<string | null>(null);
   protected readonly homeCountryIso2 = signal<string | null>(null);
   protected readonly visitedCountryIso2s = signal<Set<string>>(new Set());
+  protected readonly visitedLandAreaPercent = signal(0);
+  protected readonly visitedLandAreaLabel = computed(
+    () => `${this.visitedLandAreaPercent().toFixed(2)}%`,
+  );
   protected readonly homeCountry = computed(() => {
     const iso2 = this.homeCountryIso2();
     if (!iso2) {
@@ -497,18 +501,25 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  private async loadVisitedCountries(bookId: string | null): Promise<void> {
+  private async loadVisitedMetadata(bookId: string | null): Promise<void> {
     if (!bookId) {
       this.visitedCountryIso2s.set(new Set());
+      this.visitedLandAreaPercent.set(0);
       return;
     }
 
     try {
-      const iso2s = await this.supabase.getVisitedCountryIso2s(bookId);
+      const [iso2s, areaStats] = await Promise.all([
+        this.supabase.getVisitedCountryIso2s(bookId),
+        this.supabase.getBookVisitedLandAreaStats(bookId),
+      ]);
+
       this.visitedCountryIso2s.set(new Set(iso2s));
+      this.visitedLandAreaPercent.set(areaStats.visitedPercent);
     } catch (err) {
-      console.error('Failed to load visited countries', err);
+      console.error('Failed to load visited metadata', err);
       this.visitedCountryIso2s.set(new Set());
+      this.visitedLandAreaPercent.set(0);
     }
   }
 

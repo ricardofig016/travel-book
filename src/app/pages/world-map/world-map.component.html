@@ -24,6 +24,9 @@
     <strong>Visited:</strong>
     <span>{{ visitedCountryIso2s().size }} countries</span>
 
+    <strong>Visited Land Area:</strong>
+    <span>{{ visitedLandAreaLabel() }}</span>
+
     <strong>Hovered Country:</strong>
     @if (hoveredCountry(); as country) {
       <span>{{ country.name }}</span>
