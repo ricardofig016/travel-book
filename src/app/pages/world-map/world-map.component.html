@@ -5,37 +5,68 @@
 </div>
 
 <section class="map-page">
-  <div class="map-controls">
-    <button type="button" (click)="zoomOut()">-</button>
-    <button type="button" (click)="resetView()">Reset View</button>
-    <button type="button" (click)="zoomIn()">+</button>
-    <span>Zoom: {{ zoom() }}x</span>
-  </div>
+  <div class="metadata-layout">
+    <div class="metadata-block">
+      <div class="metadata-row">
+        <strong>Home Country:</strong>
+        @if (homeCountry(); as home) {
+          <span>{{ home.name }}</span>
+        } @else {
+          <span>Not set</span>
+        }
+      </div>
+      <div class="metadata-row">
+        <strong>Home ISO2:</strong>
+        @if (homeCountry(); as home) {
+          <span>{{ home.iso2 }}</span>
+        } @else {
+          <span>Not set</span>
+        }
+      </div>
+      <div class="metadata-row">
+        <strong>Visited Countries:</strong>
+        <span>{{ visitedCountryIso2s().size }}</span>
+      </div>
+      <div class="metadata-row">
+        <strong>Visited Land Area:</strong>
+        <span>{{ visitedLandAreaLabel() }}</span>
+      </div>
+    </div>
 
-  <div class="hover-metadata">
-    <strong>Home Country:</strong>
-    @if (homeCountry(); as home) {
-      <span>{{ home.name }}</span>
-      <span>ISO2: {{ home.iso2 }}</span>
-    } @else {
-      <span>Not set</span>
-    }
-
-    <strong>Visited:</strong>
-    <span>{{ visitedCountryIso2s().size }} countries</span>
-
-    <strong>Visited Land Area:</strong>
-    <span>{{ visitedLandAreaLabel() }}</span>
-
-    <strong>Hovered Country:</strong>
-    @if (hoveredCountry(); as country) {
-      <span>{{ country.name }}</span>
-      <span>ISO2: {{ country.iso2 }}</span>
-      <span>ISO3: {{ country.iso3 }}</span>
-      <span>Parts: {{ country.parts }}</span>
-    } @else {
-      <span>None</span>
-    }
+    <div class="metadata-block">
+      <div class="metadata-row">
+        <strong>Hovered Country:</strong>
+        @if (hoveredCountry(); as country) {
+          <span>{{ country.name }}</span>
+        } @else {
+          <span>None</span>
+        }
+      </div>
+      <div class="metadata-row">
+        <strong>ISO2:</strong>
+        @if (hoveredCountry(); as country) {
+          <span>{{ country.iso2 }}</span>
+        } @else {
+          <span>None</span>
+        }
+      </div>
+      <div class="metadata-row">
+        <strong>ISO3:</strong>
+        @if (hoveredCountry(); as country) {
+          <span>{{ country.iso3 }}</span>
+        } @else {
+          <span>None</span>
+        }
+      </div>
+      <div class="metadata-row">
+        <strong>Parts:</strong>
+        @if (hoveredCountry(); as country) {
+          <span>{{ country.parts }}</span>
+        } @else {
+          <span>None</span>
+        }
+      </div>
+    </div>
   </div>
 
   <div
@@ -97,5 +128,12 @@
         </g>
       }
     </svg>
+  </div>
+
+  <div class="map-controls">
+    <button type="button" (click)="zoomOut()">-</button>
+    <button type="button" (click)="resetView()">Reset View</button>
+    <button type="button" (click)="zoomIn()">+</button>
+    <span>Zoom: {{ zoom() }}x</span>
   </div>
 </section>

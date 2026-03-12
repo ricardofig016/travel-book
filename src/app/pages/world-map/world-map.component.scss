@@ -11,15 +11,31 @@
   gap: 0.5rem;
 }
 
-.hover-metadata {
+.metadata-layout {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.metadata-block {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.65rem;
-  padding: 0.4rem 0.6rem;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.7rem;
   border: 1px solid #222;
   background: #faf7ea;
   font-size: 0.9rem;
+}
+
+.metadata-row {
+  display: flex;
+  gap: 1rem;
+}
+
+@media (max-width: 820px) {
+  .metadata-layout {
+    grid-template-columns: 1fr;
+  }
 }
 
 .map-canvas {
