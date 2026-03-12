@@ -4,6 +4,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   ElementRef,
   inject,
   OnDestroy,
@@ -13,6 +14,7 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
+import { BookStateService } from '../../services/data/book-state.service';
 import { SupabaseService } from '../../services/data/supabase.service';
 
 type Position = [number, number];
@@ -56,12 +58,25 @@ type GeoJsonGeometry =
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
+  private static readonly HOVERED_COUNTRY_FILL = '#f2bf75';
+  private static readonly HOME_COUNTRY_FILL = '#7ecf8e';
+  private static readonly VISITED_COUNTRY_FILL = '#afc8ff';
+  private static readonly DEFAULT_COUNTRY_FILL = 'transparent';
+
   @ViewChild('mapCanvas') mapCanvas!: ElementRef<HTMLDivElement>;
   private router = inject(Router);
   private http = inject(HttpClient);
   private supabase = inject(SupabaseService);
+  private bookState = inject(BookStateService);
   private readonly hoverDebugEnabled = true;
   private boundWheelHandler: ((event: WheelEvent) => void) | null = null;
+
+  constructor() {
+    effect(() => {
+      const bookId = this.bookState.selectedBook()?.id ?? null;
+      void this.loadVisitedCountries(bookId);
+    });
+  }
 
   protected readonly mapWidth = 1200;
   protected readonly mapHeight = 600;
@@ -78,6 +93,7 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
   }>({ meridians: [], parallels: [] });
   protected readonly hoveredCountryId = signal<string | null>(null);
   protected readonly homeCountryIso2 = signal<string | null>(null);
+  protected readonly visitedCountryIso2s = signal<Set<string>>(new Set());
   protected readonly homeCountry = computed(() => {
     const iso2 = this.homeCountryIso2();
     if (!iso2) {
@@ -266,6 +282,19 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.setHoveredCountry(null, 'svg-leave');
   }
 
+  protected getCountryFill(country: CountryShape): string {
+    if (this.hoveredCountryId() === country.id)
+      return WorldMapComponent.HOVERED_COUNTRY_FILL;
+
+    if (this.homeCountryIso2() === country.iso2)
+      return WorldMapComponent.HOME_COUNTRY_FILL;
+
+    if (this.visitedCountryIso2s().has(country.iso2))
+      return WorldMapComponent.VISITED_COUNTRY_FILL;
+
+    return WorldMapComponent.DEFAULT_COUNTRY_FILL;
+  }
+
   private setHoveredCountry(countryId: string | null, source: string): void {
     const previous = this.hoveredCountryId();
     if (previous === countryId) {
@@ -370,6 +399,21 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
     } catch (err) {
       console.error('Failed to load user home country', err);
       this.homeCountryIso2.set(null);
+    }
+  }
+
+  private async loadVisitedCountries(bookId: string | null): Promise<void> {
+    if (!bookId) {
+      this.visitedCountryIso2s.set(new Set());
+      return;
+    }
+
+    try {
+      const iso2s = await this.supabase.getVisitedCountryIso2s(bookId);
+      this.visitedCountryIso2s.set(new Set(iso2s));
+    } catch (err) {
+      console.error('Failed to load visited countries', err);
+      this.visitedCountryIso2s.set(new Set());
     }
   }
 

@@ -406,4 +406,33 @@ export class SupabaseService {
 
     return bookData as Book;
   }
+
+  async getVisitedCountryIso2s(bookId: string): Promise<string[]> {
+    try {
+      const { data, error } = await this.client
+        .from('markers')
+        .select('cities(countries(iso_code_2))')
+        .eq('book_id', bookId)
+        .eq('visited', true);
+
+      if (error) {
+        console.error('Error fetching visited countries:', error);
+        return [];
+      }
+
+      const iso2s = new Set<string>();
+      for (const marker of data ?? []) {
+        const iso2 = (marker as { cities?: { countries?: { iso_code_2?: string } | null } | null })
+          ?.cities?.countries?.iso_code_2;
+        if (iso2) {
+          iso2s.add(iso2.toUpperCase());
+        }
+      }
+
+      return Array.from(iso2s);
+    } catch (err) {
+      console.error('Exception fetching visited countries:', err);
+      return [];
+    }
+  }
 }

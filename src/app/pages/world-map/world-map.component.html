@@ -21,6 +21,9 @@
       <span>Not set</span>
     }
 
+    <strong>Visited:</strong>
+    <span>{{ visitedCountryIso2s().size }} countries</span>
+
     <strong>Hovered Country:</strong>
     @if (hoveredCountry(); as country) {
       <span>{{ country.name }}</span>
@@ -82,13 +85,7 @@
             <path
               class="country-path"
               [attr.d]="path"
-              [attr.fill]="
-                hoveredCountryId() === country.id
-                  ? '#f2df95'
-                  : homeCountryIso2() === country.iso2
-                    ? '#cfe8ff'
-                    : 'transparent'
-              "
+              [attr.fill]="getCountryFill(country)"
               stroke="#000"
               stroke-width="0.65"
               vector-effect="non-scaling-stroke"
