@@ -15,7 +15,10 @@ import {
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { BookStateService } from '../../services/data/book-state.service';
-import { SupabaseService } from '../../services/data/supabase.service';
+import {
+  CountryIsoLookup,
+  SupabaseService,
+} from '../../services/data/supabase.service';
 
 type Position = [number, number];
 
@@ -359,17 +362,109 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private async loadMap(): Promise<void> {
     try {
-      const data = await firstValueFrom(
-        this.http.get<GeoJsonFeatureCollection>(
-          'assets/data/geo/visvalingam-weighted_1.8pct_keepshapes_clean.geojson',
+      const [data, countryLookup] = await Promise.all([
+        firstValueFrom(
+          this.http.get<GeoJsonFeatureCollection>(
+            'assets/data/geo/visvalingam-weighted_1.8pct_keepshapes_clean.geojson',
+          ),
         ),
-      );
-      this.countries.set(this.buildCountries(data));
+        this.supabase.getCountryIsoLookup(),
+      ]);
+
+      this.countries.set(this.buildCountries(data, countryLookup));
       this.gridPaths.set(this.buildGridPaths());
     } catch (error) {
       console.error('Failed to load countries GeoJSON for map preview', error);
       this.countries.set([]);
     }
+  }
+
+  private normalizeIso2(value?: string): string | null {
+    const normalized = value?.trim().toUpperCase();
+    if (!normalized || !/^[A-Z]{2}$/.test(normalized)) return null;
+
+    return normalized;
+  }
+
+  private normalizeIso3(value?: string): string | null {
+    const normalized = value?.trim().toUpperCase();
+    if (!normalized || !/^[A-Z]{3}$/.test(normalized)) return null;
+
+    return normalized;
+  }
+
+  private resolveIso2FromLookup(
+    properties?: GeoJsonProperties,
+    countryLookup?: CountryIsoLookup,
+  ): string {
+    if (!countryLookup)
+      return this.normalizeIso2(properties?.['ISO3166-1-Alpha-2']) ?? 'N/A';
+
+    const iso3 = this.normalizeIso3(properties?.['ISO3166-1-Alpha-3']);
+    if (iso3 && countryLookup.byIso3[iso3]) return countryLookup.byIso3[iso3];
+
+    const iso2 = this.normalizeIso2(properties?.['ISO3166-1-Alpha-2']);
+    if (iso2 && countryLookup.byIso2[iso2]) return countryLookup.byIso2[iso2];
+
+    const name = properties?.name?.trim().toLowerCase();
+    if (name && countryLookup.byName[name]) return countryLookup.byName[name];
+
+    return iso2 ?? 'N/A';
+  }
+
+  private buildCountries(
+    collection: GeoJsonFeatureCollection,
+    countryLookup?: CountryIsoLookup,
+  ): CountryShape[] {
+    const project = (point: Position): Position => {
+      const [lon, lat] = point;
+      const px = ((lon + 180) / 360) * (this.mapWidth - 40) + 20;
+      const py = ((90 - lat) / 180) * (this.mapHeight - 40) + 20;
+      return [px, py];
+    };
+
+    const countries: CountryShape[] = [];
+    let uniqueIndex = 0;
+
+    for (const [index, feature] of collection.features.entries()) {
+      if (!feature.geometry) continue;
+
+      const countryPaths: string[] = [];
+
+      if (feature.geometry.type === 'Polygon') {
+        const path = this.buildPolygonPath(
+          feature.geometry.coordinates,
+          project,
+        );
+        if (path) countryPaths.push(path);
+      }
+
+      if (feature.geometry.type === 'MultiPolygon') {
+        for (const polygon of feature.geometry.coordinates) {
+          const path = this.buildPolygonPath(polygon, project);
+          if (path) countryPaths.push(path);
+        }
+      }
+
+      if (countryPaths.length === 0) continue;
+
+      const baseId =
+        feature.properties?.['ISO3166-1-Alpha-3'] ??
+        feature.properties?.['ISO3166-1-Alpha-2'] ??
+        feature.properties?.name ??
+        `country-${index}`;
+
+      countries.push({
+        id: `${baseId}-${uniqueIndex++}`,
+        name: feature.properties?.name ?? baseId,
+        iso2: this.resolveIso2FromLookup(feature.properties, countryLookup),
+        iso3: feature.properties?.['ISO3166-1-Alpha-3'] ?? 'N/A',
+        parts: countryPaths.length,
+        paths: countryPaths,
+      });
+    }
+
+    return countries;
   }
 
   private async loadHomeCountry(): Promise<void> {
@@ -443,66 +538,6 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     return { meridians, parallels };
-  }
-
-  private buildCountries(collection: GeoJsonFeatureCollection): CountryShape[] {
-    const project = (point: Position): Position => {
-      const [lon, lat] = point;
-      const px = ((lon + 180) / 360) * (this.mapWidth - 40) + 20;
-      const py = ((90 - lat) / 180) * (this.mapHeight - 40) + 20;
-      return [px, py];
-    };
-
-    const countries: CountryShape[] = [];
-    let uniqueIndex = 0;
-
-    for (const [index, feature] of collection.features.entries()) {
-      if (!feature.geometry) {
-        continue;
-      }
-
-      const countryPaths: string[] = [];
-
-      if (feature.geometry.type === 'Polygon') {
-        const path = this.buildPolygonPath(
-          feature.geometry.coordinates,
-          project,
-        );
-        if (path) {
-          countryPaths.push(path);
-        }
-      }
-
-      if (feature.geometry.type === 'MultiPolygon') {
-        for (const polygon of feature.geometry.coordinates) {
-          const path = this.buildPolygonPath(polygon, project);
-          if (path) {
-            countryPaths.push(path);
-          }
-        }
-      }
-
-      if (countryPaths.length === 0) {
-        continue;
-      }
-
-      const baseId =
-        feature.properties?.['ISO3166-1-Alpha-3'] ??
-        feature.properties?.['ISO3166-1-Alpha-2'] ??
-        feature.properties?.name ??
-        `country-${index}`;
-
-      countries.push({
-        id: `${baseId}-${uniqueIndex++}`,
-        name: feature.properties?.name ?? baseId,
-        iso2: feature.properties?.['ISO3166-1-Alpha-2'] ?? 'N/A',
-        iso3: feature.properties?.['ISO3166-1-Alpha-3'] ?? 'N/A',
-        parts: countryPaths.length,
-        paths: countryPaths,
-      });
-    }
-
-    return countries;
   }
 
   private buildPolygonPath(
