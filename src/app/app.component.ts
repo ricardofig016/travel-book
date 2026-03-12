@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 import { RouterOutlet, Router } from '@angular/router';
 import { SupabaseService, Book } from './services/data/supabase.service';
+import { BookStateService } from './services/data/book-state.service';
 import { CommonModule } from '@angular/common';
 import {
   CreateBookDialogComponent,
@@ -25,6 +26,7 @@ export class AppComponent implements OnInit {
   title = 'travel-book';
   private supabase = inject(SupabaseService);
   private router = inject(Router);
+  private bookState = inject(BookStateService);
 
   connectionStatus = signal<{
     ok: boolean;
@@ -33,7 +35,7 @@ export class AppComponent implements OnInit {
   } | null>(null);
 
   books = signal<Book[]>([]);
-  selectedBook = signal<Book | null>(null);
+  readonly selectedBook = this.bookState.selectedBook;
   readonly isAuthenticated = this.supabase.isAuthenticated;
   error = signal<string | null>(null);
   isCreatingBook = signal<boolean>(false);
