@@ -69,6 +69,12 @@ export interface BookCountryMarkerSummary {
   markerCities: string[];
 }
 
+export interface CountryCapitalCity {
+  name: string;
+  latitude: number;
+  longitude: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class SupabaseService {
   private readonly client: SupabaseClient = createClient(
@@ -626,6 +632,52 @@ export class SupabaseService {
       return (data as CountryMetadata | null) ?? null;
     } catch (err) {
       console.error('Exception fetching country metadata by ISO2:', err);
+      return null;
+    }
+  }
+
+  async getCountryCapitalByIso2(
+    iso2: string,
+  ): Promise<CountryCapitalCity | null> {
+    const normalizedIso2 = iso2.trim().toUpperCase();
+    if (!/^[A-Z]{2}$/.test(normalizedIso2)) return null;
+
+    try {
+      const { data, error } = await this.client
+        .from('cities')
+        .select('name, latitude, longitude, countries!inner(iso_code_2)')
+        .eq('is_capital', true)
+        .eq('countries.iso_code_2', normalizedIso2)
+        .limit(1)
+        .single();
+
+      if (error) {
+        console.error('Error fetching country capital by ISO2:', error);
+        return null;
+      }
+
+      const row = data as {
+        name?: string | null;
+        latitude?: number | string | null;
+        longitude?: number | string | null;
+      } | null;
+
+      const latitude = Number(row?.latitude);
+      const longitude = Number(row?.longitude);
+      if (
+        !row?.name ||
+        !Number.isFinite(latitude) ||
+        !Number.isFinite(longitude)
+      )
+        return null;
+
+      return {
+        name: row.name,
+        latitude,
+        longitude,
+      };
+    } catch (err) {
+      console.error('Exception fetching country capital by ISO2:', err);
       return null;
     }
   }

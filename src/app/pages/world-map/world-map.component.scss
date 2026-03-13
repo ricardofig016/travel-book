@@ -74,3 +74,9 @@
   pointer-events: all;
   transition: fill 120ms ease-in-out;
 }
+
+.capital-dot circle {
+  fill: #ff1c1c;
+  stroke: #fff;
+  stroke-width: 0.5;
+}

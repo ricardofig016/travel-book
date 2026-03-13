@@ -173,6 +173,17 @@
           }
         </g>
       }
+
+      @if (hoveredCapitalDot(); as capitalDot) {
+        <g class="capital-dot" pointer-events="none">
+          <circle
+            [attr.cx]="capitalDot.x"
+            [attr.cy]="capitalDot.y"
+            r="1.5"
+          ></circle>
+          <title>{{ capitalDot.name }}</title>
+        </g>
+      }
     </svg>
   </div>
 

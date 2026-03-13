@@ -17,6 +17,7 @@ import { firstValueFrom } from 'rxjs';
 import { BookStateService } from '../../services/data/book-state.service';
 import {
   BookCountryMarkerSummary,
+  CountryCapitalCity,
   CountryMetadata,
   CountryIsoLookup,
   SupabaseService,
@@ -51,6 +52,12 @@ interface CountryShape {
 }
 
 interface EmptyMarkerSummary extends BookCountryMarkerSummary {}
+
+interface CapitalDot {
+  name: string;
+  x: number;
+  y: number;
+}
 
 type GeoJsonGeometry =
   | { type: 'Polygon'; coordinates: Position[][] }
@@ -104,6 +111,7 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
   );
   protected readonly hoveredCountryMarkerSummary =
     signal<BookCountryMarkerSummary>(this.emptyMarkerSummary());
+  protected readonly hoveredCapitalDot = signal<CapitalDot | null>(null);
   protected readonly visitedLandAreaLabel = computed(
     () => `${this.visitedLandAreaPercent().toFixed(2)}%`,
   );
@@ -477,13 +485,6 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
     collection: GeoJsonFeatureCollection,
     countryLookup?: CountryIsoLookup,
   ): CountryShape[] {
-    const project = (point: Position): Position => {
-      const [lon, lat] = point;
-      const px = ((lon + 180) / 360) * (this.mapWidth - 40) + 20;
-      const py = ((90 - lat) / 180) * (this.mapHeight - 40) + 20;
-      return [px, py];
-    };
-
     const countries: CountryShape[] = [];
     let uniqueIndex = 0;
 
@@ -495,14 +496,16 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
       if (feature.geometry.type === 'Polygon') {
         const path = this.buildPolygonPath(
           feature.geometry.coordinates,
-          project,
+          (point) => this.projectPoint(point),
         );
         if (path) countryPaths.push(path);
       }
 
       if (feature.geometry.type === 'MultiPolygon') {
         for (const polygon of feature.geometry.coordinates) {
-          const path = this.buildPolygonPath(polygon, project);
+          const path = this.buildPolygonPath(polygon, (point) =>
+            this.projectPoint(point),
+          );
           if (path) countryPaths.push(path);
         }
       }
@@ -631,27 +634,31 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!normalizedIso2) {
       this.hoveredCountryMetadata.set(null);
       this.hoveredCountryMarkerSummary.set(this.emptyMarkerSummary());
+      this.hoveredCapitalDot.set(null);
       return;
     }
 
     try {
-      const [metadata, markerSummary] = await Promise.all([
+      const [metadata, markerSummary, capitalCity] = await Promise.all([
         this.supabase.getCountryMetadataByIso2(normalizedIso2),
         bookId
           ? this.supabase.getBookCountryMarkerSummary(bookId, normalizedIso2)
           : Promise.resolve(this.emptyMarkerSummary()),
+        this.supabase.getCountryCapitalByIso2(normalizedIso2),
       ]);
 
       if (requestId !== this.hoveredMetadataRequestId) return;
 
       this.hoveredCountryMetadata.set(metadata);
       this.hoveredCountryMarkerSummary.set(markerSummary);
+      this.hoveredCapitalDot.set(this.buildCapitalDot(capitalCity));
     } catch (err) {
       console.error('Failed to load hovered country metadata', err);
       if (requestId !== this.hoveredMetadataRequestId) return;
 
       this.hoveredCountryMetadata.set(null);
       this.hoveredCountryMarkerSummary.set(this.emptyMarkerSummary());
+      this.hoveredCapitalDot.set(null);
     }
   }
 
@@ -684,24 +691,17 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
     const meridians: string[] = [];
     const parallels: string[] = [];
 
-    const project = (point: Position): Position => {
-      const [lon, lat] = point;
-      const px = ((lon + 180) / 360) * (this.mapWidth - 40) + 20;
-      const py = ((90 - lat) / 180) * (this.mapHeight - 40) + 20;
-      return [px, py];
-    };
-
     // Meridians (vertical lines) every 15° of longitude
     for (let lon = -180; lon <= 180; lon += 15) {
-      const [x1] = project([lon, -90]);
-      const [x2] = project([lon, 90]);
+      const [x1] = this.projectPoint([lon, -90]);
+      const [x2] = this.projectPoint([lon, 90]);
       meridians.push(`M ${x1} 580 L ${x2} 20`);
     }
 
     // Parallels (horizontal lines) every 15° of latitude
     for (let lat = -90; lat <= 90; lat += 15) {
-      const [x1, y1] = project([-180, lat]);
-      const [x2, y2] = project([180, lat]);
+      const [x1, y1] = this.projectPoint([-180, lat]);
+      const [x2, y2] = this.projectPoint([180, lat]);
       parallels.push(`M ${x1} ${y1} L ${x2} ${y2}`);
     }
 
@@ -714,18 +714,36 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
   ): string {
     const commands: string[] = [];
     for (const ring of rings) {
-      if (ring.length < 2) {
-        continue;
-      }
+      if (ring.length < 2) continue;
 
       const projected = ring.map(project);
       commands.push(`M ${projected[0][0]} ${projected[0][1]}`);
-      for (let index = 1; index < projected.length; index += 1) {
+      for (let index = 1; index < projected.length; index += 1)
         commands.push(`L ${projected[index][0]} ${projected[index][1]}`);
-      }
+
       commands.push('Z');
     }
 
     return commands.join(' ');
+  }
+
+  private projectPoint(point: Position): Position {
+    const [lon, lat] = point;
+    const px = ((lon + 180) / 360) * (this.mapWidth - 40) + 20;
+    const py = ((90 - lat) / 180) * (this.mapHeight - 40) + 20;
+    return [px, py];
+  }
+
+  private buildCapitalDot(
+    capital: CountryCapitalCity | null,
+  ): CapitalDot | null {
+    if (!capital) return null;
+
+    const [x, y] = this.projectPoint([capital.longitude, capital.latitude]);
+    return {
+      name: capital.name,
+      x,
+      y,
+    };
   }
 }
