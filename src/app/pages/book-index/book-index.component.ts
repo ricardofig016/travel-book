@@ -1,5 +1,4 @@
-import { Component, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { Component } from '@angular/core';
 import { ChangeDetectionStrategy } from '@angular/core';
 
 @Component({
@@ -10,14 +9,4 @@ import { ChangeDetectionStrategy } from '@angular/core';
   styleUrl: './book-index.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class BookIndexComponent {
-  private router = inject(Router);
-
-  navigatePrev(): void {
-    this.router.navigate(['/account']);
-  }
-
-  navigateNext(): void {
-    this.router.navigate(['/map']);
-  }
-}
+export class BookIndexComponent {}

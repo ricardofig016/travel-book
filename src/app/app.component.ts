@@ -5,8 +5,12 @@ import {
   inject,
   ChangeDetectionStrategy,
   effect,
+  computed,
+  DestroyRef,
 } from '@angular/core';
-import { RouterOutlet, Router } from '@angular/router';
+import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
+import { filter } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SupabaseService, Book } from './services/data/supabase.service';
 import { BookStateService } from './services/data/book-state.service';
 import { CommonModule } from '@angular/common';
@@ -27,6 +31,16 @@ export class AppComponent implements OnInit {
   private supabase = inject(SupabaseService);
   private router = inject(Router);
   private bookState = inject(BookStateService);
+  private destroyRef = inject(DestroyRef);
+  private readonly pageRouteOrder: string[] = [
+    '/cover',
+    '/account',
+    '/index',
+    '/map',
+    '/album',
+    '/statistics',
+  ];
+  private currentPath = signal<string>('/cover');
 
   connectionStatus = signal<{
     ok: boolean;
@@ -40,6 +54,9 @@ export class AppComponent implements OnInit {
   error = signal<string | null>(null);
   isCreatingBook = signal<boolean>(false);
   showCreateDialog = signal<boolean>(false);
+  readonly hasPageNavigation = computed(
+    () => this.getCurrentPageIndex() !== -1,
+  );
 
   constructor() {
     effect(() => {
@@ -52,6 +69,47 @@ export class AppComponent implements OnInit {
     // Check Supabase connection on app init
     const status = await this.supabase.checkConnection();
     this.connectionStatus.set(status);
+    this.currentPath.set(this.normalizeRoutePath(this.router.url));
+
+    this.router.events
+      .pipe(
+        filter(
+          (event): event is NavigationEnd => event instanceof NavigationEnd,
+        ),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((event) => {
+        this.currentPath.set(this.normalizeRoutePath(event.urlAfterRedirects));
+      });
+  }
+
+  navigateToPrevPage(): void {
+    const currentIndex = this.getCurrentPageIndex();
+    if (currentIndex === -1) return;
+
+    const nextIndex =
+      (currentIndex - 1 + this.pageRouteOrder.length) %
+      this.pageRouteOrder.length;
+    void this.router.navigate([this.pageRouteOrder[nextIndex]]);
+  }
+
+  navigateToNextPage(): void {
+    const currentIndex = this.getCurrentPageIndex();
+    if (currentIndex === -1) return;
+
+    const nextIndex = (currentIndex + 1) % this.pageRouteOrder.length;
+    void this.router.navigate([this.pageRouteOrder[nextIndex]]);
+  }
+
+  private normalizeRoutePath(url: string): string {
+    const path = url.split('?')[0].split('#')[0];
+    if (path === '' || path === '/') return '/cover';
+
+    return path;
+  }
+
+  private getCurrentPageIndex(): number {
+    return this.pageRouteOrder.indexOf(this.currentPath());
   }
 
   private async loadBooks(): Promise<void> {

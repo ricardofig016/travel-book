@@ -1,5 +1,4 @@
-import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
-import { Router } from '@angular/router';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 
 @Component({
   selector: 'app-book-cover',
@@ -10,13 +9,4 @@ import { Router } from '@angular/router';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BookCoverComponent {
-  private router = inject(Router);
-
-  navigatePrev(): void {
-    this.router.navigate(['/statistics']);
-  }
-
-  navigateNext(): void {
-    this.router.navigate(['/account']);
-  }
 }

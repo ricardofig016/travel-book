@@ -12,7 +12,6 @@ import {
   signal,
   ViewChild,
 } from '@angular/core';
-import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { BookStateService } from '../../services/data/book-state.service';
 import {
@@ -78,7 +77,6 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
   private static readonly DEFAULT_COUNTRY_FILL = 'transparent';
 
   @ViewChild('mapCanvas') mapCanvas!: ElementRef<HTMLDivElement>;
-  private router = inject(Router);
   private http = inject(HttpClient);
   private supabase = inject(SupabaseService);
   private bookState = inject(BookStateService);
@@ -263,14 +261,6 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
         this.boundWheelHandler,
       );
     }
-  }
-
-  navigatePrev(): void {
-    this.router.navigate(['/index']);
-  }
-
-  navigateNext(): void {
-    this.router.navigate(['/album']);
   }
 
   zoomIn(): void {

@@ -6,7 +6,6 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -26,7 +25,6 @@ type AccountMode = 'signin' | 'signup' | 'authenticated';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AccountComponent {
-  private router = inject(Router);
   private supabase = inject(SupabaseService);
 
   // Auth state from service
@@ -69,14 +67,6 @@ export class AccountComponent {
         this.mode.set('signin');
       }
     });
-  }
-
-  navigatePrev(): void {
-    this.router.navigate(['/cover']);
-  }
-
-  navigateNext(): void {
-    this.router.navigate(['/index']);
   }
 
   switchToSignIn(): void {

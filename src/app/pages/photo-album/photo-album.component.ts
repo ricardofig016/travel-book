@@ -1,5 +1,4 @@
-import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
-import { Router } from '@angular/router';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 
 @Component({
   selector: 'app-photo-album',
@@ -9,14 +8,4 @@ import { Router } from '@angular/router';
   styleUrl: './photo-album.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class PhotoAlbumComponent {
-  private router = inject(Router);
-
-  navigatePrev(): void {
-    this.router.navigate(['/map']);
-  }
-
-  navigateNext(): void {
-    this.router.navigate(['/statistics']);
-  }
-}
+export class PhotoAlbumComponent {}

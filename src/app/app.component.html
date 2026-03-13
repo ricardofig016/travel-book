@@ -82,4 +82,19 @@
   />
 }
 
+@if (hasPageNavigation()) {
+  <div class="page-nav">
+    <button
+      type="button"
+      (click)="navigateToPrevPage()"
+      aria-label="Previous page"
+    >
+      &lt;
+    </button>
+    <button type="button" (click)="navigateToNextPage()" aria-label="Next page">
+      &gt;
+    </button>
+  </div>
+}
+
 <router-outlet />

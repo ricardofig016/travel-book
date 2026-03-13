@@ -1,5 +1,4 @@
-import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
-import { Router } from '@angular/router';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 
 @Component({
   selector: 'app-statistics',
@@ -9,14 +8,4 @@ import { Router } from '@angular/router';
   styleUrl: './statistics.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class StatisticsComponent {
-  private router = inject(Router);
-
-  navigatePrev(): void {
-    this.router.navigate(['/album']);
-  }
-
-  navigateNext(): void {
-    this.router.navigate(['/cover']);
-  }
-}
+export class StatisticsComponent {}
