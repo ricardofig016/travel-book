@@ -50,6 +50,25 @@ export interface BookVisitedLandAreaStats {
   visitedPercent: number;
 }
 
+export interface CountryMetadata {
+  id: string;
+  name: string;
+  native_name: string | null;
+  iso_code_2: string;
+  iso_code_3: string;
+  area: number | null;
+  population: number | null;
+  flag_emoji: string | null;
+}
+
+export interface BookCountryMarkerSummary {
+  markerCount: number;
+  visitedCount: number;
+  favoriteCount: number;
+  wantCount: number;
+  markerCities: string[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class SupabaseService {
   private readonly client: SupabaseClient = createClient(
@@ -581,6 +600,149 @@ export class SupabaseService {
     } catch (err) {
       console.error('Exception calculating visited land area stats:', err);
       return { visitedArea: 0, totalArea: 0, visitedPercent: 0 };
+    }
+  }
+
+  async getCountryMetadataByIso2(
+    iso2: string,
+  ): Promise<CountryMetadata | null> {
+    const normalizedIso2 = iso2.trim().toUpperCase();
+    if (!/^[A-Z]{2}$/.test(normalizedIso2)) return null;
+
+    try {
+      const { data, error } = await this.client
+        .from('countries')
+        .select(
+          'id, name, native_name, iso_code_2, iso_code_3, area, population, flag_emoji',
+        )
+        .eq('iso_code_2', normalizedIso2)
+        .single();
+
+      if (error) {
+        console.error('Error fetching country metadata by ISO2:', error);
+        return null;
+      }
+
+      return (data as CountryMetadata | null) ?? null;
+    } catch (err) {
+      console.error('Exception fetching country metadata by ISO2:', err);
+      return null;
+    }
+  }
+
+  async getTotalLandArea(): Promise<number> {
+    try {
+      const { data, error } = await this.client
+        .from('countries')
+        .select('area');
+
+      if (error) {
+        console.error('Error fetching total land area:', error);
+        return 0;
+      }
+
+      return (data ?? []).reduce((sum, row) => {
+        const area = Number((row as { area?: number | string | null }).area);
+        if (!Number.isFinite(area) || area <= 0) return sum;
+
+        return sum + area;
+      }, 0);
+    } catch (err) {
+      console.error('Exception fetching total land area:', err);
+      return 0;
+    }
+  }
+
+  async getBookMarkerCount(bookId: string): Promise<number> {
+    try {
+      const { count, error } = await this.client
+        .from('markers')
+        .select('id', { count: 'exact', head: true })
+        .eq('book_id', bookId);
+
+      if (error) {
+        console.error('Error fetching marker count for book:', error);
+        return 0;
+      }
+
+      return count ?? 0;
+    } catch (err) {
+      console.error('Exception fetching marker count for book:', err);
+      return 0;
+    }
+  }
+
+  async getBookCountryMarkerSummary(
+    bookId: string,
+    iso2: string,
+  ): Promise<BookCountryMarkerSummary> {
+    const normalizedIso2 = iso2.trim().toUpperCase();
+    if (!/^[A-Z]{2}$/.test(normalizedIso2))
+      return {
+        markerCount: 0,
+        visitedCount: 0,
+        favoriteCount: 0,
+        wantCount: 0,
+        markerCities: [],
+      };
+
+    try {
+      const { data, error } = await this.client
+        .from('markers')
+        .select('visited, favorite, want, cities(name, countries(iso_code_2))')
+        .eq('book_id', bookId);
+
+      if (error) {
+        console.error('Error fetching markers for country summary:', error);
+        return {
+          markerCount: 0,
+          visitedCount: 0,
+          favoriteCount: 0,
+          wantCount: 0,
+          markerCities: [],
+        };
+      }
+
+      const filtered = (data ?? []).filter((marker) => {
+        const markerIso2 = (
+          marker as {
+            cities?: {
+              countries?: { iso_code_2?: string | null } | null;
+            } | null;
+          }
+        )?.cities?.countries?.iso_code_2;
+
+        return markerIso2?.toUpperCase() === normalizedIso2;
+      });
+
+      const markerCities = Array.from(
+        new Set(
+          filtered
+            .map(
+              (marker) =>
+                (marker as { cities?: { name?: string | null } | null })?.cities
+                  ?.name ?? null,
+            )
+            .filter((name): name is string => Boolean(name)),
+        ),
+      );
+
+      return {
+        markerCount: filtered.length,
+        visitedCount: filtered.filter((marker) => marker.visited).length,
+        favoriteCount: filtered.filter((marker) => marker.favorite).length,
+        wantCount: filtered.filter((marker) => marker.want).length,
+        markerCities,
+      };
+    } catch (err) {
+      console.error('Exception fetching marker summary for country:', err);
+      return {
+        markerCount: 0,
+        visitedCount: 0,
+        favoriteCount: 0,
+        wantCount: 0,
+        markerCities: [],
+      };
     }
   }
 }

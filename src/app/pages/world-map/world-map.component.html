@@ -9,19 +9,15 @@
     <div class="metadata-block">
       <div class="metadata-row">
         <strong>Home Country:</strong>
-        @if (homeCountry(); as home) {
-          <span>{{ home.name }}</span>
+        @if (homeCountryMetadata(); as homeMeta) {
+          <span>{{ homeMeta.name }}</span>
         } @else {
           <span>Not set</span>
         }
       </div>
       <div class="metadata-row">
-        <strong>Home ISO2:</strong>
-        @if (homeCountry(); as home) {
-          <span>{{ home.iso2 }}</span>
-        } @else {
-          <span>Not set</span>
-        }
+        <strong>Book Markers:</strong>
+        <span>{{ bookMarkerCount() }}</span>
       </div>
       <div class="metadata-row">
         <strong>Visited Countries:</strong>
@@ -29,31 +25,61 @@
       </div>
       <div class="metadata-row">
         <strong>Visited Land Area:</strong>
+        <span>{{ formatArea(visitedLandAreaSqKm()) }}</span>
+      </div>
+      <div class="metadata-row">
+        <strong>Visited Land Share:</strong>
         <span>{{ visitedLandAreaLabel() }}</span>
+      </div>
+      <div class="metadata-row">
+        <strong>Home Already Visited:</strong>
+        <span>{{ homeCountryVisited() ? "Yes" : "No" }}</span>
       </div>
     </div>
 
     <div class="metadata-block">
       <div class="metadata-row">
         <strong>Hovered Country:</strong>
-        @if (hoveredCountry(); as country) {
-          <span>{{ country.name }}</span>
+        @if (hoveredCountryMetadata(); as countryMeta) {
+          <span>{{ countryMeta.name }}</span>
         } @else {
           <span>None</span>
         }
       </div>
       <div class="metadata-row">
-        <strong>ISO2:</strong>
-        @if (hoveredCountry(); as country) {
-          <span>{{ country.iso2 }}</span>
+        <strong>Native Name:</strong>
+        @if (hoveredCountryMetadata(); as countryMeta) {
+          <span>{{ countryMeta.native_name || "N/A" }}</span>
         } @else {
           <span>None</span>
         }
       </div>
       <div class="metadata-row">
-        <strong>ISO3:</strong>
-        @if (hoveredCountry(); as country) {
-          <span>{{ country.iso3 }}</span>
+        <strong>Population:</strong>
+        @if (hoveredCountryMetadata(); as countryMeta) {
+          <span>{{ formatPopulation(countryMeta.population) }}</span>
+        } @else {
+          <span>None</span>
+        }
+      </div>
+      <div class="metadata-row">
+        <strong>Land Area:</strong>
+        @if (hoveredCountryMetadata(); as countryMeta) {
+          <span>{{ formatArea(countryMeta.area) }}</span>
+        } @else {
+          <span>None</span>
+        }
+      </div>
+      <div class="metadata-row">
+        <strong>World Land Share:</strong>
+        <span>{{ formatPercent(hoveredCountryWorldAreaPercent()) }}</span>
+      </div>
+      <div class="metadata-row">
+        <strong>ISO:</strong>
+        @if (hoveredCountryMetadata(); as countryMeta) {
+          <span
+            >{{ countryMeta.iso_code_2 }} / {{ countryMeta.iso_code_3 }}</span
+          >
         } @else {
           <span>None</span>
         }
@@ -62,6 +88,26 @@
         <strong>Parts:</strong>
         @if (hoveredCountry(); as country) {
           <span>{{ country.parts }}</span>
+        } @else {
+          <span>None</span>
+        }
+      </div>
+      <div class="metadata-row">
+        <strong>Markers:</strong>
+        <span>{{ hoveredCountryMarkerSummary().markerCount }}</span>
+      </div>
+      <div class="metadata-row">
+        <strong>Status:</strong>
+        <span>
+          V {{ hoveredCountryMarkerSummary().visitedCount }} | F
+          {{ hoveredCountryMarkerSummary().favoriteCount }} | W
+          {{ hoveredCountryMarkerSummary().wantCount }}
+        </span>
+      </div>
+      <div class="metadata-row">
+        <strong>Marker Cities:</strong>
+        @if (hoveredCountryMetadata()) {
+          <span>{{ hoveredMarkerCitiesLabel() }}</span>
         } @else {
           <span>None</span>
         }

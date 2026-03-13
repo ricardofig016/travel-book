@@ -16,6 +16,8 @@ import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { BookStateService } from '../../services/data/book-state.service';
 import {
+  BookCountryMarkerSummary,
+  CountryMetadata,
   CountryIsoLookup,
   SupabaseService,
 } from '../../services/data/supabase.service';
@@ -48,6 +50,8 @@ interface CountryShape {
   paths: string[];
 }
 
+interface EmptyMarkerSummary extends BookCountryMarkerSummary {}
+
 type GeoJsonGeometry =
   | { type: 'Polygon'; coordinates: Position[][] }
   | { type: 'MultiPolygon'; coordinates: Position[][][] };
@@ -61,9 +65,9 @@ type GeoJsonGeometry =
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
-  private static readonly HOVERED_COUNTRY_FILL = '#f2bf75';
-  private static readonly HOME_COUNTRY_FILL = '#7ecf8e';
-  private static readonly VISITED_COUNTRY_FILL = '#afc8ff';
+  private static readonly HOVERED_COUNTRY_FILL = '#f2af55';
+  private static readonly HOME_COUNTRY_FILL = '#7fcf6e';
+  private static readonly VISITED_COUNTRY_FILL = '#8fa8ff';
   private static readonly DEFAULT_COUNTRY_FILL = 'transparent';
 
   @ViewChild('mapCanvas') mapCanvas!: ElementRef<HTMLDivElement>;
@@ -73,13 +77,6 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
   private bookState = inject(BookStateService);
   private readonly hoverDebugEnabled = true;
   private boundWheelHandler: ((event: WheelEvent) => void) | null = null;
-
-  constructor() {
-    effect(() => {
-      const bookId = this.bookState.selectedBook()?.id ?? null;
-      void this.loadVisitedMetadata(bookId);
-    });
-  }
 
   protected readonly mapWidth = 1200;
   protected readonly mapHeight = 600;
@@ -98,9 +95,48 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
   protected readonly homeCountryIso2 = signal<string | null>(null);
   protected readonly visitedCountryIso2s = signal<Set<string>>(new Set());
   protected readonly visitedLandAreaPercent = signal(0);
+  protected readonly visitedLandAreaSqKm = signal(0);
+  protected readonly totalLandAreaSqKm = signal(0);
+  protected readonly bookMarkerCount = signal(0);
+  protected readonly homeCountryMetadata = signal<CountryMetadata | null>(null);
+  protected readonly hoveredCountryMetadata = signal<CountryMetadata | null>(
+    null,
+  );
+  protected readonly hoveredCountryMarkerSummary =
+    signal<BookCountryMarkerSummary>(this.emptyMarkerSummary());
   protected readonly visitedLandAreaLabel = computed(
     () => `${this.visitedLandAreaPercent().toFixed(2)}%`,
   );
+  protected readonly homeCountryVisited = computed(() => {
+    const homeIso2 = this.homeCountryMetadata()?.iso_code_2;
+    if (!homeIso2) return false;
+
+    return this.visitedCountryIso2s().has(homeIso2);
+  });
+  protected readonly homeCountryWorldAreaPercent = computed(() => {
+    const homeArea = this.homeCountryMetadata()?.area;
+    const totalArea = this.totalLandAreaSqKm();
+    if (!homeArea || totalArea <= 0) return 0;
+
+    return (homeArea / totalArea) * 100;
+  });
+  protected readonly hoveredCountryWorldAreaPercent = computed(() => {
+    const hoveredArea = this.hoveredCountryMetadata()?.area;
+    const totalArea = this.totalLandAreaSqKm();
+    if (!hoveredArea || totalArea <= 0) return 0;
+
+    return (hoveredArea / totalArea) * 100;
+  });
+  protected readonly hoveredMarkerCitiesLabel = computed(() => {
+    const cities = this.hoveredCountryMarkerSummary().markerCities;
+    if (cities.length === 0) return 'None';
+
+    const visibleCount = 6;
+    const visible = cities.slice(0, visibleCount).join(', ');
+    if (cities.length <= visibleCount) return visible;
+
+    return `${visible} +${cities.length - visibleCount} more`;
+  });
   protected readonly homeCountry = computed(() => {
     const iso2 = this.homeCountryIso2();
     if (!iso2) {
@@ -131,9 +167,30 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
   private activePointerId: number | null = null;
   private lastPointerX = 0;
   private lastPointerY = 0;
+  private hoveredMetadataRequestId = 0;
+  private homeMetadataRequestId = 0;
+
+  constructor() {
+    effect(() => {
+      const bookId = this.bookState.selectedBook()?.id ?? null;
+      void this.loadVisitedMetadata(bookId);
+    });
+
+    effect(() => {
+      const iso2 = this.homeCountryIso2();
+      void this.loadHomeCountryMetadata(iso2);
+    });
+
+    effect(() => {
+      const hoveredIso2 = this.hoveredCountry()?.iso2 ?? null;
+      const bookId = this.bookState.selectedBook()?.id ?? null;
+      void this.loadHoveredCountryMetadata(hoveredIso2, bookId);
+    });
+  }
 
   ngOnInit(): void {
     void this.loadMap();
+    void this.loadTotalLandArea();
     void this.loadHomeCountry();
   }
 
@@ -505,22 +562,122 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!bookId) {
       this.visitedCountryIso2s.set(new Set());
       this.visitedLandAreaPercent.set(0);
+      this.visitedLandAreaSqKm.set(0);
+      this.bookMarkerCount.set(0);
       return;
     }
 
     try {
-      const [iso2s, areaStats] = await Promise.all([
+      const [iso2s, areaStats, markerCount] = await Promise.all([
         this.supabase.getVisitedCountryIso2s(bookId),
         this.supabase.getBookVisitedLandAreaStats(bookId),
+        this.supabase.getBookMarkerCount(bookId),
       ]);
 
       this.visitedCountryIso2s.set(new Set(iso2s));
       this.visitedLandAreaPercent.set(areaStats.visitedPercent);
+      this.visitedLandAreaSqKm.set(areaStats.visitedArea);
+      this.bookMarkerCount.set(markerCount);
+      if (areaStats.totalArea > 0)
+        this.totalLandAreaSqKm.set(areaStats.totalArea);
     } catch (err) {
       console.error('Failed to load visited metadata', err);
       this.visitedCountryIso2s.set(new Set());
       this.visitedLandAreaPercent.set(0);
+      this.visitedLandAreaSqKm.set(0);
+      this.bookMarkerCount.set(0);
     }
+  }
+
+  private async loadTotalLandArea(): Promise<void> {
+    try {
+      const totalArea = await this.supabase.getTotalLandArea();
+      this.totalLandAreaSqKm.set(totalArea);
+    } catch (err) {
+      console.error('Failed to load total land area', err);
+      this.totalLandAreaSqKm.set(0);
+    }
+  }
+
+  private async loadHomeCountryMetadata(iso2: string | null): Promise<void> {
+    const requestId = ++this.homeMetadataRequestId;
+    const normalizedIso2 = this.normalizeIso2(iso2 ?? undefined);
+    if (!normalizedIso2) {
+      this.homeCountryMetadata.set(null);
+      return;
+    }
+
+    try {
+      const metadata =
+        await this.supabase.getCountryMetadataByIso2(normalizedIso2);
+      if (requestId !== this.homeMetadataRequestId) return;
+
+      this.homeCountryMetadata.set(metadata);
+    } catch (err) {
+      console.error('Failed to load home country metadata', err);
+      if (requestId !== this.homeMetadataRequestId) return;
+
+      this.homeCountryMetadata.set(null);
+    }
+  }
+
+  private async loadHoveredCountryMetadata(
+    iso2: string | null,
+    bookId: string | null,
+  ): Promise<void> {
+    const requestId = ++this.hoveredMetadataRequestId;
+    const normalizedIso2 = this.normalizeIso2(iso2 ?? undefined);
+
+    if (!normalizedIso2) {
+      this.hoveredCountryMetadata.set(null);
+      this.hoveredCountryMarkerSummary.set(this.emptyMarkerSummary());
+      return;
+    }
+
+    try {
+      const [metadata, markerSummary] = await Promise.all([
+        this.supabase.getCountryMetadataByIso2(normalizedIso2),
+        bookId
+          ? this.supabase.getBookCountryMarkerSummary(bookId, normalizedIso2)
+          : Promise.resolve(this.emptyMarkerSummary()),
+      ]);
+
+      if (requestId !== this.hoveredMetadataRequestId) return;
+
+      this.hoveredCountryMetadata.set(metadata);
+      this.hoveredCountryMarkerSummary.set(markerSummary);
+    } catch (err) {
+      console.error('Failed to load hovered country metadata', err);
+      if (requestId !== this.hoveredMetadataRequestId) return;
+
+      this.hoveredCountryMetadata.set(null);
+      this.hoveredCountryMarkerSummary.set(this.emptyMarkerSummary());
+    }
+  }
+
+  protected formatPopulation(value: number | null | undefined): string {
+    if (!value || value <= 0) return 'N/A';
+    return value.toLocaleString();
+  }
+
+  protected formatArea(value: number | null | undefined): string {
+    if (!value || value <= 0) return 'N/A';
+    return `${Math.round(value).toLocaleString()} km²`;
+  }
+
+  protected formatPercent(value: number): string {
+    if (!Number.isFinite(value) || value <= 0) return '0.00%';
+    return `${value.toFixed(2)}%`;
+  }
+
+  private emptyMarkerSummary(): EmptyMarkerSummary {
+    return {
+      markerCount: 0,
+      visitedCount: 0,
+      favoriteCount: 0,
+      wantCount: 0,
+      markerCities: [],
+    };
   }
 
   private buildGridPaths(): { meridians: string[]; parallels: string[] } {
