@@ -175,6 +175,21 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
   private lastPointerY = 0;
   private hoveredMetadataRequestId = 0;
   private homeMetadataRequestId = 0;
+  private countryMetadataCache = new Map<string, CountryMetadata | null>();
+  private countryMetadataInFlight = new Map<
+    string,
+    Promise<CountryMetadata | null>
+  >();
+  private countryCapitalCache = new Map<string, CountryCapitalCity | null>();
+  private countryCapitalInFlight = new Map<
+    string,
+    Promise<CountryCapitalCity | null>
+  >();
+  private markerSummaryCache = new Map<string, BookCountryMarkerSummary>();
+  private markerSummaryInFlight = new Map<
+    string,
+    Promise<BookCountryMarkerSummary>
+  >();
 
   constructor() {
     effect(() => {
@@ -601,8 +616,7 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     try {
-      const metadata =
-        await this.supabase.getCountryMetadataByIso2(normalizedIso2);
+      const metadata = await this.getCountryMetadataCached(normalizedIso2);
       if (requestId !== this.homeMetadataRequestId) return;
 
       this.homeCountryMetadata.set(metadata);
@@ -628,13 +642,36 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
+    const markerSummaryKey = this.getMarkerSummaryCacheKey(
+      bookId,
+      normalizedIso2,
+    );
+    if (this.countryMetadataCache.has(normalizedIso2))
+      this.hoveredCountryMetadata.set(
+        this.countryMetadataCache.get(normalizedIso2) ?? null,
+      );
+    else this.hoveredCountryMetadata.set(null);
+
+    if (this.countryCapitalCache.has(normalizedIso2))
+      this.hoveredCapitalDot.set(
+        this.buildCapitalDot(
+          this.countryCapitalCache.get(normalizedIso2) ?? null,
+        ),
+      );
+    else this.hoveredCapitalDot.set(null);
+
+    if (markerSummaryKey && this.markerSummaryCache.has(markerSummaryKey))
+      this.hoveredCountryMarkerSummary.set(
+        this.markerSummaryCache.get(markerSummaryKey) ??
+          this.emptyMarkerSummary(),
+      );
+    else this.hoveredCountryMarkerSummary.set(this.emptyMarkerSummary());
+
     try {
       const [metadata, markerSummary, capitalCity] = await Promise.all([
-        this.supabase.getCountryMetadataByIso2(normalizedIso2),
-        bookId
-          ? this.supabase.getBookCountryMarkerSummary(bookId, normalizedIso2)
-          : Promise.resolve(this.emptyMarkerSummary()),
-        this.supabase.getCountryCapitalByIso2(normalizedIso2),
+        this.getCountryMetadataCached(normalizedIso2),
+        this.getBookCountryMarkerSummaryCached(bookId, normalizedIso2),
+        this.getCountryCapitalCached(normalizedIso2),
       ]);
 
       if (requestId !== this.hoveredMetadataRequestId) return;
@@ -650,6 +687,89 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
       this.hoveredCountryMarkerSummary.set(this.emptyMarkerSummary());
       this.hoveredCapitalDot.set(null);
     }
+  }
+
+  private getMarkerSummaryCacheKey(
+    bookId: string | null,
+    iso2: string,
+  ): string | null {
+    return bookId ? `${bookId}:${iso2}` : null;
+  }
+
+  private async getCountryMetadataCached(
+    iso2: string,
+  ): Promise<CountryMetadata | null> {
+    if (this.countryMetadataCache.has(iso2))
+      return this.countryMetadataCache.get(iso2) ?? null;
+
+    const inFlightRequest = this.countryMetadataInFlight.get(iso2);
+    if (inFlightRequest) return inFlightRequest;
+
+    const request = this.supabase
+      .getCountryMetadataByIso2(iso2)
+      .then((metadata) => {
+        this.countryMetadataCache.set(iso2, metadata);
+        return metadata;
+      })
+      .finally(() => {
+        this.countryMetadataInFlight.delete(iso2);
+      });
+
+    this.countryMetadataInFlight.set(iso2, request);
+    return request;
+  }
+
+  private async getCountryCapitalCached(
+    iso2: string,
+  ): Promise<CountryCapitalCity | null> {
+    if (this.countryCapitalCache.has(iso2))
+      return this.countryCapitalCache.get(iso2) ?? null;
+
+    const inFlightRequest = this.countryCapitalInFlight.get(iso2);
+    if (inFlightRequest) return inFlightRequest;
+
+    const request = this.supabase
+      .getCountryCapitalByIso2(iso2)
+      .then((capital) => {
+        this.countryCapitalCache.set(iso2, capital);
+        return capital;
+      })
+      .finally(() => {
+        this.countryCapitalInFlight.delete(iso2);
+      });
+
+    this.countryCapitalInFlight.set(iso2, request);
+    return request;
+  }
+
+  private async getBookCountryMarkerSummaryCached(
+    bookId: string | null,
+    iso2: string,
+  ): Promise<BookCountryMarkerSummary> {
+    const activeBookId = bookId;
+    if (!activeBookId) return this.emptyMarkerSummary();
+
+    const key = this.getMarkerSummaryCacheKey(activeBookId, iso2);
+    if (!key) return this.emptyMarkerSummary();
+
+    if (this.markerSummaryCache.has(key))
+      return this.markerSummaryCache.get(key) ?? this.emptyMarkerSummary();
+
+    const inFlightRequest = this.markerSummaryInFlight.get(key);
+    if (inFlightRequest) return inFlightRequest;
+
+    const request = this.supabase
+      .getBookCountryMarkerSummary(activeBookId, iso2)
+      .then((summary) => {
+        this.markerSummaryCache.set(key, summary);
+        return summary;
+      })
+      .finally(() => {
+        this.markerSummaryInFlight.delete(key);
+      });
+
+    this.markerSummaryInFlight.set(key, request);
+    return request;
   }
 
   protected formatPopulation(value: number | null | undefined): string {
