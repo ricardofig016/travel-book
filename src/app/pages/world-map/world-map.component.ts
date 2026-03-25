@@ -14,13 +14,13 @@ import {
 } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { BookStateService } from '../../services/data/book-state.service';
+import { SupabaseService } from '../../services/data/supabase.service';
 import {
   BookCountryMarkerSummary,
   CountryCapitalCity,
   CountryMetadata,
   CountryIsoLookup,
-  SupabaseService,
-} from '../../services/data/supabase.service';
+} from '../../services/data/supabase/models';
 
 type Position = [number, number];
 

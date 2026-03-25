@@ -9,10 +9,8 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
-import {
-  CitySearchResult,
-  SupabaseService,
-} from '../../services/data/supabase.service';
+import { SupabaseService } from '../../services/data/supabase.service';
+import { CitySearchResult } from '../../services/data/supabase/models';
 
 type AccountMode = 'signin' | 'signup' | 'authenticated';
 

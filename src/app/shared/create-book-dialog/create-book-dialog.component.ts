@@ -7,10 +7,8 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import {
-  SupabaseService,
-  UserLookupResult,
-} from '../../services/data/supabase.service';
+import { SupabaseService } from '../../services/data/supabase.service';
+import { UserLookupResult } from '../../services/data/supabase/models';
 
 export interface CreateBookResult {
   name: string;
