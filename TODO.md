@@ -3,9 +3,9 @@
 - [ ] test: add supabase tests of authenticated, non-admin users
 - [ ] data: setup cloudinary
 - [ ] data: seed cloudinary with demo photos for the demo book
-- [ ] fix: country hover metadata takes too long to load
-- [ ] map: add a script to run on the transformed geojson data (public/assets/data/geo/visvalingam-weighted_1.8pct_keepshapes_clean.geojson) to remove countries not included in the db (Northern Cyprus, Baikonur Cosmodrome) and normalize countries with missing iso codes (France, Norway)
-- [ ] refactor: world map component is getting too big
+- [x] fix: country hover metadata takes too long to load - this was fixed when country caching was implemented
+- [x] map: add a script to run on the transformed geojson data (public/assets/data/geo/visvalingam-weighted_1.8pct_keepshapes_clean.geojson) to remove countries not included in the db (Northern Cyprus, Baikonur Cosmodrome) and normalize countries with missing iso codes (France, Norway)
+- [x] refactor: world map component is getting too big
 - [x] refactor: supabase service is getting too big - split into separate services in new supabase/ directory
 - [x] fix: continuously hovering different countries very fast causes the metadata block to get stuck for a long time waiting for all the other requests to resolve. maybe save data as cache in the component so that if the user hovers a country that was already hovered before, the metadata block can be populated immediately without waiting for the request to resolve again
 - [x] app: move nav buttons from each page to the main app component

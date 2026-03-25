@@ -31,6 +31,31 @@ python seed_countries.py
 
 `visvalingam-weighted_1.8pct_keepshapes_clean.geojson` already exists in `../data`.
 
+**Optional cleanup/normalization (recommended before seeding shapes)**
+
+```bash
+python normalize_country_shapes_geojson.py
+```
+
+- Removes GeoJSON features that do not map to a country in the `countries` table (e.g., disputed/non-DB shapes)
+- Normalizes feature `name`, `ISO3166-1-Alpha-2`, and `ISO3166-1-Alpha-3` from DB values
+- Fixes placeholder ISO codes like `-99` via the same match strategy used by shape seeding
+- Tries to dissolve removed shapes into adjacent parent countries to prevent empty map holes (requires `shapely`)
+- Prints detailed per-country logs (found, kept, updated, removed) and summary diagnostics
+- Default output: `../data/visvalingam-weighted_1.8pct_keepshapes_clean.db-normalized.geojson`
+
+Install dissolve dependency (one time):
+
+```bash
+pip install shapely
+```
+
+To overwrite the source file in-place:
+
+```bash
+python normalize_country_shapes_geojson.py --in-place
+```
+
 **Seed to Supabase**
 
 ```bash
