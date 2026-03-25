@@ -39,6 +39,14 @@ DEFAULT_OUTPUT_FILE = Path(__file__).parent.parent / "data" / "visvalingam-weigh
 
 INVALID_ISO_VALUES = {"", "-99", "N/A", "NA", "NULL", "NONE", "--", "-"}
 
+# Deterministic dissolve overrides for known special cases.
+FORCED_DISSOLVE_PARENT_BY_FEATURE_NAME = {
+    "somaliland": "somalia",
+}
+NEVER_DISSOLVE_FEATURE_NAMES = {
+    "brazilian island",
+}
+
 load_dotenv(ENV_PATH)
 
 
@@ -303,12 +311,18 @@ def dissolve_unmatched_into_parents(
         template_feature_by_country.setdefault(item.country.country_id, item.feature)
 
     country_union: dict[str, Any] = {}
+    country_id_by_name: dict[str, str] = {}
     for country_id, geoms in grouped_by_country.items():
         try:
             country_union[country_id] = unary_union(geoms)
         except Exception:
             if geoms:
                 country_union[country_id] = geoms[0]
+
+        template = template_feature_by_country.get(country_id, {})
+        country_name = str(template.get("properties", {}).get("name") or "").strip()
+        if country_name:
+            country_id_by_name[canonicalize(country_name)] = country_id
 
     dissolved = 0
     not_dissolved = 0
@@ -320,6 +334,12 @@ def dissolve_unmatched_into_parents(
             not_dissolved += 1
             continue
 
+        removed_name_key = canonicalize(removed.name)
+        if removed_name_key in NEVER_DISSOLVE_FEATURE_NAMES:
+            not_dissolved += 1
+            dissolve_logs.append(f"not dissolved: {removed.name} (override: never dissolve)")
+            continue
+
         try:
             removed_geom = shape(geometry)
         except Exception:
@@ -328,6 +348,25 @@ def dissolve_unmatched_into_parents(
 
         if removed_geom.is_empty:
             not_dissolved += 1
+            continue
+
+        forced_parent_name = FORCED_DISSOLVE_PARENT_BY_FEATURE_NAME.get(removed_name_key)
+        if forced_parent_name:
+            forced_country_id = country_id_by_name.get(canonicalize(forced_parent_name))
+            if forced_country_id and forced_country_id in country_union:
+                try:
+                    country_union[forced_country_id] = unary_union([country_union[forced_country_id], removed_geom])
+                    dissolved += 1
+                    parent_name = template_feature_by_country.get(forced_country_id, {}).get("properties", {}).get("name", forced_parent_name)
+                    dissolve_logs.append(f"dissolved: {removed.name} -> {parent_name} (override)")
+                    continue
+                except Exception:
+                    not_dissolved += 1
+                    dissolve_logs.append(f"not dissolved: {removed.name} (override union failed)")
+                    continue
+
+            not_dissolved += 1
+            dissolve_logs.append(f"not dissolved: {removed.name} (override parent not found: {forced_parent_name})")
             continue
 
         best_country_id: str | None = None
