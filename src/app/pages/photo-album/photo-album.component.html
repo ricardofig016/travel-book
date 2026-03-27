@@ -1,1 +1,20 @@
-<h1>album</h1>
+<section>
+  @if (viewType() === "landing") {
+    <h1>Album</h1>
+    <p>Album landing page.</p>
+  }
+
+  @if (viewType() === "country") {
+    <h1>Album Country Index</h1>
+    <p>Country: {{ countrySlug() }}</p>
+    <a routerLink="/album">Back to album landing</a>
+  }
+
+  @if (viewType() === "city-marker") {
+    <h1>Album City Marker</h1>
+    <p>Country: {{ countrySlug() }}</p>
+    <p>City: {{ citySlug() }}</p>
+    <p>Marker id tail: {{ idTail() }}</p>
+    <a [routerLink]="['/album', countrySlug()]">Back to country index</a>
+  }
+</section>

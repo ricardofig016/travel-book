@@ -30,15 +30,28 @@ Cover -> Account -> Index -> Map -> Album -> Statistics -> Back Cover.
   - Minimal map: manually rendered country shapes from static file `visvalingam-weighted_1.8pct_keepshapes_clean.geojson`.
   - Hierarchy: Country level only (MVP).
   - Countries automatically filled based on markers (user's home country colored distinctly from visited countries).
-  - Click country -> country entry page with:
+  - Click country -> country modal with:
     - Searchable city list -> marker form
-    - Popular dishes checklist
-    - Marker list
+    - Country entry page link (/album/:countrySlug)
+    - Marker list with marker links to album pages (/album/:countrySlug/:citySlug--:idTail)
   - Marker details view with "See Album" if photos exist.
 - **Photo Album**:
+  - Album is divided into countries (if there's a marker in that country), and each country is divided into cities (if there's a marker in that city).
+  - Routing structure (hybrid, human-readable + stable tail id):
+    - `/album` -> album landing page.
+    - `/album/:countrySlug` -> country index page in album context.
+    - `/album/:countrySlug/:citySlug--:idTail` -> city marker album page, where `idTail` is the last 12 characters of the marker UUID.
+  - Route matching and lookup rules:
+    - `:citySlug--:idTail` is the canonical city-marker route format.
+    - `idTail` (last 12 characters) is used to narrow marker lookup, then validated against the selected book context.
+    - Slugs are for readability and navigation; the identifier tail is the stability anchor.
+    - If a slug does not match canonical marker/city/country naming, the app should redirect to the canonical route.
+  - Each country is divided into:
+    - an 'index' page with country metadata (capital, population, flag, coat of arms, etc) and book specific info (markers, dishes tried, etc).
+    - several city sections (each representing a marker) each with enough pages for all the photos of that marker. Each city section starts with a city entry page with marker specific info, followed by photo pages.
   - Scrapbook two-page spreads; taped/rotated photos; page flip navigation.
-  - Each page is selected from one of the template layouts. There's layouts for pages with 2 and 3 photos. Layouts have designated areas for photos, captions, doodles, etc. Photo rotation is random within a small angle range to create a casual, scrapbook feel.
-  - Album are sorted by country name, then city name.
+  - Each page is selected from one of the template layouts. There's layouts for pages with 2 and 3 photos. Layouts have designated areas for photos, captions, doodles, etc. Photo rotation is random within a small angle range to create a casual, scrapbook feel. Layouts are dynamically selected so that every city section has at least one free photo slot for adding new photos, and the last page of a city section is always on the right side of the spread, so that the next city section can start on a new spread.
+  - Album are sorted alphabetically by country name, then city name.
   - Photos on a city's marker are sorted by date taken.
   - Photo page layouts are selected randomly at render time, with constraints to ensure that the last photo page of a city album:
     - has a free photo slot to add new photos

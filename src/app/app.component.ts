@@ -105,6 +105,7 @@ export class AppComponent implements OnInit {
   private normalizeRoutePath(url: string): string {
     const path = url.split('?')[0].split('#')[0];
     if (path === '' || path === '/') return '/cover';
+    if (path === '/album' || path.startsWith('/album/')) return '/album';
 
     return path;
   }
