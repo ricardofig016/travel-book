@@ -5,6 +5,7 @@
 - [ ] data: seed cloudinary with demo photos for the demo book
 - [ ] album: if the url is `album/:countrySlug/:citySlug`, redirect to `album/:countrySlug/:citySlug--:idTail` with the best match for idTail for that city.
 - [ ] chore: remove index route completely since it has redundant information that is managed by the bookmarks
+- [ ] chore: rename page components' folders to match route names (e.g. photo-album -> album, book-cover -> cover, etc.)
 - [x] fix: country hover metadata takes too long to load - this was fixed when country caching was implemented
 - [x] map: add a script to run on the transformed geojson data (public/assets/data/geo/visvalingam-weighted_1.8pct_keepshapes_clean.geojson) to remove countries not included in the db (Northern Cyprus, Baikonur Cosmodrome) and normalize countries with missing iso codes (France, Norway)
 - [x] refactor: world map component is getting too big
