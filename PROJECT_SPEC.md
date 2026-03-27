@@ -3,7 +3,7 @@
 ## Overview
 
 Personal travel journal web app using a physical book metaphor. Navigation flow:
-Cover -> Account -> Index -> Map -> Album -> Statistics -> Back Cover.
+Cover -> Account -> Map -> Album -> Statistics -> Back Cover.
 
 ## Stack + Services
 
@@ -25,7 +25,6 @@ Cover -> Account -> Index -> Map -> Album -> Statistics -> Back Cover.
 - **Account**:
   - user account/authentication page on the back of the front cover, with a passport where the user can sign up, sign in, sign out and view their profile information.
   - entry page (page 1) with title, logo, description, and authorship info.
-- **Book Index**: table of contents for Map, Album, Statistics.
 - **World Map**:
   - Minimal map: manually rendered country shapes from static file `visvalingam-weighted_1.8pct_keepshapes_clean.geojson`.
   - Hierarchy: Country level only (MVP).

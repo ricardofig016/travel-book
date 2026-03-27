@@ -36,7 +36,6 @@ export class AppComponent implements OnInit {
   private readonly pageRouteOrder: string[] = [
     '/cover',
     '/account',
-    '/index',
     '/map',
     '/album',
     '/statistics',
