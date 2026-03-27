@@ -290,6 +290,61 @@ export class AlbumDataService {
     };
   }
 
+  async getBestCityMarkerIdTail(
+    bookId: string,
+    countrySlug: string,
+    citySlug: string,
+  ): Promise<string | null> {
+    const rows = await this.fetchMarkerCountryRows(bookId);
+
+    const candidates = rows
+      .map((row) => {
+        const markerId = row.id ?? null;
+        const rowCountryName = row.cities?.countries?.name ?? null;
+        const rowCityName = row.cities?.name ?? null;
+        if (!markerId || !rowCountryName || !rowCityName) return null;
+
+        if (
+          this.slugify(rowCountryName) !== countrySlug ||
+          this.slugify(rowCityName) !== citySlug
+        )
+          return null;
+
+        return {
+          markerId,
+          markerIdTail: markerId.slice(-12),
+          photoCount: (row.photos ?? []).length,
+          visited: Boolean(row.visited),
+          favorite: Boolean(row.favorite),
+          want: Boolean(row.want),
+        };
+      })
+      .filter(
+        (
+          value,
+        ): value is {
+          markerId: string;
+          markerIdTail: string;
+          photoCount: number;
+          visited: boolean;
+          favorite: boolean;
+          want: boolean;
+        } => value !== null,
+      )
+      .sort((a, b) => {
+        if (a.photoCount !== b.photoCount) return b.photoCount - a.photoCount;
+        if (a.visited !== b.visited)
+          return Number(b.visited) - Number(a.visited);
+        if (a.favorite !== b.favorite)
+          return Number(b.favorite) - Number(a.favorite);
+        if (a.want !== b.want) return Number(a.want) - Number(b.want);
+        return a.markerId.localeCompare(b.markerId);
+      });
+
+    if (candidates.length === 0) return null;
+    return candidates[0].markerIdTail;
+  }
+
   private async fetchMarkerCountryRows(
     bookId: string,
     includeMarkerDetails = false,

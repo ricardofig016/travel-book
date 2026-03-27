@@ -3,7 +3,7 @@
 - [ ] test: add supabase tests of authenticated, non-admin users
 - [ ] data: setup cloudinary
 - [ ] data: seed cloudinary with demo photos for the demo book
-- [ ] album: if the url is `album/:countrySlug/:citySlug` (missing/incorrect idTail), redirect to `album/:countrySlug/:citySlug--:idTail` with the best match for idTail for that city.
+- [x] album: if the url is `album/:countrySlug/:citySlug` (with missing/incorrect idTail), redirect to `album/:countrySlug/:citySlug--:idTail` with the best match for idTail for that city. if the matching fails, redirect to `album/:countrySlug`
 - [x] refactor: rename page components' folders and files to match route names (photo-album -> album, book-cover -> cover, world-map -> map)
 - [x] chore: remove index page completely since it has redundant information that will be managed by the bookmarks
 - [x] fix: country hover metadata takes too long to load - this was fixed when country caching was implemented

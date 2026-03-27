@@ -12,6 +12,8 @@ import { AccountComponent } from './pages/account/account.component';
 import { WorldMapComponent } from './pages/map/map.component';
 import { PhotoAlbumComponent } from './pages/album/album.component';
 import { StatisticsComponent } from './pages/statistics/statistics.component';
+import { BookStateService } from './services/data/book-state.service';
+import { AlbumDataService } from './services/album/album-data.service';
 
 const albumCityMarkerMatcher = (
   segments: UrlSegment[],
@@ -39,22 +41,81 @@ const albumCityMarkerMatcher = (
   };
 };
 
-const albumCityMarkerGuard: CanActivateFn = (route) => {
+const albumCityMarkerGuard: CanActivateFn = async (route) => {
   const router = inject(Router);
+  const bookState = inject(BookStateService);
+  const albumData = inject(AlbumDataService);
   const countrySlug = route.paramMap.get('countrySlug');
   const citySlug = route.paramMap.get('citySlug');
   const idTail = route.paramMap.get('idTail');
-  const safeIdTail = idTail ?? '';
 
   if (!countrySlug) return router.createUrlTree(['/album']);
+  if (!citySlug) return router.createUrlTree(['/album', countrySlug]);
 
-  const isValidCityMarker =
-    Boolean(citySlug) && /^[0-9a-f]{12}$/i.test(safeIdTail);
+  let selectedBookId = bookState.selectedBook()?.id ?? null;
 
-  if (!isValidCityMarker) return router.createUrlTree(['/album', countrySlug]);
+  if (!selectedBookId && !bookState.booksInitialized()) {
+    await waitForBooksInitialization(bookState);
+    selectedBookId = bookState.selectedBook()?.id ?? null;
+  }
 
-  return true;
+  if (!selectedBookId) return router.createUrlTree(['/album', countrySlug]);
+
+  const safeIdTail = idTail ?? '';
+  const isValidTailFormat = /^[0-9a-f]{12}$/i.test(safeIdTail);
+
+  if (isValidTailFormat) {
+    const exactMatch = await albumData.getCityMarkerPage(
+      selectedBookId,
+      countrySlug,
+      citySlug,
+      safeIdTail,
+    );
+
+    if (exactMatch) return true;
+  }
+
+  const bestIdTail = await albumData.getBestCityMarkerIdTail(
+    selectedBookId,
+    countrySlug,
+    citySlug,
+  );
+
+  if (bestIdTail) {
+    return router.createUrlTree([
+      '/album',
+      countrySlug,
+      `${citySlug}--${bestIdTail}`,
+    ]);
+  }
+
+  return router.createUrlTree(['/album', countrySlug]);
 };
+
+const waitForBooksInitialization = (
+  bookState: BookStateService,
+  timeoutMs = 4000,
+): Promise<void> =>
+  new Promise((resolve) => {
+    if (bookState.booksInitialized()) {
+      resolve();
+      return;
+    }
+
+    const startedAt = Date.now();
+    const interval = setInterval(() => {
+      if (bookState.booksInitialized()) {
+        clearInterval(interval);
+        resolve();
+        return;
+      }
+
+      if (Date.now() - startedAt >= timeoutMs) {
+        clearInterval(interval);
+        resolve();
+      }
+    }, 50);
+  });
 
 export const routes: Routes = [
   { path: '', component: BookCoverComponent },

@@ -106,10 +106,12 @@
 
   @if (hasSelectedBook() && !isLoading() && viewType() === "city-marker") {
     @if (cityMarkerPage(); as markerPage) {
-      <h2>Marker: {{ markerPage.city.name }}</h2>
       <a [routerLink]="['/album', markerPage.country.slug]"
         >Back to country index</a
       >
+
+      <h2>Marker: {{ markerPage.city.name }}</h2>
+
       <p>
         Country: {{ markerPage.country.flagEmoji || "" }}
         {{ markerPage.country.name }}

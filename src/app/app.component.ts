@@ -114,25 +114,30 @@ export class AppComponent implements OnInit {
   }
 
   private async loadBooks(): Promise<void> {
-    const userBooks = await this.supabase.getUserBooks();
-    this.books.set(userBooks);
+    try {
+      const userBooks = await this.supabase.getUserBooks();
+      this.books.set(userBooks);
 
-    if (userBooks.length === 0) {
-      this.selectedBook.set(null);
-      return;
-    }
+      if (userBooks.length === 0) {
+        this.selectedBook.set(null);
+        return;
+      }
 
-    const currentSelectedBookId = this.selectedBook()?.id;
-    if (!currentSelectedBookId) {
-      this.selectedBook.set(userBooks[0]);
-      return;
-    }
+      const currentSelectedBookId = this.selectedBook()?.id;
+      if (!currentSelectedBookId) {
+        this.selectedBook.set(userBooks[0]);
+        return;
+      }
 
-    const stillExists = userBooks.some(
-      (book) => book.id === currentSelectedBookId,
-    );
-    if (!stillExists) {
-      this.selectedBook.set(userBooks[0]);
+      const stillExists = userBooks.some(
+        (book) => book.id === currentSelectedBookId,
+      );
+      if (!stillExists) {
+        this.selectedBook.set(userBooks[0]);
+      }
+    } finally {
+      // Guards rely on this to avoid redirecting deep links before selection loads.
+      this.bookState.booksInitialized.set(true);
     }
   }
 
