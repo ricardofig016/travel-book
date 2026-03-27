@@ -47,7 +47,7 @@ Cover -> Account -> Index -> Map -> Album -> Statistics -> Back Cover.
     - Slugs are for readability and navigation; the identifier tail is the stability anchor.
     - If a slug does not match canonical marker/city/country naming, the app should redirect to the canonical route.
   - Each country is divided into:
-    - an 'index' page with country metadata (capital, population, flag, coat of arms, etc) and book specific info (markers, dishes tried, etc).
+    - an entry page with country metadata (capital, population, flag, coat of arms, etc) and book specific info (markers, dishes tried, etc).
     - several city sections (each representing a marker) each with enough pages for all the photos of that marker. Each city section starts with a city entry page with marker specific info, followed by photo pages.
   - Scrapbook two-page spreads; taped/rotated photos; page flip navigation.
   - Each page is selected from one of the template layouts. There's layouts for pages with 2 and 3 photos. Layouts have designated areas for photos, captions, doodles, etc. Photo rotation is random within a small angle range to create a casual, scrapbook feel. Layouts are dynamically selected so that every city section has at least one free photo slot for adding new photos, and the last page of a city section is always on the right side of the spread, so that the next city section can start on a new spread.

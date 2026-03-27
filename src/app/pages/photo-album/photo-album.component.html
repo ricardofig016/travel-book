@@ -1,20 +1,181 @@
 <section>
-  @if (viewType() === "landing") {
-    <h1>Album</h1>
-    <p>Album landing page.</p>
+  <h1>Album</h1>
+
+  @if (!hasSelectedBook()) {
+    <p>Select a book to view album data.</p>
   }
 
-  @if (viewType() === "country") {
-    <h1>Album Country Index</h1>
-    <p>Country: {{ countrySlug() }}</p>
-    <a routerLink="/album">Back to album landing</a>
+  @if (isLoading()) {
+    <p>Loading album data...</p>
   }
 
-  @if (viewType() === "city-marker") {
-    <h1>Album City Marker</h1>
-    <p>Country: {{ countrySlug() }}</p>
-    <p>City: {{ citySlug() }}</p>
-    <p>Marker id tail: {{ idTail() }}</p>
-    <a [routerLink]="['/album', countrySlug()]">Back to country index</a>
+  @if (loadError(); as errorMessage) {
+    <p>{{ errorMessage }}</p>
+  }
+
+  @if (hasSelectedBook() && !isLoading() && viewType() === "landing") {
+    <h2>Countries With Markers</h2>
+
+    @if (countryIndex().length === 0) {
+      <p>No markers found for the selected book.</p>
+    } @else {
+      <ul>
+        @for (country of countryIndex(); track country.countryId) {
+          <li>
+            <a [routerLink]="['/album', country.countrySlug]">
+              {{ country.flagEmoji || "" }} {{ country.countryName }}
+            </a>
+            <span>
+              | markers: {{ country.markerCount }} | visited:
+              {{ country.visitedCount }} | favorite:
+              {{ country.favoriteCount }} | want:
+              {{ country.wantCount }}
+            </span>
+          </li>
+        }
+      </ul>
+    }
+  }
+
+  @if (hasSelectedBook() && !isLoading() && viewType() === "country") {
+    @if (countryPage(); as page) {
+      <a routerLink="/album">Back to album landing</a>
+
+      <h2>{{ page.country.flagEmoji || "" }} {{ page.country.name }}</h2>
+
+      <h3>Country Metadata</h3>
+      <p>Native name: {{ page.country.nativeName || "N/A" }}</p>
+      <p>ISO: {{ page.country.isoCode2 }} / {{ page.country.isoCode3 }}</p>
+      <p>Population: {{ formatPopulation(page.country.population) }}</p>
+      <p>Area: {{ formatArea(page.country.area) }}</p>
+
+      <h3>Book-specific Info</h3>
+      <p>Markers: {{ page.bookInfo.markerCount }}</p>
+      <p>Cities with markers: {{ page.bookInfo.cityCount }}</p>
+      <p>Visited: {{ page.bookInfo.visitedCount }}</p>
+      <p>Favorite: {{ page.bookInfo.favoriteCount }}</p>
+      <p>Want: {{ page.bookInfo.wantCount }}</p>
+      <p>Photos: {{ page.bookInfo.photoCount }}</p>
+
+      <h3>Cities With Markers</h3>
+      @if (page.cities.length === 0) {
+        <p>No marker cities found for this country.</p>
+      } @else {
+        <ul>
+          @for (city of page.cities; track city.markerId) {
+            <li>
+              <a
+                [routerLink]="
+                  getCityMarkerLink(
+                    page.country.slug,
+                    city.citySlug,
+                    city.markerIdTail
+                  )
+                "
+              >
+                {{ city.cityName }}
+              </a>
+              <span>
+                | status: {{ city.visited ? "Visited " : "" }}
+                {{ city.favorite ? "Favorite " : "" }}
+                {{ city.want ? "Want " : "" }} | photos: {{ city.photoCount }}
+              </span>
+            </li>
+          }
+        </ul>
+      }
+
+      <h3>Dishes Tried In This Country</h3>
+      @if (page.dishesTried.length === 0) {
+        <p>No tried dishes found for this country in this book.</p>
+      } @else {
+        <ul>
+          @for (dish of page.dishesTried; track dish.dishId) {
+            <li>
+              <strong>{{ dish.name }}</strong>
+              <span>
+                | category: {{ dish.category || "N/A" }} | rating:
+                {{ dish.rating ?? "N/A" }}
+              </span>
+            </li>
+          }
+        </ul>
+      }
+    }
+  }
+
+  @if (hasSelectedBook() && !isLoading() && viewType() === "city-marker") {
+    @if (cityMarkerPage(); as markerPage) {
+      <h2>Marker: {{ markerPage.city.name }}</h2>
+      <a [routerLink]="['/album', markerPage.country.slug]"
+        >Back to country index</a
+      >
+      <p>
+        Country: {{ markerPage.country.flagEmoji || "" }}
+        {{ markerPage.country.name }}
+      </p>
+      <p>Marker ID tail: {{ markerPage.markerIdTail }}</p>
+      <p>Admin region: {{ markerPage.city.adminName || "N/A" }}</p>
+
+      <h3>Status</h3>
+      <p>Visited: {{ markerPage.status.visited ? "Yes" : "No" }}</p>
+      <p>Favorite: {{ markerPage.status.favorite ? "Yes" : "No" }}</p>
+      <p>Want: {{ markerPage.status.want ? "Yes" : "No" }}</p>
+
+      <h3>Marker Notes</h3>
+      <p>{{ markerPage.notes || "No notes." }}</p>
+
+      <h3>Companions</h3>
+      @if (markerPage.companions.length === 0) {
+        <p>No companions listed.</p>
+      } @else {
+        <ul>
+          @for (companion of markerPage.companions; track $index) {
+            <li>{{ companion }}</li>
+          }
+        </ul>
+      }
+
+      <h3>Activities</h3>
+      @if (markerPage.activities.length === 0) {
+        <p>No activities listed.</p>
+      } @else {
+        <ul>
+          @for (activity of markerPage.activities; track $index) {
+            <li>{{ activity }}</li>
+          }
+        </ul>
+      }
+
+      <h3>Visits</h3>
+      @if (markerPage.visits.length === 0) {
+        <p>No visit periods recorded.</p>
+      } @else {
+        <ul>
+          @for (visit of markerPage.visits; track visit.id) {
+            <li>{{ visit.startDate }} to {{ visit.endDate }}</li>
+          }
+        </ul>
+      }
+
+      <h3>Photos</h3>
+      @if (markerPage.photos.length === 0) {
+        <p>No photos uploaded yet.</p>
+      } @else {
+        <ul>
+          @for (photo of markerPage.photos; track photo.id) {
+            <li>
+              <a [href]="photo.url" target="_blank" rel="noopener noreferrer">
+                {{ photo.publicId }}
+              </a>
+              <span>
+                | date: {{ photo.dateTaken || "N/A" }} | caption:
+                {{ photo.caption || "N/A" }}
+              </span>
+            </li>
+          }
+        </ul>
+      }
+    }
   }
 </section>
