@@ -7,10 +7,10 @@ import {
   UrlMatchResult,
   UrlSegment,
 } from '@angular/router';
-import { BookCoverComponent } from './pages/book-cover/book-cover.component';
+import { BookCoverComponent } from './pages/cover/cover.component';
 import { AccountComponent } from './pages/account/account.component';
-import { WorldMapComponent } from './pages/world-map/world-map.component';
-import { PhotoAlbumComponent } from './pages/photo-album/photo-album.component';
+import { WorldMapComponent } from './pages/map/map.component';
+import { PhotoAlbumComponent } from './pages/album/album.component';
 import { StatisticsComponent } from './pages/statistics/statistics.component';
 
 const albumCityMarkerMatcher = (

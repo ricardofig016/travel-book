@@ -21,8 +21,8 @@ import {
   selector: 'app-photo-album',
   standalone: true,
   imports: [CommonModule, RouterLink],
-  templateUrl: './photo-album.component.html',
-  styleUrl: './photo-album.component.scss',
+  templateUrl: './album.component.html',
+  styleUrl: './album.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PhotoAlbumComponent {

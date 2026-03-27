@@ -27,8 +27,8 @@ import { MetadataCacheService } from '../../services/map/metadata-cache.service'
   selector: 'app-world-map',
   standalone: true,
   imports: [],
-  templateUrl: './world-map.component.html',
-  styleUrl: './world-map.component.scss',
+  templateUrl: './map.component.html',
+  styleUrl: './map.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {

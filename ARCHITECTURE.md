@@ -61,15 +61,15 @@ travel-book/
 │       │   └── modules/
 │       │       └── core-feature.module.ts      # Core feature with providers
 │       ├── pages/                              # Full-page components (one per route)
-│       │   ├── book-cover/
-│       │   │   └── book-cover.component.ts/html/scss
+│       │   ├── cover/
+│       │   │   └── cover.component.ts/html/scss
 │       │   ├── book-index/
 │       │   │   └── book-index.component.ts/html/scss
-│       │   ├── world-map/
-│       │   │   ├── world-map.component.ts/html/scss
+│       │   ├── map/
+│       │   │   ├── map.component.ts/html/scss
 │       │   │   └── world-map.module.ts         # Lazy-loaded feature module
-│       │   ├── photo-album/
-│       │   │   ├── photo-album.component.ts/html/scss
+│       │   ├── album/
+│       │   │   ├── album.component.ts/html/scss
 │       │   │   └── photo-album.module.ts
 │       │   └── statistics/
 │       │       ├── statistics.component.ts/html/scss

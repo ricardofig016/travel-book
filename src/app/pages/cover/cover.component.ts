@@ -4,8 +4,8 @@ import { Component, ChangeDetectionStrategy } from '@angular/core';
   selector: 'app-book-cover',
   standalone: true,
   imports: [],
-  templateUrl: './book-cover.component.html',
-  styleUrl: './book-cover.component.scss',
+  templateUrl: './cover.component.html',
+  styleUrl: './cover.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BookCoverComponent {
