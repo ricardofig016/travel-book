@@ -1,5 +1,5 @@
 <section>
-  <h1>Album</h1>
+  <h1>album</h1>
 
   @if (!hasSelectedBook()) {
     <p>Select a book to view album data.</p>
@@ -23,7 +23,8 @@
         @for (country of countryIndex(); track country.countryId) {
           <li>
             <a [routerLink]="['/album', country.countrySlug]">
-              {{ country.flagEmoji || "" }} {{ country.countryName }}
+              <app-flag-icon [isoCode2]="country.isoCode2" [countryName]="country.countryName" />
+              {{ country.countryName }}
             </a>
             <span>
               | markers: {{ country.markerCount }} | visited:
@@ -41,7 +42,10 @@
     @if (countryPage(); as page) {
       <a routerLink="/album">Back to album landing</a>
 
-      <h2>{{ page.country.flagEmoji || "" }} {{ page.country.name }}</h2>
+      <h2>
+        <app-flag-icon [isoCode2]="page.country.isoCode2" [countryName]="page.country.name" />
+        {{ page.country.name }}
+      </h2>
 
       <h3>Country Metadata</h3>
       <p>Native name: {{ page.country.nativeName || "N/A" }}</p>
@@ -113,7 +117,8 @@
       <h2>Marker: {{ markerPage.city.name }}</h2>
 
       <p>
-        Country: {{ markerPage.country.flagEmoji || "" }}
+        Country:
+        <app-flag-icon [isoCode2]="markerPage.country.isoCode2" [countryName]="markerPage.country.name" />
         {{ markerPage.country.name }}
       </p>
       <p>Marker ID tail: {{ markerPage.markerIdTail }}</p>

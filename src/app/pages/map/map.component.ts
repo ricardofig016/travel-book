@@ -22,11 +22,12 @@ import { GeoProcessorService } from '../../services/map/geo-processor.service';
 import { MapViewportService } from '../../services/map/map-viewport.service';
 import { MapDataService } from '../../services/map/map-data.service';
 import { MetadataCacheService } from '../../services/map/metadata-cache.service';
+import { FlagIconComponent } from '../../shared/flag-icon/flag-icon.component';
 
 @Component({
   selector: 'app-world-map',
   standalone: true,
-  imports: [],
+  imports: [FlagIconComponent],
   templateUrl: './map.component.html',
   styleUrl: './map.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

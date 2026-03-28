@@ -1,6 +1,5 @@
 # TODO
 
-- [ ] test: add supabase tests of authenticated, non-admin users
 - [ ] data: setup cloudinary
 - [ ] data: seed cloudinary with demo photos for the demo book
 - [x] album: if the url is `album/:countrySlug/:citySlug` (with missing/incorrect idTail), redirect to `album/:countrySlug/:citySlug--:idTail` with the best match for idTail for that city. if the matching fails, redirect to `album/:countrySlug`

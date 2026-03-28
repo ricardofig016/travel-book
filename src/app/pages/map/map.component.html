@@ -6,7 +6,13 @@
       <div class="metadata-row">
         <strong>Home Country:</strong>
         @if (homeCountryMetadata(); as homeMeta) {
-          <span>{{ homeMeta.name }}</span>
+          <span class="country-with-flag">
+            <app-flag-icon
+              [isoCode2]="homeMeta.iso_code_2"
+              [countryName]="homeMeta.name"
+            />
+            {{ homeMeta.name }}
+          </span>
         } @else {
           <span>Not set</span>
         }
@@ -37,7 +43,13 @@
       <div class="metadata-row">
         <strong>Hovered Country:</strong>
         @if (hoveredCountryMetadata(); as countryMeta) {
-          <span>{{ countryMeta.name }}</span>
+          <span class="country-with-flag">
+            <app-flag-icon
+              [isoCode2]="countryMeta.iso_code_2"
+              [countryName]="countryMeta.name"
+            />
+            {{ countryMeta.name }}
+          </span>
         } @else {
           <span>None</span>
         }

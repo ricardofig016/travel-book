@@ -11,6 +11,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { BookStateService } from '../../services/data/book-state.service';
 import { AlbumDataService } from '../../services/album/album-data.service';
+import { FlagIconComponent } from '../../shared/flag-icon/flag-icon.component';
 import {
   AlbumCityMarkerData,
   AlbumCountryIndexItem,
@@ -20,7 +21,7 @@ import {
 @Component({
   selector: 'app-photo-album',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, FlagIconComponent],
   templateUrl: './album.component.html',
   styleUrl: './album.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

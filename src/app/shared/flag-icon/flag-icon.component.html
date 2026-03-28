@@ -1,0 +1,11 @@
+@if (flagUrl(); as src) {
+  <img
+    [src]="src"
+    [alt]="altText()"
+    title="Country flag"
+    loading="lazy"
+    decoding="async"
+    [attr.width]="width()"
+    [attr.height]="height()"
+  />
+}
