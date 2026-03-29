@@ -168,6 +168,7 @@
           class="country-shape"
           [attr.data-country-id]="country.id"
           [attr.aria-label]="country.name"
+          (click)="onCountryClick(country.id)"
         >
           @for (path of country.paths; track $index) {
             <path
@@ -192,6 +193,12 @@
           <title>{{ capitalDot.name }}</title>
         </g>
       }
+
+      @if (computedCityDot(); as cityDot) {
+        <g class="city-dot" pointer-events="none">
+          <circle [attr.cx]="cityDot.x" [attr.cy]="cityDot.y" r="1"></circle>
+        </g>
+      }
     </svg>
   </div>
 
@@ -201,4 +208,113 @@
     <button type="button" (click)="zoomIn()">+</button>
     <span>Zoom: {{ zoom() }}x</span>
   </div>
+
+  <!-- Country Details Panel -->
+  @if (selectedCountryIso2(); as iso2) {
+    <div class="country-panel">
+      <div class="panel-header">
+        <a
+          [routerLink]="
+            getCountryAlbumSegments(selectedCountryMetadata()?.name)
+          "
+          class="country-album-link"
+        >
+          <h3>{{ selectedCountryMetadata()?.name || iso2 }}</h3>
+        </a>
+        <button type="button" (click)="closeCountryPanel()">✕</button>
+      </div>
+
+      <div class="panel-content">
+        <!-- Markers Section -->
+        @if (selectedCountryMarkers().length > 0) {
+          <div class="markers-section">
+            <h3>Markers</h3>
+            <ul>
+              <li
+                *ngFor="
+                  let marker of selectedCountryMarkers();
+                  trackBy: trackMarkerById
+                "
+              >
+                <a [routerLink]="getMarkerUrl(marker)">
+                  {{ marker.cityName }}
+                </a>
+                <div class="marker-status">
+                  <label>
+                    <input
+                      #visitedBox
+                      type="checkbox"
+                      [checked]="marker.visited"
+                      [disabled]="isMarkerUpdating(marker.id)"
+                      (change)="
+                        onMarkerStatusChange(
+                          marker.id,
+                          'visited',
+                          visitedBox.checked
+                        )
+                      "
+                    />
+                    visited
+                  </label>
+                  <label>
+                    <input
+                      #favoriteBox
+                      type="checkbox"
+                      [checked]="marker.favorite"
+                      [disabled]="isMarkerUpdating(marker.id)"
+                      (change)="
+                        onMarkerStatusChange(
+                          marker.id,
+                          'favorite',
+                          favoriteBox.checked
+                        )
+                      "
+                    />
+                    favorite
+                  </label>
+                  <label>
+                    <input
+                      #wantBox
+                      type="checkbox"
+                      [checked]="marker.want"
+                      [disabled]="isMarkerUpdating(marker.id)"
+                      (change)="
+                        onMarkerStatusChange(marker.id, 'want', wantBox.checked)
+                      "
+                    />
+                    want
+                  </label>
+                </div>
+              </li>
+            </ul>
+          </div>
+        }
+
+        <!-- Cities Section -->
+        <div class="cities-section">
+          <h3>Cities</h3>
+          <input
+            type="text"
+            [(ngModel)]="citiesSearchText"
+            placeholder="Search cities..."
+            class="search-input"
+          />
+          <ul class="cities-list">
+            <li
+              *ngFor="let city of filteredCities(); trackBy: trackCityById"
+              (mouseenter)="onCityHover(city)"
+              (mouseleave)="onCityLeave()"
+            >
+              <span class="city-name">{{ city.name }}</span>
+              @if (city.population) {
+                <span class="city-population">
+                  {{ (city.population / 1000000).toFixed(1) }}M
+                </span>
+              }
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  }
 </section>

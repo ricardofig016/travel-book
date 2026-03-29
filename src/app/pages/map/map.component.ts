@@ -12,9 +12,16 @@ import {
   Signal,
   ViewChild,
 } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { BookStateService } from '../../services/data/book-state.service';
+import { SupabaseService } from '../../services/data/supabase.service';
 import {
   BookCountryMarkerSummary,
+  CountryCity,
+  CountryMarkerDetail,
+  CountryMarkerStatusPatch,
   CountryMetadata,
 } from '../../services/data/supabase/models';
 import { CountryShape, CapitalDot, GridPaths } from '../../services/map/models';
@@ -22,12 +29,13 @@ import { GeoProcessorService } from '../../services/map/geo-processor.service';
 import { MapViewportService } from '../../services/map/map-viewport.service';
 import { MapDataService } from '../../services/map/map-data.service';
 import { MetadataCacheService } from '../../services/map/metadata-cache.service';
+import { AlbumRouteService } from '../../services/album/album-route.service';
 import { FlagIconComponent } from '../../shared/flag-icon/flag-icon.component';
 
 @Component({
   selector: 'app-world-map',
   standalone: true,
-  imports: [FlagIconComponent],
+  imports: [FlagIconComponent, CommonModule, FormsModule, RouterLink],
   templateUrl: './map.component.html',
   styleUrl: './map.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -45,8 +53,11 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
   private viewport = inject(MapViewportService);
   private mapData = inject(MapDataService);
   private metadataCache = inject(MetadataCacheService);
+  private albumRoutes = inject(AlbumRouteService);
+  private supabase = inject(SupabaseService);
   private readonly hoverDebugEnabled = true;
   private boundWheelHandler: ((event: WheelEvent) => void) | null = null;
+  private suppressCountryClickUntil = 0;
 
   private hoveredMetadataRequestId = 0;
   private homeMetadataRequestId = 0;
@@ -70,6 +81,13 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
   protected readonly hoveredCountryMarkerSummary =
     signal<BookCountryMarkerSummary>(this.emptyMarkerSummary());
   protected readonly hoveredCapitalDot = signal<CapitalDot | null>(null);
+
+  protected readonly selectedCountryIso2 = signal<string | null>(null);
+  protected readonly selectedCountryCities = signal<CountryCity[]>([]);
+  protected readonly selectedCountryMarkers = signal<CountryMarkerDetail[]>([]);
+  protected readonly updatingMarkerIds = signal<Set<string>>(new Set());
+  protected readonly citiesSearchText = signal('');
+  protected readonly hoveredCityCoords = signal<[number, number] | null>(null);
 
   protected get zoom(): Signal<number> {
     return this.viewport.zoom;
@@ -145,6 +163,45 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
   protected readonly viewBox = computed(
     () => `0 0 ${this.mapWidth} ${this.mapHeight}`,
   );
+
+  protected readonly filteredCities = computed(() => {
+    const searchText = this.citiesSearchText().toLowerCase();
+    if (!searchText) return this.selectedCountryCities();
+    return this.selectedCountryCities().filter((city) =>
+      city.name.toLowerCase().includes(searchText),
+    );
+  });
+
+  protected readonly selectedCountryMetadata = computed(() => {
+    const iso2 = this.selectedCountryIso2();
+    if (!iso2) return null;
+    // Look up metadata from the countries array
+    const country = this.countries().find((c) => c.iso2 === iso2);
+    if (!country) return null;
+    // Return a minimal metadata object; full metadata would be loaded separately if needed
+    return { name: country.name, iso_code_2: iso2 };
+  });
+
+  protected readonly getCountryAlbumSegments = (
+    countryName: string | null | undefined,
+  ): string[] => {
+    return ['/album', this.albumRoutes.slugify(countryName ?? '')];
+  };
+
+  protected readonly getMarkerUrl = (marker: CountryMarkerDetail): string => {
+    return this.albumRoutes.buildCityMarkerPath(
+      this.selectedCountryMetadata()?.name ?? '',
+      marker.cityName,
+      marker.id,
+    );
+  };
+
+  protected readonly computedCityDot = computed(() => {
+    const coords = this.hoveredCityCoords();
+    if (!coords) return null;
+    const [x, y] = this.geoProcessor.projectCoordinate(coords[1], coords[0]);
+    return { x, y };
+  });
 
   constructor() {
     // Load data when selected book changes
@@ -238,6 +295,10 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   onPointerUp(event: PointerEvent): void {
     this.viewport.onPointerUp(event);
+
+    // Suppress click events for a short time to prevent accidental clicks on countries when dragging.
+    if (this.viewport.consumeCountryClickSuppression())
+      this.suppressCountryClickUntil = performance.now() + 100;
   }
 
   onSvgPointerMove(event: PointerEvent): void {
@@ -269,6 +330,94 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.setHoveredCountry(null, 'svg-leave');
   }
 
+  onCountryClick(countryId: string): void {
+    if (performance.now() < this.suppressCountryClickUntil) return;
+
+    const country = this.countries().find((c) => c.id === countryId);
+    if (!country) return;
+
+    const iso2 = country.iso2;
+    if (this.selectedCountryIso2() === iso2) {
+      this.closeCountryPanel();
+      return;
+    }
+
+    this.selectedCountryIso2.set(iso2);
+    this.citiesSearchText.set('');
+    this.hoveredCityCoords.set(null);
+    void this.loadSelectedCountryData(iso2);
+  }
+
+  closeCountryPanel(): void {
+    this.selectedCountryIso2.set(null);
+    this.selectedCountryCities.set([]);
+    this.selectedCountryMarkers.set([]);
+    this.citiesSearchText.set('');
+    this.hoveredCityCoords.set(null);
+  }
+
+  onCityHover(city: CountryCity): void {
+    this.hoveredCityCoords.set([city.latitude, city.longitude]);
+  }
+
+  onCityLeave(): void {
+    this.hoveredCityCoords.set(null);
+  }
+
+  trackMarkerById(_index: number, marker: CountryMarkerDetail): string {
+    return marker.id;
+  }
+
+  trackCityById(_index: number, city: CountryCity): string {
+    return city.id;
+  }
+
+  isMarkerUpdating(markerId: string): boolean {
+    return this.updatingMarkerIds().has(markerId);
+  }
+
+  async onMarkerStatusChange(
+    markerId: string,
+    status: keyof CountryMarkerStatusPatch,
+    value: boolean,
+  ): Promise<void> {
+    const previousMarkers = this.selectedCountryMarkers();
+    const marker = previousMarkers.find((item) => item.id === markerId);
+    if (!marker || this.isMarkerUpdating(markerId)) return;
+
+    this.selectedCountryMarkers.set(
+      previousMarkers.map((item) =>
+        item.id === markerId ? { ...item, [status]: value } : item,
+      ),
+    );
+
+    const nextUpdating = new Set(this.updatingMarkerIds());
+    nextUpdating.add(markerId);
+    this.updatingMarkerIds.set(nextUpdating);
+
+    const updated = await this.supabase.updateMarkerStatuses(markerId, {
+      [status]: value,
+    });
+
+    const afterUpdate = new Set(this.updatingMarkerIds());
+    afterUpdate.delete(markerId);
+    this.updatingMarkerIds.set(afterUpdate);
+
+    if (!updated) {
+      // Roll back the optimistic update when persistence fails.
+      this.selectedCountryMarkers.set(previousMarkers);
+      return;
+    }
+
+    const bookId = this.bookState.selectedBook()?.id ?? null;
+    if (!bookId) return;
+
+    await this.loadBookVisitedMetadata(bookId);
+
+    const hoveredIso2 = this.hoveredCountry()?.iso2 ?? null;
+    await this.loadHoveredCountryMetadata(hoveredIso2, bookId);
+  }
+
   protected getCountryFill(country: CountryShape): string {
     if (this.hoveredCountryId() === country.id)
       return WorldMapComponent.HOVERED_COUNTRY_FILL;
@@ -295,6 +444,31 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
   protected formatPercent(value: number): string {
     if (!Number.isFinite(value) || value <= 0) return '0.00%';
     return `${value.toFixed(2)}%`;
+  }
+
+  private async loadSelectedCountryData(iso2: string): Promise<void> {
+    const bookId = this.bookState.selectedBook()?.id ?? null;
+
+    try {
+      const [cities, markers] = await Promise.all([
+        this.supabase.getCountryCitiesByIso2(iso2),
+        bookId
+          ? this.supabase.getCountryMarkersForBook(bookId, iso2)
+          : Promise.resolve([]),
+      ]);
+
+      // Only update if this is still the selected country
+      if (this.selectedCountryIso2() === iso2) {
+        this.selectedCountryCities.set(cities);
+        this.selectedCountryMarkers.set(markers);
+      }
+    } catch (err) {
+      console.error('Failed to load selected country data', err);
+      if (this.selectedCountryIso2() === iso2) {
+        this.selectedCountryCities.set([]);
+        this.selectedCountryMarkers.set([]);
+      }
+    }
   }
 
   private setHoveredCountry(countryId: string | null, source: string): void {

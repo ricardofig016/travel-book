@@ -11,6 +11,8 @@ import {
  */
 @Injectable({ providedIn: 'root' })
 export class MapViewportService {
+  readonly dragStartThresholdPx = 2;
+
   readonly minZoom = 1;
   readonly maxZoom = 15;
   readonly zoomStep = 0.2;
@@ -27,6 +29,8 @@ export class MapViewportService {
   private activePointerId: number | null = null;
   private lastPointerX = 0;
   private lastPointerY = 0;
+  private movedDuringActivePointer = false;
+  private suppressNextCountryClick = false;
   private mapCanvasElement: HTMLDivElement | null = null;
 
   /**
@@ -68,6 +72,7 @@ export class MapViewportService {
     this.activePointerId = event.pointerId;
     this.lastPointerX = event.clientX;
     this.lastPointerY = event.clientY;
+    this.movedDuringActivePointer = false;
     this.isDragging.set(true);
     event.preventDefault();
   }
@@ -80,6 +85,12 @@ export class MapViewportService {
 
     const dx = event.clientX - this.lastPointerX;
     const dy = event.clientY - this.lastPointerY;
+
+    if (
+      Math.abs(dx) >= this.dragStartThresholdPx ||
+      Math.abs(dy) >= this.dragStartThresholdPx
+    )
+      this.movedDuringActivePointer = true;
 
     const clampedPan = this.clampPan(this.panX() + dx, this.panY() + dy);
     this.panX.set(clampedPan.x);
@@ -96,8 +107,17 @@ export class MapViewportService {
   onPointerUp(event: PointerEvent): void {
     if (this.activePointerId !== event.pointerId) return;
 
+    if (this.movedDuringActivePointer) this.suppressNextCountryClick = true;
+
     this.activePointerId = null;
     this.isDragging.set(false);
+    this.movedDuringActivePointer = false;
+  }
+
+  consumeCountryClickSuppression(): boolean {
+    const suppress = this.suppressNextCountryClick;
+    this.suppressNextCountryClick = false;
+    return suppress;
   }
 
   /**

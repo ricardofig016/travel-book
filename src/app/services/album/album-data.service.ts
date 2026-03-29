@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { SupabaseService } from '../data/supabase.service';
+import { AlbumRouteService } from './album-route.service';
 import {
   AlbumCityMarkerData,
   AlbumCountryCityItem,
@@ -49,6 +50,7 @@ interface MarkerCountryRow {
 @Injectable({ providedIn: 'root' })
 export class AlbumDataService {
   private readonly supabase = inject(SupabaseService);
+  private readonly albumRoutes = inject(AlbumRouteService);
 
   async getCountryIndex(bookId: string): Promise<AlbumCountryIndexItem[]> {
     const rows = await this.fetchMarkerCountryRows(bookId);
@@ -77,7 +79,7 @@ export class AlbumDataService {
           item: {
             countryId,
             countryName,
-            countrySlug: this.slugify(countryName),
+            countrySlug: this.albumRoutes.slugify(countryName),
             isoCode2,
             flagEmoji: country?.flag_emoji ?? null,
             markerCount,
@@ -113,7 +115,7 @@ export class AlbumDataService {
     const matchedRows = rows.filter((row) => {
       const countryName = row.cities?.countries?.name ?? null;
       if (!countryName) return false;
-      return this.slugify(countryName) === countrySlug;
+      return this.albumRoutes.slugify(countryName) === countrySlug;
     });
 
     if (matchedRows.length === 0) return null;
@@ -134,10 +136,10 @@ export class AlbumDataService {
 
         return {
           markerId,
-          markerIdTail: markerId.slice(-12),
+          markerIdTail: this.albumRoutes.getMarkerIdTail(markerId),
           cityId,
           cityName,
-          citySlug: this.slugify(cityName),
+          citySlug: this.albumRoutes.slugify(cityName),
           adminName: row.cities?.admin_name ?? null,
           visited: Boolean(row.visited),
           favorite: Boolean(row.favorite),
@@ -196,8 +198,8 @@ export class AlbumDataService {
 
       return (
         markerId.toLowerCase().endsWith(idTail.toLowerCase()) &&
-        this.slugify(rowCountryName) === countrySlug &&
-        this.slugify(rowCityName) === citySlug
+        this.albumRoutes.slugify(rowCountryName) === countrySlug &&
+        this.albumRoutes.slugify(rowCityName) === citySlug
       );
     });
 
@@ -259,11 +261,11 @@ export class AlbumDataService {
 
     return {
       markerId,
-      markerIdTail: markerId.slice(-12),
+      markerIdTail: this.albumRoutes.getMarkerIdTail(markerId),
       country: {
         id: countryId,
         name: countryName,
-        slug: this.slugify(countryName),
+        slug: this.albumRoutes.slugify(countryName),
         nativeName: country.native_name ?? null,
         isoCode2,
         isoCode3,
@@ -274,7 +276,7 @@ export class AlbumDataService {
       city: {
         id: cityId,
         name: cityName,
-        slug: this.slugify(cityName),
+        slug: this.albumRoutes.slugify(cityName),
         adminName: city.admin_name ?? null,
       },
       status: {
@@ -305,14 +307,14 @@ export class AlbumDataService {
         if (!markerId || !rowCountryName || !rowCityName) return null;
 
         if (
-          this.slugify(rowCountryName) !== countrySlug ||
-          this.slugify(rowCityName) !== citySlug
+          this.albumRoutes.slugify(rowCountryName) !== countrySlug ||
+          this.albumRoutes.slugify(rowCityName) !== citySlug
         )
           return null;
 
         return {
           markerId,
-          markerIdTail: markerId.slice(-12),
+          markerIdTail: this.albumRoutes.getMarkerIdTail(markerId),
           photoCount: (row.photos ?? []).length,
           visited: Boolean(row.visited),
           favorite: Boolean(row.favorite),
@@ -438,21 +440,6 @@ export class AlbumDataService {
       console.error('Exception while loading country dishes:', error);
       return [];
     }
-  }
-
-  private slugify(value: string): string {
-    const base = value
-      .normalize('NFKD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase()
-      .trim();
-
-    const slug = base
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+/, '')
-      .replace(/-+$/, '');
-
-    return slug || 'unknown';
   }
 
   private normalizeIsoCode2(value: string | null | undefined): string | null {

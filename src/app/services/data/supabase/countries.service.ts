@@ -3,7 +3,10 @@ import { SupabaseClient } from '@supabase/supabase-js';
 
 import {
   CountryCapitalCity,
+  CountryCity,
   CountryIsoLookup,
+  CountryMarkerDetail,
+  CountryMarkerStatusPatch,
   CountryMetadata,
 } from './models';
 
@@ -168,6 +171,152 @@ export class SupabaseCountriesService {
     } catch (err) {
       console.error('Exception fetching country capital by ISO2:', err);
       return null;
+    }
+  }
+
+  async getCountryCitiesByIso2(
+    client: SupabaseClient,
+    iso2: string,
+  ): Promise<CountryCity[]> {
+    const normalizedIso2 = iso2.trim().toUpperCase();
+    if (!/^[A-Z]{2}$/.test(normalizedIso2)) return [];
+
+    try {
+      const { data, error } = await client
+        .from('cities')
+        .select(
+          'id, name, population, latitude, longitude, countries!inner(iso_code_2)',
+        )
+        .eq('countries.iso_code_2', normalizedIso2)
+        .order('population', { ascending: false, nullsFirst: false });
+
+      if (error) {
+        console.error('Error fetching country cities by ISO2:', error);
+        return [];
+      }
+
+      return (
+        (data ?? []).map((row: unknown) => {
+          const typed = row as {
+            id?: string;
+            name?: string;
+            population?: number | string | null;
+            latitude?: number | string | null;
+            longitude?: number | string | null;
+          };
+          const latitude = Number(typed.latitude);
+          const longitude = Number(typed.longitude);
+          const population =
+            typed.population === null ? null : Number(typed.population);
+
+          if (
+            !typed.id ||
+            !typed.name ||
+            !Number.isFinite(latitude) ||
+            !Number.isFinite(longitude)
+          )
+            return null;
+
+          return {
+            id: typed.id,
+            name: typed.name,
+            population:
+              population !== null &&
+              Number.isFinite(population) &&
+              population > 0
+                ? population
+                : null,
+            latitude,
+            longitude,
+          };
+        }) as (CountryCity | null)[]
+      ).filter((city): city is CountryCity => city !== null);
+    } catch (err) {
+      console.error('Exception fetching country cities by ISO2:', err);
+      return [];
+    }
+  }
+
+  async getCountryMarkersForBook(
+    client: SupabaseClient,
+    bookId: string,
+    iso2: string,
+  ): Promise<CountryMarkerDetail[]> {
+    const normalizedIso2 = iso2.trim().toUpperCase();
+    if (!/^[A-Z]{2}$/.test(normalizedIso2)) return [];
+
+    try {
+      const { data, error } = await client
+        .from('markers')
+        .select(
+          'id, visited, favorite, want, cities!inner(id, name, countries!inner(iso_code_2))',
+        )
+        .eq('book_id', bookId)
+        .eq('cities.countries.iso_code_2', normalizedIso2);
+
+      if (error) {
+        console.error('Error fetching country markers for book:', error);
+        return [];
+      }
+
+      return (
+        (data ?? []).map((row: unknown) => {
+          const typed = row as {
+            id?: string;
+            visited?: boolean;
+            favorite?: boolean;
+            want?: boolean;
+            cities?: { id?: string; name?: string } | null;
+          };
+          const city = typed.cities;
+
+          if (!typed.id || !city?.id || !city?.name) return null;
+
+          return {
+            id: typed.id,
+            cityId: city.id,
+            cityName: city.name,
+            visited: typed.visited ?? false,
+            favorite: typed.favorite ?? false,
+            want: typed.want ?? false,
+          };
+        }) as (CountryMarkerDetail | null)[]
+      ).filter((marker): marker is CountryMarkerDetail => marker !== null);
+    } catch (err) {
+      console.error('Exception fetching country markers for book:', err);
+      return [];
+    }
+  }
+
+  async updateMarkerStatuses(
+    client: SupabaseClient,
+    markerId: string,
+    patch: CountryMarkerStatusPatch,
+  ): Promise<boolean> {
+    if (!markerId) return false;
+
+    const updates: CountryMarkerStatusPatch = {};
+    if (typeof patch.visited === 'boolean') updates.visited = patch.visited;
+    if (typeof patch.favorite === 'boolean') updates.favorite = patch.favorite;
+    if (typeof patch.want === 'boolean') updates.want = patch.want;
+
+    if (Object.keys(updates).length === 0) return true;
+
+    try {
+      const { error } = await client
+        .from('markers')
+        .update(updates)
+        .eq('id', markerId);
+
+      if (error) {
+        console.error('Error updating marker statuses:', error);
+        return false;
+      }
+
+      return true;
+    } catch (err) {
+      console.error('Exception updating marker statuses:', err);
+      return false;
     }
   }
 }

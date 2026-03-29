@@ -11,6 +11,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { BookStateService } from '../../services/data/book-state.service';
 import { AlbumDataService } from '../../services/album/album-data.service';
+import { AlbumRouteService } from '../../services/album/album-route.service';
 import { FlagIconComponent } from '../../shared/flag-icon/flag-icon.component';
 import {
   AlbumCityMarkerData,
@@ -30,6 +31,7 @@ export class PhotoAlbumComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly bookState = inject(BookStateService);
   private readonly albumData = inject(AlbumDataService);
+  private readonly albumRoutes = inject(AlbumRouteService);
   private readonly params = toSignal(this.route.paramMap, {
     initialValue: this.route.snapshot.paramMap,
   });
@@ -122,7 +124,7 @@ export class PhotoAlbumComponent {
       if (requestId !== this.requestId) return;
 
       if (!countryPage) {
-        this.loadError.set('Country not found in selected book markers.');
+        this.loadError.set("You've never visited this country!");
         this.isLoading.set(false);
         return;
       }
@@ -146,7 +148,11 @@ export class PhotoAlbumComponent {
     citySlug: string,
     idTail: string,
   ): string {
-    return `/album/${countrySlug}/${citySlug}--${idTail}`;
+    return this.albumRoutes.buildCityMarkerPathFromSlugs(
+      countrySlug,
+      citySlug,
+      idTail,
+    );
   }
 
   formatPopulation(value: number | null): string {

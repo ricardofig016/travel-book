@@ -2,6 +2,15 @@
 
 - [ ] data: setup cloudinary
 - [ ] data: seed cloudinary with demo photos for the demo book
+- [ ] map: country panel should show selected country name at the top
+- [ ] album: only markers with visited=true should be shown in the album. other markers will still be shown on the map and in the country panels, but they won't have an album entry.
+- [x] map: dragging in map should not trigger click event on countries - added click suppression logic in the map viewport service and map component
+- [x] map: links in marker list in country panel are build wrong ("saka" instead of "osaka", "so-paulo" instead of "sao-paulo") - created centralized album-route service to prevent mismatch bugs like this in the future
+- [x] map: rearrange country panel header: close button, country name, and album country page link (it's ugly)
+- [x] map: city dots should have the same white border as capital dots
+- [x] map: the country panel should have checkboxes that can be toggled to update for each marker's status (visited/favorite/want)
+- [x] map: marker list shown in country panel should only display the markers from the selected country, not all markers from the book
+- [x] map: change the color of the hovered city dot to the same orange as the hovered country highlight
 - [x] album: if the url is `album/:countrySlug/:citySlug` (with missing/incorrect idTail), redirect to `album/:countrySlug/:citySlug--:idTail` with the best match for idTail for that city. if the matching fails, redirect to `album/:countrySlug`
 - [x] refactor: rename page components' folders and files to match route names (photo-album -> album, book-cover -> cover, world-map -> map)
 - [x] chore: remove index page completely since it has redundant information that will be managed by the bookmarks

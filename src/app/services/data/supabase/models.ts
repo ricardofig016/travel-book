@@ -69,3 +69,26 @@ export interface CountryCapitalCity {
   latitude: number;
   longitude: number;
 }
+
+export interface CountryCity {
+  id: string;
+  name: string;
+  population: number | null;
+  latitude: number;
+  longitude: number;
+}
+
+export interface CountryMarkerDetail {
+  id: string;
+  cityId: string;
+  cityName: string;
+  visited: boolean;
+  favorite: boolean;
+  want: boolean;
+}
+
+export interface CountryMarkerStatusPatch {
+  visited?: boolean;
+  favorite?: boolean;
+  want?: boolean;
+}

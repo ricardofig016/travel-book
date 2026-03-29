@@ -12,7 +12,10 @@ import type {
   BookVisitedLandAreaStats,
   CitySearchResult,
   CountryCapitalCity,
+  CountryCity,
   CountryIsoLookup,
+  CountryMarkerDetail,
+  CountryMarkerStatusPatch,
   CountryMetadata,
   SupabaseConnectionStatus,
   UserLookupResult,
@@ -143,6 +146,32 @@ export class SupabaseService {
     iso2: string,
   ): Promise<CountryCapitalCity | null> {
     return this.countriesService.getCountryCapitalByIso2(this.client, iso2);
+  }
+
+  async getCountryCitiesByIso2(iso2: string): Promise<CountryCity[]> {
+    return this.countriesService.getCountryCitiesByIso2(this.client, iso2);
+  }
+
+  async getCountryMarkersForBook(
+    bookId: string,
+    iso2: string,
+  ): Promise<CountryMarkerDetail[]> {
+    return this.countriesService.getCountryMarkersForBook(
+      this.client,
+      bookId,
+      iso2,
+    );
+  }
+
+  async updateMarkerStatuses(
+    markerId: string,
+    patch: CountryMarkerStatusPatch,
+  ): Promise<boolean> {
+    return this.countriesService.updateMarkerStatuses(
+      this.client,
+      markerId,
+      patch,
+    );
   }
 
   async getTotalLandArea(): Promise<number> {

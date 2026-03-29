@@ -110,6 +110,14 @@ export class GeoProcessorService {
   }
 
   /**
+   * Project a coordinate point [longitude, latitude] to canvas coordinates [x, y]
+   * Public method for coordinate transformations
+   */
+  projectCoordinate(longitude: number, latitude: number): [number, number] {
+    return this.projectPoint([longitude, latitude]);
+  }
+
+  /**
    * Convert coordinates to SVG path string
    */
   private buildPolygonPath(
