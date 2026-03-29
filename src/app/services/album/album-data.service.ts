@@ -191,6 +191,8 @@ export class AlbumDataService {
     const rows = await this.fetchMarkerCountryRows(bookId, true);
 
     const matchedRow = rows.find((row) => {
+      if (!row.visited) return false;
+
       const markerId = row.id ?? '';
       const rowCountryName = row.cities?.countries?.name ?? null;
       const rowCityName = row.cities?.name ?? null;
@@ -301,6 +303,8 @@ export class AlbumDataService {
 
     const candidates = rows
       .map((row) => {
+        if (!row.visited) return null;
+
         const markerId = row.id ?? null;
         const rowCountryName = row.cities?.countries?.name ?? null;
         const rowCityName = row.cities?.name ?? null;
@@ -334,12 +338,9 @@ export class AlbumDataService {
         } => value !== null,
       )
       .sort((a, b) => {
-        if (a.photoCount !== b.photoCount) return b.photoCount - a.photoCount;
-        if (a.visited !== b.visited)
-          return Number(b.visited) - Number(a.visited);
         if (a.favorite !== b.favorite)
           return Number(b.favorite) - Number(a.favorite);
-        if (a.want !== b.want) return Number(a.want) - Number(b.want);
+        if (a.photoCount !== b.photoCount) return b.photoCount - a.photoCount;
         return a.markerId.localeCompare(b.markerId);
       });
 

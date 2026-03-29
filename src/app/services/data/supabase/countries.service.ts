@@ -281,7 +281,9 @@ export class SupabaseCountriesService {
             want: typed.want ?? false,
           };
         }) as (CountryMarkerDetail | null)[]
-      ).filter((marker): marker is CountryMarkerDetail => marker !== null);
+      )
+        .filter((marker): marker is CountryMarkerDetail => marker !== null)
+        .sort((a, b) => a.cityName.localeCompare(b.cityName));
     } catch (err) {
       console.error('Exception fetching country markers for book:', err);
       return [];

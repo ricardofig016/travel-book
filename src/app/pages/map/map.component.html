@@ -236,9 +236,13 @@
                   trackBy: trackMarkerById
                 "
               >
-                <a [routerLink]="getMarkerUrl(marker)">
-                  {{ marker.cityName }}
-                </a>
+                @if (marker.visited) {
+                  <a [routerLink]="getMarkerUrl(marker)">
+                    {{ marker.cityName }}
+                  </a>
+                } @else {
+                  <span>{{ marker.cityName }}</span>
+                }
                 <div class="marker-status">
                   <label>
                     <input

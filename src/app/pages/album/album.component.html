@@ -23,7 +23,10 @@
         @for (country of countryIndex(); track country.countryId) {
           <li>
             <a [routerLink]="['/album', country.countrySlug]">
-              <app-flag-icon [isoCode2]="country.isoCode2" [countryName]="country.countryName" />
+              <app-flag-icon
+                [isoCode2]="country.isoCode2"
+                [countryName]="country.countryName"
+              />
               {{ country.countryName }}
             </a>
             <span>
@@ -43,7 +46,10 @@
       <a routerLink="/album">Back to album landing</a>
 
       <h2>
-        <app-flag-icon [isoCode2]="page.country.isoCode2" [countryName]="page.country.name" />
+        <app-flag-icon
+          [isoCode2]="page.country.isoCode2"
+          [countryName]="page.country.name"
+        />
         {{ page.country.name }}
       </h2>
 
@@ -68,17 +74,21 @@
         <ul>
           @for (city of page.cities; track city.markerId) {
             <li>
-              <a
-                [routerLink]="
-                  getCityMarkerLink(
-                    page.country.slug,
-                    city.citySlug,
-                    city.markerIdTail
-                  )
-                "
-              >
-                {{ city.cityName }}
-              </a>
+              @if (city.visited) {
+                <a
+                  [routerLink]="
+                    getCityMarkerLink(
+                      page.country.slug,
+                      city.citySlug,
+                      city.markerIdTail
+                    )
+                  "
+                >
+                  {{ city.cityName }}
+                </a>
+              } @else {
+                <span>{{ city.cityName }}</span>
+              }
               <span>
                 | status: {{ city.visited ? "Visited " : "" }}
                 {{ city.favorite ? "Favorite " : "" }}
@@ -110,15 +120,18 @@
 
   @if (hasSelectedBook() && !isLoading() && viewType() === "city-marker") {
     @if (cityMarkerPage(); as markerPage) {
-      <a [routerLink]="['/album', markerPage.country.slug]"
-        >Back to country index</a
-      >
+      <a [routerLink]="['/album', markerPage.country.slug]">
+        Back to country index
+      </a>
 
       <h2>Marker: {{ markerPage.city.name }}</h2>
 
       <p>
         Country:
-        <app-flag-icon [isoCode2]="markerPage.country.isoCode2" [countryName]="markerPage.country.name" />
+        <app-flag-icon
+          [isoCode2]="markerPage.country.isoCode2"
+          [countryName]="markerPage.country.name"
+        />
         {{ markerPage.country.name }}
       </p>
       <p>Marker ID tail: {{ markerPage.markerIdTail }}</p>
