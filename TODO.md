@@ -2,10 +2,10 @@
 
 - [ ] data: setup cloudinary
 - [ ] data: seed cloudinary with demo photos for the demo book
-- [ ] map: country panel should show selected country name at the top
 - [ ] album: only markers with visited=true should be shown in the album. other markers will still be shown on the map and in the country panels, but they won't have an album entry.
 - [ ] feat: if a user tries to modify the demo book (add markers, toggle marker statuses, add pictures, etc.) prompt them to sign up (if unauthenticated) or create a new book (if authenticated).
 - [ ] map: hovering over markers in country panel should also highlight the corresponding city dot on the map
+- [x] map: country panel should show selected country name at the top
 - [x] map: dragging in map should not trigger click event on countries - added click suppression logic in the map viewport service and map component
 - [x] map: links in marker list in country panel are build wrong ("saka" instead of "osaka", "so-paulo" instead of "sao-paulo") - created centralized album-route service to prevent mismatch bugs like this in the future
 - [x] map: rearrange country panel header: close button, country name, and album country page link (it's ugly)
