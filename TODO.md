@@ -3,7 +3,8 @@
 - [ ] data: setup cloudinary
 - [ ] data: seed cloudinary with demo photos for the demo book
 - [ ] feat: if a user tries to modify the demo book (add markers, toggle marker statuses, add pictures, etc.) prompt them to sign up (if unauthenticated) or create a new book (if authenticated).
-- [ ] map: hovering over markers in country panel should also highlight the corresponding city dot on the map, like hovering over cities in the cities list does
+- [ ] geojson: merge western sahara into morocco on the map since cities in its territory are part of morocco in the database.
+- [x] map: hovering over markers in country panel should also highlight the corresponding city dot on the map, like hovering over cities in the cities list does
 - [x] album: only markers with visited=true should be shown in the album. other markers will still be shown on the map and in the country panels, but they won't have an album entry.
 - [x] map: country panel should show selected country name at the top
 - [x] map: dragging in map should not trigger click event on countries - added click suppression logic in the map viewport service and map component

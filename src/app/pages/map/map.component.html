@@ -183,6 +183,18 @@
         </g>
       }
 
+      @if (hoveredCountryMarkerDots().length > 0) {
+        @for (markerDot of hoveredCountryMarkerDots(); track $index) {
+          <g class="city-dot" pointer-events="none">
+            <circle
+              [attr.cx]="markerDot.x"
+              [attr.cy]="markerDot.y"
+              r="1"
+            ></circle>
+          </g>
+        }
+      }
+
       @if (hoveredCapitalDot(); as capitalDot) {
         <g class="capital-dot" pointer-events="none">
           <circle

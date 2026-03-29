@@ -19,6 +19,7 @@ import { BookStateService } from '../../services/data/book-state.service';
 import { SupabaseService } from '../../services/data/supabase.service';
 import {
   BookCountryMarkerSummary,
+  CountryCapitalCity,
   CountryCity,
   CountryMarkerDetail,
   CountryMarkerStatusPatch,
@@ -80,6 +81,7 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
   );
   protected readonly hoveredCountryMarkerSummary =
     signal<BookCountryMarkerSummary>(this.emptyMarkerSummary());
+  protected readonly hoveredCountryMarkerDots = signal<CapitalDot[]>([]);
   protected readonly hoveredCapitalDot = signal<CapitalDot | null>(null);
 
   protected readonly selectedCountryIso2 = signal<string | null>(null);
@@ -577,9 +579,12 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!normalizedIso2) {
       this.hoveredCountryMetadata.set(null);
       this.hoveredCountryMarkerSummary.set(this.emptyMarkerSummary());
+      this.hoveredCountryMarkerDots.set([]);
       this.hoveredCapitalDot.set(null);
       return;
     }
+
+    this.hoveredCountryMarkerDots.set([]);
 
     // Set cached values immediately
     const cachedMetadata =
@@ -601,16 +606,23 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
       this.hoveredCountryMarkerSummary.set(cachedMarkerSummary);
 
     try {
-      const [metadata, markerSummary, capitalCity] = await Promise.all([
-        this.metadataCache.getCountryMetadata(normalizedIso2),
-        this.metadataCache.getBookCountryMarkerSummary(bookId, normalizedIso2),
-        this.metadataCache.getCountryCapital(normalizedIso2),
-      ]);
+      const [metadata, markerSummary, capitalCity, countryMarkers] =
+        await Promise.all([
+          this.metadataCache.getCountryMetadata(normalizedIso2),
+          this.metadataCache.getBookCountryMarkerSummary(bookId, normalizedIso2),
+          this.metadataCache.getCountryCapital(normalizedIso2),
+          bookId
+            ? this.supabase.getCountryMarkersForBook(bookId, normalizedIso2)
+            : Promise.resolve([]),
+        ]);
 
       if (requestId !== this.hoveredMetadataRequestId) return;
 
       this.hoveredCountryMetadata.set(metadata);
       this.hoveredCountryMarkerSummary.set(markerSummary);
+      this.hoveredCountryMarkerDots.set(
+        this.buildHoveredMarkerDots(countryMarkers, capitalCity),
+      );
       this.hoveredCapitalDot.set(
         this.geoProcessor.buildCapitalDot(capitalCity),
       );
@@ -620,8 +632,54 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
       this.hoveredCountryMetadata.set(null);
       this.hoveredCountryMarkerSummary.set(this.emptyMarkerSummary());
+      this.hoveredCountryMarkerDots.set([]);
       this.hoveredCapitalDot.set(null);
     }
+  }
+
+  private buildHoveredMarkerDots(
+    markers: CountryMarkerDetail[],
+    capitalCity: CountryCapitalCity | null,
+  ): CapitalDot[] {
+    const dots: CapitalDot[] = [];
+    const seenCityIds = new Set<string>();
+
+    for (const marker of markers) {
+      if (seenCityIds.has(marker.cityId)) continue;
+      seenCityIds.add(marker.cityId);
+
+      if (
+        capitalCity &&
+        this.isSameCoordinate(
+          marker.latitude,
+          marker.longitude,
+          capitalCity.latitude,
+          capitalCity.longitude,
+        )
+      )
+        continue;
+
+      const [x, y] = this.geoProcessor.projectCoordinate(
+        marker.longitude,
+        marker.latitude,
+      );
+
+      dots.push({ name: marker.cityName, x, y });
+    }
+
+    return dots;
+  }
+
+  private isSameCoordinate(
+    latA: number,
+    lngA: number,
+    latB: number,
+    lngB: number,
+    tolerance = 0.000001,
+  ): boolean {
+    return (
+      Math.abs(latA - latB) <= tolerance && Math.abs(lngA - lngB) <= tolerance
+    );
   }
 
   private emptyMarkerSummary(): BookCountryMarkerSummary {

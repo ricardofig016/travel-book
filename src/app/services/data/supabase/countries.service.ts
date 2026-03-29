@@ -249,7 +249,7 @@ export class SupabaseCountriesService {
       const { data, error } = await client
         .from('markers')
         .select(
-          'id, visited, favorite, want, cities!inner(id, name, countries!inner(iso_code_2))',
+          'id, visited, favorite, want, cities!inner(id, name, latitude, longitude, countries!inner(iso_code_2))',
         )
         .eq('book_id', bookId)
         .eq('cities.countries.iso_code_2', normalizedIso2);
@@ -266,16 +266,32 @@ export class SupabaseCountriesService {
             visited?: boolean;
             favorite?: boolean;
             want?: boolean;
-            cities?: { id?: string; name?: string } | null;
+            cities?: {
+              id?: string;
+              name?: string;
+              latitude?: number | string | null;
+              longitude?: number | string | null;
+            } | null;
           };
           const city = typed.cities;
+          const latitude = Number(city?.latitude);
+          const longitude = Number(city?.longitude);
 
-          if (!typed.id || !city?.id || !city?.name) return null;
+          if (
+            !typed.id ||
+            !city?.id ||
+            !city?.name ||
+            !Number.isFinite(latitude) ||
+            !Number.isFinite(longitude)
+          )
+            return null;
 
           return {
             id: typed.id,
             cityId: city.id,
             cityName: city.name,
+            latitude,
+            longitude,
             visited: typed.visited ?? false,
             favorite: typed.favorite ?? false,
             want: typed.want ?? false,

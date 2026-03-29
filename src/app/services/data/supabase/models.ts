@@ -82,6 +82,8 @@ export interface CountryMarkerDetail {
   id: string;
   cityId: string;
   cityName: string;
+  latitude: number;
+  longitude: number;
   visited: boolean;
   favorite: boolean;
   want: boolean;
