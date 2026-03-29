@@ -433,7 +433,11 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   protected formatPopulation(value: number | null | undefined): string {
     if (!value || value <= 0) return 'N/A';
-    return value.toLocaleString();
+    return new Intl.NumberFormat(undefined, {
+      notation: 'compact',
+      compactDisplay: 'short',
+      maximumFractionDigits: 1,
+    }).format(value);
   }
 
   protected formatArea(value: number | null | undefined): string {

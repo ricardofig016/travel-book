@@ -306,11 +306,9 @@
               (mouseleave)="onCityLeave()"
             >
               <span class="city-name">{{ city.name }}</span>
-              @if (city.population) {
-                <span class="city-population">
-                  {{ (city.population / 1000000).toFixed(1) }}M
-                </span>
-              }
+              <span class="city-population">
+                {{ formatPopulation(city.population) }}
+              </span>
             </li>
           </ul>
         </div>
