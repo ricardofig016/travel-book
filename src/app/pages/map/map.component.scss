@@ -29,7 +29,9 @@
 
 .metadata-row {
   display: flex;
+  align-items: center;
   gap: 0.5rem;
+  min-height: 2rem;
 }
 
 .metadata-row strong {
@@ -37,13 +39,17 @@
 }
 
 .metadata-row span {
-  overflow-wrap: anywhere;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .country-with-flag {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
+  line-height: 1;
 }
 
 @media (max-width: 820px) {
