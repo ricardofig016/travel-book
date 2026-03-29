@@ -356,6 +356,18 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.hoveredCityCoords.set(null);
   }
 
+  onMarkerHover(marker: CountryMarkerDetail): void {
+    const city = this.selectedCountryCities().find(
+      (item) => item.id === marker.cityId,
+    );
+    if (!city) return;
+    this.hoveredCityCoords.set([city.latitude, city.longitude]);
+  }
+
+  onMarkerLeave(): void {
+    this.hoveredCityCoords.set(null);
+  }
+
   onCityHover(city: CountryCity): void {
     this.hoveredCityCoords.set([city.latitude, city.longitude]);
   }

@@ -235,6 +235,10 @@
                   let marker of selectedCountryMarkers();
                   trackBy: trackMarkerById
                 "
+                (mouseenter)="onMarkerHover(marker)"
+                (mouseleave)="onMarkerLeave()"
+                (focusin)="onMarkerHover(marker)"
+                (focusout)="onMarkerLeave()"
               >
                 @if (marker.visited) {
                   <a [routerLink]="getMarkerUrl(marker)">
