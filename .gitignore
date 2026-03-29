@@ -53,3 +53,7 @@ Thumbs.db
 
 # Python
 __pycache__/
+
+# GitHub Copilot instructions
+.github/instructions/
+.github/copilot-instructions.md
