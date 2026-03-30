@@ -49,6 +49,9 @@ DEFAULT_SOURCE_GEOJSON = Path(__file__).parent.parent.parent / "public" / "asset
 FETCH_PAGE_SIZE = 1000
 UPDATE_BATCH_SIZE = 500
 
+VATICAN_CITY_NAME_NORMALIZED = "vatican city"
+VATICAN_ISO2 = "VA"
+
 load_dotenv(ENV_PATH)
 
 
@@ -420,12 +423,32 @@ def choose_country_for_city(
 ) -> MismatchDecision | None:
     point = Point(city.longitude, city.latitude)
 
+    old_country = by_country_id.get(city.country_id)
+    old_name = old_country.name if old_country else "<missing-country-row>"
+
+    # Explicit safeguard: keep Vatican City in Vatican City even when geometry overlap/simplification may pull to Italy.
+    if city.name.strip().casefold() == VATICAN_CITY_NAME_NORMALIZED:
+        vatican_country = next((country for country in countries if country.iso2 == VATICAN_ISO2), None)
+        if vatican_country is not None:
+            if city.country_id == vatican_country.country_id:
+                return None
+
+            return MismatchDecision(
+                city=city,
+                old_country_id=city.country_id,
+                old_country_name=old_name,
+                new_country_id=vatican_country.country_id,
+                new_country_name=vatican_country.name,
+                strategy="manual-override-vatican",
+                confidence="high",
+                nearest_distance=0.0,
+                second_nearest_distance=None,
+                details="Forced override for Vatican City city assignment.",
+            )
+
     # Fast candidate shortlist by bbox intersection.
     index_matches = tree.query(point)
     candidate_indices = [int(idx) for idx in index_matches.tolist()] if hasattr(index_matches, "tolist") else [int(idx) for idx in index_matches]
-
-    old_country = by_country_id.get(city.country_id)
-    old_name = old_country.name if old_country else "<missing-country-row>"
 
     covering: list[CountryGeom] = []
     for idx in candidate_indices:
