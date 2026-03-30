@@ -297,6 +297,9 @@ export class SupabaseCountriesService {
         .select('name, latitude, longitude, countries!inner(iso_code_2)')
         .eq('is_capital', true)
         .eq('countries.iso_code_2', normalizedIso2)
+        // Some countries can have multiple capital-flagged rows (e.g. overseas territories).
+        // Pick the most representative one by population to keep UI behavior stable.
+        .order('population', { ascending: false, nullsFirst: false })
         .limit(1)
         .single();
 
