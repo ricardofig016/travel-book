@@ -221,129 +221,487 @@
     <span>Zoom: {{ zoom() }}x</span>
   </div>
 
-  <!-- Country Details Panel -->
-  @if (selectedCountryIso2(); as iso2) {
-    <div class="country-panel">
-      <div class="panel-header">
-        <a
-          [routerLink]="
-            getCountryAlbumSegments(selectedCountryMetadata()?.name)
-          "
-          class="country-album-link"
-        >
-          <h3>{{ selectedCountryMetadata()?.name || iso2 }}</h3>
-        </a>
-        <button type="button" (click)="closeCountryPanel()">✕</button>
-      </div>
-
-      <div class="panel-content">
-        <!-- Markers Section -->
-        @if (selectedCountryMarkers().length > 0) {
-          <div class="markers-section">
-            <h3>Markers</h3>
-            <ul>
-              <li
-                *ngFor="
-                  let marker of selectedCountryMarkers();
-                  trackBy: trackMarkerById
+  @if (selectedCountryIso2() || activeDetailPanel()) {
+    <div class="panel-layout">
+      <div class="panel-layout-column">
+        @if (selectedCountryIso2(); as iso2) {
+          <div class="panel">
+            <div class="panel-header">
+              <a
+                [routerLink]="
+                  getCountryAlbumSegments(selectedCountryMetadata()?.name)
                 "
-                (mouseenter)="onMarkerHover(marker)"
-                (mouseleave)="onMarkerLeave()"
-                (focusin)="onMarkerHover(marker)"
-                (focusout)="onMarkerLeave()"
+                class="country-album-link"
               >
-                @if (marker.visited) {
-                  <a [routerLink]="getMarkerUrl(marker)">
-                    {{ marker.cityName }}
-                  </a>
-                } @else {
-                  <span>{{ marker.cityName }}</span>
-                }
-                <div class="marker-status">
-                  <label>
-                    <input
-                      #visitedBox
-                      type="checkbox"
-                      [checked]="marker.visited"
-                      [disabled]="isMarkerUpdating(marker.id)"
-                      (change)="
-                        onMarkerStatusChange(
-                          marker.id,
-                          'visited',
-                          visitedBox.checked
-                        )
+                <h3>{{ selectedCountryMetadata()?.name || iso2 }}</h3>
+              </a>
+              <button type="button" (click)="closeCountryPanel()">✕</button>
+            </div>
+
+            <div class="panel-content">
+              <!-- Markers Section -->
+              @if (selectedCountryMarkers().length > 0) {
+                <div class="markers-section">
+                  <h3>Markers</h3>
+                  <ul>
+                    <li
+                      *ngFor="
+                        let marker of selectedCountryMarkers();
+                        trackBy: trackMarkerById
                       "
-                    />
-                    visited
-                  </label>
-                  <label>
-                    <input
-                      #favoriteBox
-                      type="checkbox"
-                      [checked]="marker.favorite"
-                      [disabled]="isMarkerUpdating(marker.id)"
-                      (change)="
-                        onMarkerStatusChange(
-                          marker.id,
-                          'favorite',
-                          favoriteBox.checked
-                        )
-                      "
-                    />
-                    favorite
-                  </label>
-                  <label>
-                    <input
-                      #wantBox
-                      type="checkbox"
-                      [checked]="marker.want"
-                      [disabled]="isMarkerUpdating(marker.id)"
-                      (change)="
-                        onMarkerStatusChange(marker.id, 'want', wantBox.checked)
-                      "
-                    />
-                    want
-                  </label>
+                      class="interactive-list-item"
+                      (click)="onMarkerRowClick(marker, $event)"
+                      (mouseenter)="onMarkerHover(marker)"
+                      (mouseleave)="onMarkerLeave()"
+                      (focusin)="onMarkerHover(marker)"
+                      (focusout)="onMarkerLeave()"
+                    >
+                      @if (marker.visited) {
+                        <a [routerLink]="getMarkerUrl(marker)">
+                          {{ marker.cityName }}
+                        </a>
+                      } @else {
+                        <span>{{ marker.cityName }}</span>
+                      }
+                      <div class="marker-status">
+                        <label>
+                          <input
+                            #visitedBox
+                            type="checkbox"
+                            [checked]="marker.visited"
+                            [disabled]="isMarkerUpdating(marker.id)"
+                            (change)="
+                              onMarkerStatusChange(
+                                marker.id,
+                                'visited',
+                                visitedBox.checked
+                              )
+                            "
+                          />
+                          visited
+                        </label>
+                        <label>
+                          <input
+                            #favoriteBox
+                            type="checkbox"
+                            [checked]="marker.favorite"
+                            [disabled]="isMarkerUpdating(marker.id)"
+                            (change)="
+                              onMarkerStatusChange(
+                                marker.id,
+                                'favorite',
+                                favoriteBox.checked
+                              )
+                            "
+                          />
+                          favorite
+                        </label>
+                        <label>
+                          <input
+                            #wantBox
+                            type="checkbox"
+                            [checked]="marker.want"
+                            [disabled]="isMarkerUpdating(marker.id)"
+                            (change)="
+                              onMarkerStatusChange(
+                                marker.id,
+                                'want',
+                                wantBox.checked
+                              )
+                            "
+                          />
+                          want
+                        </label>
+                      </div>
+                    </li>
+                  </ul>
                 </div>
-              </li>
-            </ul>
+              }
+
+              <!-- Cities Section -->
+              <div class="cities-section">
+                <h3>Cities</h3>
+                <input
+                  type="text"
+                  [ngModel]="citiesSearchText()"
+                  (ngModelChange)="onCitiesSearchChange($event)"
+                  placeholder="Search cities..."
+                  class="search-input"
+                />
+                <div class="cities-count-text">
+                  Showing {{ visibleCities().length }} of
+                  {{ filteredCities().length }}
+                </div>
+                <ul class="cities-list">
+                  <li
+                    *ngFor="let city of visibleCities(); trackBy: trackCityById"
+                    class="interactive-list-item"
+                    (click)="onCityClick(city)"
+                    (mouseenter)="onCityHover(city)"
+                    (mouseleave)="onCityLeave()"
+                  >
+                    <span class="city-name">{{ city.name }}</span>
+                    <span class="city-population">
+                      {{ formatPopulation(city.population) }}
+                    </span>
+                  </li>
+                  <li class="load-more-item" *ngIf="hasMoreCities()">
+                    <button type="button" (click)="loadMoreCities()">
+                      Load more ({{ nextCitiesBatchSize() }})
+                    </button>
+                  </li>
+                </ul>
+              </div>
+            </div>
           </div>
         }
+      </div>
 
-        <!-- Cities Section -->
-        <div class="cities-section">
-          <h3>Cities</h3>
-          <input
-            type="text"
-            [ngModel]="citiesSearchText()"
-            (ngModelChange)="onCitiesSearchChange($event)"
-            placeholder="Search cities..."
-            class="search-input"
-          />
-          <div class="cities-count-text">
-            Showing {{ visibleCities().length }} of
-            {{ filteredCities().length }}
-          </div>
-          <ul class="cities-list">
-            <li
-              *ngFor="let city of visibleCities(); trackBy: trackCityById"
-              (mouseenter)="onCityHover(city)"
-              (mouseleave)="onCityLeave()"
-            >
-              <span class="city-name">{{ city.name }}</span>
-              <span class="city-population">
-                {{ formatPopulation(city.population) }}
-              </span>
-            </li>
-            @if (hasMoreCities()) {
-              <li class="load-more-item">
-                <button type="button" (click)="loadMoreCities()">
-                  Load more ({{ nextCitiesBatchSize() }})
-                </button>
-              </li>
-            }
-          </ul>
-        </div>
+      <div class="panel-layout-column">
+        @if (activeDetailPanel() === "city") {
+          @if (selectedCityForPanel(); as city) {
+            <div class="panel">
+              <div class="panel-header">
+                <h3>{{ city.name }}</h3>
+                <button type="button" (click)="closeDetailPanel()">✕</button>
+              </div>
+
+              <div class="panel-content">
+                <div class="panel-field">
+                  <label class="panel-field-label">Status</label>
+                  <div class="panel-status-options">
+                    <label>
+                      <input
+                        type="checkbox"
+                        [ngModel]="cityPanelForm().visited"
+                        (ngModelChange)="
+                          onCityFormFieldChange('visited', $event)
+                        "
+                      />
+                      visited
+                    </label>
+                    <label>
+                      <input
+                        type="checkbox"
+                        [ngModel]="cityPanelForm().favorite"
+                        (ngModelChange)="
+                          onCityFormFieldChange('favorite', $event)
+                        "
+                      />
+                      favorite
+                    </label>
+                    <label>
+                      <input
+                        type="checkbox"
+                        [ngModel]="cityPanelForm().want"
+                        (ngModelChange)="onCityFormFieldChange('want', $event)"
+                      />
+                      want
+                    </label>
+                  </div>
+                </div>
+
+                <div class="panel-field">
+                  <label class="panel-field-label" for="city-marker-notes"
+                    >Notes</label
+                  >
+                  <textarea
+                    id="city-marker-notes"
+                    [ngModel]="cityPanelForm().notes"
+                    (ngModelChange)="onCityFormFieldChange('notes', $event)"
+                  ></textarea>
+                </div>
+
+                <div class="panel-field">
+                  <label class="panel-field-label" for="city-marker-companions"
+                    >Companions (comma/new line separated)</label
+                  >
+                  <textarea
+                    id="city-marker-companions"
+                    [ngModel]="cityPanelForm().companionsText"
+                    (ngModelChange)="
+                      onCityFormFieldChange('companionsText', $event)
+                    "
+                  ></textarea>
+                </div>
+
+                <div class="panel-field">
+                  <label class="panel-field-label" for="city-marker-activities"
+                    >Activities (comma/new line separated)</label
+                  >
+                  <textarea
+                    id="city-marker-activities"
+                    [ngModel]="cityPanelForm().activitiesText"
+                    (ngModelChange)="
+                      onCityFormFieldChange('activitiesText', $event)
+                    "
+                  ></textarea>
+                </div>
+
+                <div class="panel-field">
+                  <label class="panel-field-label">Visit Dates</label>
+                  <ul class="panel-visit-list">
+                    <li
+                      *ngFor="
+                        let visit of cityPanelForm().visits;
+                        let i = index
+                      "
+                    >
+                      <input
+                        type="date"
+                        aria-label="Visit start date"
+                        [ngModel]="visit.startDate"
+                        (ngModelChange)="
+                          onCityVisitFieldChange(i, 'startDate', $event)
+                        "
+                      />
+                      <input
+                        type="date"
+                        aria-label="Visit end date"
+                        [ngModel]="visit.endDate"
+                        (ngModelChange)="
+                          onCityVisitFieldChange(i, 'endDate', $event)
+                        "
+                      />
+                      <button type="button" (click)="removeCityVisitRow(i)">
+                        Remove
+                      </button>
+                    </li>
+                  </ul>
+                  <button type="button" (click)="addCityVisitRow()">
+                    Add Visit
+                  </button>
+                </div>
+
+                <div class="panel-field">
+                  <button
+                    type="button"
+                    [disabled]="cityPanelSubmitting()"
+                    (click)="createMarkerFromCityPanel()"
+                  >
+                    Create Marker
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
+        }
+
+        @if (activeDetailPanel() === "marker") {
+          @if (selectedMarkerDetail(); as marker) {
+            <div class="panel">
+              <div class="panel-header">
+                <h3>{{ markerPanelCityName() }}</h3>
+                <button type="button" (click)="closeDetailPanel()">✕</button>
+              </div>
+
+              <div class="panel-content">
+                @if (!markerEditMode()) {
+                  <div class="panel-details-block">
+                    <div class="metadata-row">
+                      <strong>Visited:</strong>
+                      <span>{{ markerVisitedLabel(marker.visited) }}</span>
+                    </div>
+                    <div class="metadata-row">
+                      <strong>Favorite:</strong>
+                      <span>{{ markerVisitedLabel(marker.favorite) }}</span>
+                    </div>
+                    <div class="metadata-row">
+                      <strong>Want:</strong>
+                      <span>{{ markerVisitedLabel(marker.want) }}</span>
+                    </div>
+                    <div class="metadata-row">
+                      <strong>Notes:</strong>
+                      <span>{{ marker.notes || "None" }}</span>
+                    </div>
+                    <div class="metadata-row">
+                      <strong>Companions:</strong>
+                      <span>{{
+                        marker.companions.length
+                          ? marker.companions.join(", ")
+                          : "None"
+                      }}</span>
+                    </div>
+                    <div class="metadata-row">
+                      <strong>Activities:</strong>
+                      <span>{{
+                        marker.activities.length
+                          ? marker.activities.join(", ")
+                          : "None"
+                      }}</span>
+                    </div>
+                    <div class="metadata-row">
+                      <strong>Visit Dates:</strong>
+                      <span>
+                        {{ marker.visits.length ? "" : "None" }}
+                        @for (
+                          visit of marker.visits;
+                          track visit.id;
+                          let isLast = $last
+                        ) {
+                          {{ visit.startDate }} to {{ visit.endDate
+                          }}{{ isLast ? "" : " | " }}
+                        }
+                      </span>
+                    </div>
+                    <div class="metadata-row">
+                      <strong>Created:</strong>
+                      <span>{{ marker.createdAt | date: "medium" }}</span>
+                    </div>
+                    <div class="metadata-row">
+                      <strong>Updated:</strong>
+                      <span>{{ marker.updatedAt | date: "medium" }}</span>
+                    </div>
+                  </div>
+
+                  <div class="panel-actions-row">
+                    <a [routerLink]="getMarkerPanelAlbumUrl(marker)">
+                      Marker Album Page
+                    </a>
+                    <a
+                      [routerLink]="
+                        getCountryAlbumSegments(selectedCountryMetadata()?.name)
+                      "
+                    >
+                      Country Album Page
+                    </a>
+                    <button type="button" (click)="startMarkerEdit()">
+                      Edit Marker
+                    </button>
+                    <button
+                      type="button"
+                      [disabled]="markerPanelDeleting()"
+                      (click)="deleteSelectedMarker()"
+                    >
+                      Delete Marker
+                    </button>
+                  </div>
+                } @else {
+                  <div class="panel-field">
+                    <label class="panel-field-label">Status</label>
+                    <div class="panel-status-options">
+                      <label>
+                        <input
+                          type="checkbox"
+                          [ngModel]="markerPanelForm().visited"
+                          (ngModelChange)="
+                            onMarkerFormFieldChange('visited', $event)
+                          "
+                        />
+                        visited
+                      </label>
+                      <label>
+                        <input
+                          type="checkbox"
+                          [ngModel]="markerPanelForm().favorite"
+                          (ngModelChange)="
+                            onMarkerFormFieldChange('favorite', $event)
+                          "
+                        />
+                        favorite
+                      </label>
+                      <label>
+                        <input
+                          type="checkbox"
+                          [ngModel]="markerPanelForm().want"
+                          (ngModelChange)="
+                            onMarkerFormFieldChange('want', $event)
+                          "
+                        />
+                        want
+                      </label>
+                    </div>
+                  </div>
+
+                  <div class="panel-field">
+                    <label class="panel-field-label" for="marker-notes"
+                      >Notes</label
+                    >
+                    <textarea
+                      id="marker-notes"
+                      [ngModel]="markerPanelForm().notes"
+                      (ngModelChange)="onMarkerFormFieldChange('notes', $event)"
+                    ></textarea>
+                  </div>
+
+                  <div class="panel-field">
+                    <label class="panel-field-label" for="marker-companions"
+                      >Companions (comma/new line separated)</label
+                    >
+                    <textarea
+                      id="marker-companions"
+                      [ngModel]="markerPanelForm().companionsText"
+                      (ngModelChange)="
+                        onMarkerFormFieldChange('companionsText', $event)
+                      "
+                    ></textarea>
+                  </div>
+
+                  <div class="panel-field">
+                    <label class="panel-field-label" for="marker-activities"
+                      >Activities (comma/new line separated)</label
+                    >
+                    <textarea
+                      id="marker-activities"
+                      [ngModel]="markerPanelForm().activitiesText"
+                      (ngModelChange)="
+                        onMarkerFormFieldChange('activitiesText', $event)
+                      "
+                    ></textarea>
+                  </div>
+
+                  <div class="panel-field">
+                    <label class="panel-field-label">Visit Dates</label>
+                    <button type="button" (click)="addMarkerVisitRow()">
+                      Add visit range
+                    </button>
+                    <ul class="panel-visit-list">
+                      <li
+                        *ngFor="
+                          let visit of markerPanelForm().visits;
+                          let i = index
+                        "
+                      >
+                        <input
+                          type="date"
+                          aria-label="Visit start date"
+                          [ngModel]="visit.startDate"
+                          (ngModelChange)="
+                            onMarkerVisitFieldChange(i, 'startDate', $event)
+                          "
+                        />
+                        <input
+                          type="date"
+                          aria-label="Visit end date"
+                          [ngModel]="visit.endDate"
+                          (ngModelChange)="
+                            onMarkerVisitFieldChange(i, 'endDate', $event)
+                          "
+                        />
+                        <button type="button" (click)="removeMarkerVisitRow(i)">
+                          Remove
+                        </button>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div class="panel-actions-row">
+                    <button
+                      type="button"
+                      [disabled]="markerPanelSubmitting()"
+                      (click)="saveMarkerPanelChanges()"
+                    >
+                      Save
+                    </button>
+                    <button type="button" (click)="cancelMarkerEdit()">
+                      Cancel
+                    </button>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        }
       </div>
     </div>
   }

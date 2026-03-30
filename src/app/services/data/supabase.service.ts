@@ -15,6 +15,8 @@ import type {
   CountryCity,
   CountryIsoLookup,
   CountryMarkerDetail,
+  MarkerFullDetail,
+  MarkerMutationInput,
   CountryMarkerStatusPatch,
   CountryMetadata,
   SupabaseConnectionStatus,
@@ -171,6 +173,54 @@ export class SupabaseService {
       this.client,
       markerId,
       patch,
+    );
+  }
+
+  async getMarkerDetailForBook(
+    markerId: string,
+    bookId: string,
+  ): Promise<MarkerFullDetail | null> {
+    return this.countriesService.getMarkerDetailForBook(
+      this.client,
+      markerId,
+      bookId,
+    );
+  }
+
+  async createMarkerForBookCity(
+    bookId: string,
+    cityId: string,
+    input: MarkerMutationInput,
+  ): Promise<MarkerFullDetail | null> {
+    return this.countriesService.createMarkerForBookCity(
+      this.client,
+      bookId,
+      cityId,
+      input,
+    );
+  }
+
+  async updateMarkerForBook(
+    markerId: string,
+    bookId: string,
+    input: MarkerMutationInput,
+  ): Promise<MarkerFullDetail | null> {
+    return this.countriesService.updateMarkerForBook(
+      this.client,
+      markerId,
+      bookId,
+      input,
+    );
+  }
+
+  async deleteMarkerForBook(
+    markerId: string,
+    bookId: string,
+  ): Promise<boolean> {
+    return this.countriesService.deleteMarkerForBook(
+      this.client,
+      markerId,
+      bookId,
     );
   }
 

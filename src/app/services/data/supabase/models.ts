@@ -95,3 +95,38 @@ export interface CountryMarkerStatusPatch {
   favorite?: boolean;
   want?: boolean;
 }
+
+export interface MarkerVisitPeriod {
+  id: string;
+  startDate: string;
+  endDate: string;
+}
+
+export interface MarkerMutationInput {
+  visited: boolean;
+  favorite: boolean;
+  want: boolean;
+  notes: string | null;
+  companions: string[];
+  activities: string[];
+  visits: Array<{
+    startDate: string;
+    endDate: string;
+  }>;
+}
+
+export interface MarkerFullDetail {
+  id: string;
+  bookId: string;
+  cityId: string;
+  cityName: string;
+  visited: boolean;
+  favorite: boolean;
+  want: boolean;
+  notes: string | null;
+  companions: string[];
+  activities: string[];
+  visits: MarkerVisitPeriod[];
+  createdAt: string;
+  updatedAt: string;
+}

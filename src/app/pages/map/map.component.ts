@@ -14,7 +14,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { BookStateService } from '../../services/data/book-state.service';
 import { SupabaseService } from '../../services/data/supabase.service';
 import {
@@ -23,6 +23,8 @@ import {
   CountryCity,
   CountryMarkerDetail,
   CountryMarkerStatusPatch,
+  MarkerFullDetail,
+  MarkerMutationInput,
   CountryMetadata,
 } from '../../services/data/supabase/models';
 import { CountryShape, CapitalDot, GridPaths } from '../../services/map/models';
@@ -32,6 +34,21 @@ import { MapDataService } from '../../services/map/map-data.service';
 import { MetadataCacheService } from '../../services/map/metadata-cache.service';
 import { AlbumRouteService } from '../../services/album/album-route.service';
 import { FlagIconComponent } from '../../shared/flag-icon/flag-icon.component';
+
+interface MarkerVisitFormRow {
+  startDate: string;
+  endDate: string;
+}
+
+interface MarkerFormState {
+  visited: boolean;
+  favorite: boolean;
+  want: boolean;
+  notes: string;
+  companionsText: string;
+  activitiesText: string;
+  visits: MarkerVisitFormRow[];
+}
 
 @Component({
   selector: 'app-world-map',
@@ -57,6 +74,7 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
   private metadataCache = inject(MetadataCacheService);
   private albumRoutes = inject(AlbumRouteService);
   private supabase = inject(SupabaseService);
+  private router = inject(Router);
   private readonly hoverDebugEnabled = true;
   private boundWheelHandler: ((event: WheelEvent) => void) | null = null;
   private suppressCountryClickUntil = 0;
@@ -94,6 +112,21 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
     WorldMapComponent.CITY_PAGE_SIZE,
   );
   protected readonly hoveredCityCoords = signal<[number, number] | null>(null);
+  protected readonly activeDetailPanel = signal<'city' | 'marker' | null>(null);
+  protected readonly selectedCityForPanel = signal<CountryCity | null>(null);
+  protected readonly selectedMarkerDetail = signal<MarkerFullDetail | null>(
+    null,
+  );
+  protected readonly markerEditMode = signal(false);
+  protected readonly cityPanelSubmitting = signal(false);
+  protected readonly markerPanelSubmitting = signal(false);
+  protected readonly markerPanelDeleting = signal(false);
+  protected readonly cityPanelForm = signal<MarkerFormState>(
+    this.createEmptyMarkerForm(),
+  );
+  protected readonly markerPanelForm = signal<MarkerFormState>(
+    this.createEmptyMarkerForm(),
+  );
 
   protected get zoom(): Signal<number> {
     return this.viewport.zoom;
@@ -188,6 +221,18 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.visibleCitiesCount() < this.filteredCities().length;
   });
 
+  protected readonly markerByCityId = computed(() => {
+    const markerMap = new Map<string, CountryMarkerDetail>();
+    for (const marker of this.selectedCountryMarkers()) {
+      markerMap.set(marker.cityId, marker);
+    }
+    return markerMap;
+  });
+
+  protected readonly markerPanelCityName = computed(() => {
+    return this.selectedMarkerDetail()?.cityName ?? 'Marker';
+  });
+
   protected readonly nextCitiesBatchSize = computed(() => {
     const remaining = this.filteredCities().length - this.visibleCitiesCount();
     if (remaining <= 0) return 0;
@@ -211,6 +256,16 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
   };
 
   protected readonly getMarkerUrl = (marker: CountryMarkerDetail): string => {
+    return this.albumRoutes.buildCityMarkerPath(
+      this.selectedCountryMetadata()?.name ?? '',
+      marker.cityName,
+      marker.id,
+    );
+  };
+
+  protected readonly getMarkerPanelAlbumUrl = (
+    marker: MarkerFullDetail,
+  ): string => {
     return this.albumRoutes.buildCityMarkerPath(
       this.selectedCountryMetadata()?.name ?? '',
       marker.cityName,
@@ -378,6 +433,7 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.citiesSearchText.set('');
     this.visibleCitiesCount.set(WorldMapComponent.CITY_PAGE_SIZE);
     this.hoveredCityCoords.set(null);
+    this.closeDetailPanel();
   }
 
   onCitiesSearchChange(value: string): void {
@@ -411,6 +467,222 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   onCityLeave(): void {
     this.hoveredCityCoords.set(null);
+  }
+
+  async onCityClick(city: CountryCity): Promise<void> {
+    const existingMarker = this.markerByCityId().get(city.id);
+    if (existingMarker) {
+      await this.openMarkerPanel(existingMarker.id);
+      return;
+    }
+
+    this.selectedCityForPanel.set(city);
+    this.cityPanelForm.set({
+      ...this.createEmptyMarkerForm(),
+      visits: [{ startDate: '', endDate: '' }],
+    });
+    this.activeDetailPanel.set('city');
+    this.markerEditMode.set(false);
+    this.selectedMarkerDetail.set(null);
+  }
+
+  async onMarkerRowClick(
+    marker: CountryMarkerDetail,
+    event?: MouseEvent,
+  ): Promise<void> {
+    const target = event?.target as HTMLElement | null;
+    if (target?.closest('input, label, button, a')) return;
+
+    await this.openMarkerPanel(marker.id);
+  }
+
+  closeDetailPanel(): void {
+    this.activeDetailPanel.set(null);
+    this.selectedCityForPanel.set(null);
+    this.selectedMarkerDetail.set(null);
+    this.markerEditMode.set(false);
+    this.cityPanelForm.set(this.createEmptyMarkerForm());
+    this.markerPanelForm.set(this.createEmptyMarkerForm());
+    this.cityPanelSubmitting.set(false);
+    this.markerPanelSubmitting.set(false);
+    this.markerPanelDeleting.set(false);
+  }
+
+  async createMarkerFromCityPanel(): Promise<void> {
+    const city = this.selectedCityForPanel();
+    const bookId = this.bookState.selectedBook()?.id ?? null;
+    if (!city || !bookId || this.cityPanelSubmitting()) return;
+
+    this.cityPanelSubmitting.set(true);
+
+    try {
+      const createdMarker = await this.supabase.createMarkerForBookCity(
+        bookId,
+        city.id,
+        this.toMarkerMutationInput(this.cityPanelForm()),
+      );
+
+      if (!createdMarker) return;
+
+      await this.refreshAfterMarkerMutation();
+      this.closeDetailPanel();
+
+      const countryName = this.selectedCountryMetadata()?.name ?? '';
+      const albumPath = this.albumRoutes.buildCityMarkerPath(
+        countryName,
+        city.name,
+        createdMarker.id,
+      );
+      await this.router.navigateByUrl(albumPath);
+    } finally {
+      this.cityPanelSubmitting.set(false);
+    }
+  }
+
+  startMarkerEdit(): void {
+    const detail = this.selectedMarkerDetail();
+    if (!detail) return;
+
+    this.markerPanelForm.set(this.createMarkerFormFromDetail(detail));
+    this.markerEditMode.set(true);
+  }
+
+  cancelMarkerEdit(): void {
+    this.markerEditMode.set(false);
+    const detail = this.selectedMarkerDetail();
+    if (!detail) {
+      this.markerPanelForm.set(this.createEmptyMarkerForm());
+      return;
+    }
+
+    this.markerPanelForm.set(this.createMarkerFormFromDetail(detail));
+  }
+
+  async saveMarkerPanelChanges(): Promise<void> {
+    const detail = this.selectedMarkerDetail();
+    if (!detail || this.markerPanelSubmitting()) return;
+
+    this.markerPanelSubmitting.set(true);
+
+    try {
+      const updatedMarker = await this.supabase.updateMarkerForBook(
+        detail.id,
+        detail.bookId,
+        this.toMarkerMutationInput(this.markerPanelForm()),
+      );
+
+      if (!updatedMarker) return;
+
+      this.selectedMarkerDetail.set(updatedMarker);
+      this.markerPanelForm.set(this.createMarkerFormFromDetail(updatedMarker));
+      this.markerEditMode.set(false);
+      await this.refreshAfterMarkerMutation();
+    } finally {
+      this.markerPanelSubmitting.set(false);
+    }
+  }
+
+  async deleteSelectedMarker(): Promise<void> {
+    const detail = this.selectedMarkerDetail();
+    if (!detail || this.markerPanelDeleting()) return;
+
+    const confirmed = window.confirm(
+      `Delete marker for ${detail.cityName}? This cannot be undone.`,
+    );
+    if (!confirmed) return;
+
+    this.markerPanelDeleting.set(true);
+
+    try {
+      const deleted = await this.supabase.deleteMarkerForBook(
+        detail.id,
+        detail.bookId,
+      );
+      if (!deleted) return;
+
+      this.closeDetailPanel();
+      await this.refreshAfterMarkerMutation();
+    } finally {
+      this.markerPanelDeleting.set(false);
+    }
+  }
+
+  onCityFormFieldChange(
+    field: Exclude<keyof MarkerFormState, 'visits'>,
+    value: string | boolean,
+  ): void {
+    this.cityPanelForm.update((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  }
+
+  onMarkerFormFieldChange(
+    field: Exclude<keyof MarkerFormState, 'visits'>,
+    value: string | boolean,
+  ): void {
+    this.markerPanelForm.update((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  }
+
+  addCityVisitRow(): void {
+    this.cityPanelForm.update((current) => ({
+      ...current,
+      visits: [...current.visits, { startDate: '', endDate: '' }],
+    }));
+  }
+
+  removeCityVisitRow(index: number): void {
+    this.cityPanelForm.update((current) => ({
+      ...current,
+      visits: current.visits.filter((_, idx) => idx !== index),
+    }));
+  }
+
+  onCityVisitFieldChange(
+    index: number,
+    field: keyof MarkerVisitFormRow,
+    value: string,
+  ): void {
+    this.cityPanelForm.update((current) => ({
+      ...current,
+      visits: current.visits.map((visit, idx) =>
+        idx === index ? { ...visit, [field]: value } : visit,
+      ),
+    }));
+  }
+
+  addMarkerVisitRow(): void {
+    this.markerPanelForm.update((current) => ({
+      ...current,
+      visits: [...current.visits, { startDate: '', endDate: '' }],
+    }));
+  }
+
+  removeMarkerVisitRow(index: number): void {
+    this.markerPanelForm.update((current) => ({
+      ...current,
+      visits: current.visits.filter((_, idx) => idx !== index),
+    }));
+  }
+
+  onMarkerVisitFieldChange(
+    index: number,
+    field: keyof MarkerVisitFormRow,
+    value: string,
+  ): void {
+    this.markerPanelForm.update((current) => ({
+      ...current,
+      visits: current.visits.map((visit, idx) =>
+        idx === index ? { ...visit, [field]: value } : visit,
+      ),
+    }));
+  }
+
+  markerVisitedLabel(value: boolean): string {
+    return value ? 'Yes' : 'No';
   }
 
   trackMarkerById(_index: number, marker: CountryMarkerDetail): string {
@@ -460,6 +732,84 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
     const bookId = this.bookState.selectedBook()?.id ?? null;
     if (!bookId) return;
+
+    await this.loadBookVisitedMetadata(bookId);
+
+    const hoveredIso2 = this.hoveredCountry()?.iso2 ?? null;
+    await this.loadHoveredCountryMetadata(hoveredIso2, bookId);
+  }
+
+  private async openMarkerPanel(markerId: string): Promise<void> {
+    const bookId = this.bookState.selectedBook()?.id ?? null;
+    if (!bookId) return;
+
+    const detail = await this.supabase.getMarkerDetailForBook(markerId, bookId);
+    if (!detail) return;
+
+    this.selectedMarkerDetail.set(detail);
+    this.markerPanelForm.set(this.createMarkerFormFromDetail(detail));
+    this.markerEditMode.set(false);
+    this.selectedCityForPanel.set(null);
+    this.activeDetailPanel.set('marker');
+  }
+
+  private createEmptyMarkerForm(): MarkerFormState {
+    return {
+      visited: false,
+      favorite: false,
+      want: false,
+      notes: '',
+      companionsText: '',
+      activitiesText: '',
+      visits: [],
+    };
+  }
+
+  private createMarkerFormFromDetail(
+    detail: MarkerFullDetail,
+  ): MarkerFormState {
+    return {
+      visited: detail.visited,
+      favorite: detail.favorite,
+      want: detail.want,
+      notes: detail.notes ?? '',
+      companionsText: detail.companions.join(', '),
+      activitiesText: detail.activities.join(', '),
+      visits: detail.visits.map((visit) => ({
+        startDate: visit.startDate,
+        endDate: visit.endDate,
+      })),
+    };
+  }
+
+  private parseTextList(value: string): string[] {
+    return value
+      .split(/[\n,]/)
+      .map((item) => item.trim())
+      .filter((item) => item.length > 0);
+  }
+
+  private toMarkerMutationInput(form: MarkerFormState): MarkerMutationInput {
+    return {
+      visited: form.visited,
+      favorite: form.favorite,
+      want: form.want,
+      notes: form.notes.trim() ? form.notes.trim() : null,
+      companions: this.parseTextList(form.companionsText),
+      activities: this.parseTextList(form.activitiesText),
+      visits: form.visits
+        .filter((visit) => visit.startDate && visit.endDate)
+        .map((visit) => ({
+          startDate: visit.startDate,
+          endDate: visit.endDate,
+        })),
+    };
+  }
+
+  private async refreshAfterMarkerMutation(): Promise<void> {
+    const iso2 = this.selectedCountryIso2();
+    const bookId = this.bookState.selectedBook()?.id ?? null;
+    if (iso2) await this.loadSelectedCountryData(iso2);
 
     await this.loadBookVisitedMetadata(bookId);
 

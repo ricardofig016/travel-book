@@ -6,12 +6,156 @@ import {
   CountryCity,
   CountryIsoLookup,
   CountryMarkerDetail,
+  MarkerFullDetail,
+  MarkerMutationInput,
+  MarkerVisitPeriod,
   CountryMarkerStatusPatch,
   CountryMetadata,
 } from './models';
 
 @Injectable({ providedIn: 'root' })
 export class SupabaseCountriesService {
+  private toMarkerMutationPayload(input: MarkerMutationInput): {
+    visited: boolean;
+    favorite: boolean;
+    want: boolean;
+    notes: string | null;
+    companions: string[];
+    activities: string[];
+  } {
+    return {
+      visited: input.visited,
+      favorite: input.favorite,
+      want: input.want,
+      notes: input.notes,
+      companions: input.companions,
+      activities: input.activities,
+    };
+  }
+
+  private normalizeMarkerVisits(
+    visits: MarkerMutationInput['visits'],
+  ): Array<{ start_date: string; end_date: string }> {
+    return visits
+      .map((visit) => ({
+        start_date: visit.startDate,
+        end_date: visit.endDate,
+      }))
+      .filter((visit) => Boolean(visit.start_date && visit.end_date));
+  }
+
+  private async replaceMarkerVisits(
+    client: SupabaseClient,
+    markerId: string,
+    visits: MarkerMutationInput['visits'],
+  ): Promise<boolean> {
+    const { error: deleteError } = await client
+      .from('marker_visits')
+      .delete()
+      .eq('marker_id', markerId);
+
+    if (deleteError) {
+      console.error('Error deleting marker visits:', deleteError);
+      return false;
+    }
+
+    const normalizedVisits = this.normalizeMarkerVisits(visits);
+    if (normalizedVisits.length === 0) return true;
+
+    const { error: insertError } = await client.from('marker_visits').insert(
+      normalizedVisits.map((visit) => ({
+        marker_id: markerId,
+        start_date: visit.start_date,
+        end_date: visit.end_date,
+      })),
+    );
+
+    if (insertError) {
+      console.error('Error inserting marker visits:', insertError);
+      return false;
+    }
+
+    return true;
+  }
+
+  private async mapMarkerFullDetailRow(
+    client: SupabaseClient,
+    markerId: string,
+    bookId: string,
+  ): Promise<MarkerFullDetail | null> {
+    const { data, error } = await client
+      .from('markers')
+      .select(
+        'id, book_id, city_id, visited, favorite, want, notes, companions, activities, created_at, updated_at, cities!inner(name), marker_visits(id, start_date, end_date)',
+      )
+      .eq('id', markerId)
+      .eq('book_id', bookId)
+      .single();
+
+    if (error) {
+      console.error('Error fetching marker detail:', error);
+      return null;
+    }
+
+    const row = data as {
+      id?: string;
+      book_id?: string;
+      city_id?: string;
+      visited?: boolean;
+      favorite?: boolean;
+      want?: boolean;
+      notes?: string | null;
+      companions?: string[] | null;
+      activities?: string[] | null;
+      created_at?: string;
+      updated_at?: string;
+      cities?: { name?: string } | null;
+      marker_visits?: Array<{
+        id?: string;
+        start_date?: string;
+        end_date?: string;
+      }> | null;
+    } | null;
+
+    if (
+      !row?.id ||
+      !row.book_id ||
+      !row.city_id ||
+      !row.created_at ||
+      !row.updated_at ||
+      !row.cities?.name
+    )
+      return null;
+
+    const visits: MarkerVisitPeriod[] = (row.marker_visits ?? [])
+      .map((visit) => {
+        if (!visit.id || !visit.start_date || !visit.end_date) return null;
+        return {
+          id: visit.id,
+          startDate: visit.start_date,
+          endDate: visit.end_date,
+        };
+      })
+      .filter((visit): visit is MarkerVisitPeriod => visit !== null)
+      .sort((a, b) => a.startDate.localeCompare(b.startDate));
+
+    return {
+      id: row.id,
+      bookId: row.book_id,
+      cityId: row.city_id,
+      cityName: row.cities.name,
+      visited: row.visited ?? false,
+      favorite: row.favorite ?? false,
+      want: row.want ?? false,
+      notes: row.notes ?? null,
+      companions: row.companions ?? [],
+      activities: row.activities ?? [],
+      visits,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    };
+  }
+
   async getVisitedCountryIso2s(
     client: SupabaseClient,
     bookId: string,
@@ -376,6 +520,122 @@ export class SupabaseCountriesService {
       return true;
     } catch (err) {
       console.error('Exception updating marker statuses:', err);
+      return false;
+    }
+  }
+
+  async getMarkerDetailForBook(
+    client: SupabaseClient,
+    markerId: string,
+    bookId: string,
+  ): Promise<MarkerFullDetail | null> {
+    if (!markerId || !bookId) return null;
+
+    try {
+      return await this.mapMarkerFullDetailRow(client, markerId, bookId);
+    } catch (err) {
+      console.error('Exception fetching marker detail:', err);
+      return null;
+    }
+  }
+
+  async createMarkerForBookCity(
+    client: SupabaseClient,
+    bookId: string,
+    cityId: string,
+    input: MarkerMutationInput,
+  ): Promise<MarkerFullDetail | null> {
+    if (!bookId || !cityId) return null;
+
+    try {
+      const { data, error } = await client
+        .from('markers')
+        .insert({
+          book_id: bookId,
+          city_id: cityId,
+          ...this.toMarkerMutationPayload(input),
+        })
+        .select('id')
+        .single();
+
+      if (error) {
+        console.error('Error creating marker:', error);
+        return null;
+      }
+
+      const markerId = (data as { id?: string } | null)?.id;
+      if (!markerId) return null;
+
+      const visitsSaved = await this.replaceMarkerVisits(
+        client,
+        markerId,
+        input.visits,
+      );
+      if (!visitsSaved) return null;
+
+      return await this.mapMarkerFullDetailRow(client, markerId, bookId);
+    } catch (err) {
+      console.error('Exception creating marker:', err);
+      return null;
+    }
+  }
+
+  async updateMarkerForBook(
+    client: SupabaseClient,
+    markerId: string,
+    bookId: string,
+    input: MarkerMutationInput,
+  ): Promise<MarkerFullDetail | null> {
+    if (!markerId || !bookId) return null;
+
+    try {
+      const { error } = await client
+        .from('markers')
+        .update(this.toMarkerMutationPayload(input))
+        .eq('id', markerId)
+        .eq('book_id', bookId);
+
+      if (error) {
+        console.error('Error updating marker:', error);
+        return null;
+      }
+
+      const visitsSaved = await this.replaceMarkerVisits(
+        client,
+        markerId,
+        input.visits,
+      );
+      if (!visitsSaved) return null;
+
+      return await this.mapMarkerFullDetailRow(client, markerId, bookId);
+    } catch (err) {
+      console.error('Exception updating marker:', err);
+      return null;
+    }
+  }
+
+  async deleteMarkerForBook(
+    client: SupabaseClient,
+    markerId: string,
+    bookId: string,
+  ): Promise<boolean> {
+    if (!markerId || !bookId) return false;
+
+    try {
+      const { error } = await client
+        .from('markers')
+        .delete()
+        .eq('id', markerId)
+        .eq('book_id', bookId);
+
+      if (error) {
+        console.error('Error deleting marker:', error);
+        return false;
+      }
+
+      return true;
+    } catch (err) {
+      console.error('Exception deleting marker:', err);
       return false;
     }
   }
