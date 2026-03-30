@@ -17,28 +17,41 @@ export class SupabaseCountriesService {
     bookId: string,
   ): Promise<string[]> {
     try {
-      const { data, error } = await client
-        .from('markers')
-        .select('cities(countries(iso_code_2))')
-        .eq('book_id', bookId)
-        .eq('visited', true);
+      const pageSize = 1000;
+      let offset = 0;
+      const allRows: Array<{
+        cities?: { countries?: { iso_code_2?: string } | null } | null;
+      }> = [];
 
-      if (error) {
-        console.error('Error fetching visited countries:', error);
-        return [];
+      while (true) {
+        const { data, error } = await client
+          .from('markers')
+          .select('cities(countries(iso_code_2))')
+          .eq('book_id', bookId)
+          .eq('visited', true)
+          .range(offset, offset + pageSize - 1);
+
+        if (error) {
+          console.error('Error fetching visited countries:', error);
+          return [];
+        }
+
+        const pageRows =
+          (data as Array<{
+            cities?: { countries?: { iso_code_2?: string } | null } | null;
+          }> | null) ?? [];
+
+        allRows.push(...pageRows);
+
+        if (pageRows.length < pageSize) break;
+        offset += pageSize;
       }
 
       const iso2s = new Set<string>();
-      for (const marker of data ?? []) {
-        const iso2 = (
-          marker as {
-            cities?: { countries?: { iso_code_2?: string } | null } | null;
-          }
-        )?.cities?.countries?.iso_code_2;
+      for (const marker of allRows) {
+        const iso2 = marker?.cities?.countries?.iso_code_2;
 
-        if (iso2) {
-          iso2s.add(iso2.toUpperCase());
-        }
+        if (iso2) iso2s.add(iso2.toUpperCase());
       }
 
       return Array.from(iso2s);
@@ -182,21 +195,34 @@ export class SupabaseCountriesService {
     if (!/^[A-Z]{2}$/.test(normalizedIso2)) return [];
 
     try {
-      const { data, error } = await client
-        .from('cities')
-        .select(
-          'id, name, population, latitude, longitude, countries!inner(iso_code_2)',
-        )
-        .eq('countries.iso_code_2', normalizedIso2)
-        .order('population', { ascending: false, nullsFirst: false });
+      const pageSize = 1000;
+      let offset = 0;
+      const allRows: unknown[] = [];
 
-      if (error) {
-        console.error('Error fetching country cities by ISO2:', error);
-        return [];
+      while (true) {
+        const { data, error } = await client
+          .from('cities')
+          .select(
+            'id, name, population, latitude, longitude, countries!inner(iso_code_2)',
+          )
+          .eq('countries.iso_code_2', normalizedIso2)
+          .order('population', { ascending: false, nullsFirst: false })
+          .range(offset, offset + pageSize - 1);
+
+        if (error) {
+          console.error('Error fetching country cities by ISO2:', error);
+          return [];
+        }
+
+        const pageRows = data ?? [];
+        allRows.push(...pageRows);
+
+        if (pageRows.length < pageSize) break;
+        offset += pageSize;
       }
 
       return (
-        (data ?? []).map((row: unknown) => {
+        allRows.map((row: unknown) => {
           const typed = row as {
             id?: string;
             name?: string;
@@ -246,21 +272,34 @@ export class SupabaseCountriesService {
     if (!/^[A-Z]{2}$/.test(normalizedIso2)) return [];
 
     try {
-      const { data, error } = await client
-        .from('markers')
-        .select(
-          'id, visited, favorite, want, cities!inner(id, name, latitude, longitude, countries!inner(iso_code_2))',
-        )
-        .eq('book_id', bookId)
-        .eq('cities.countries.iso_code_2', normalizedIso2);
+      const pageSize = 1000;
+      let offset = 0;
+      const allRows: unknown[] = [];
 
-      if (error) {
-        console.error('Error fetching country markers for book:', error);
-        return [];
+      while (true) {
+        const { data, error } = await client
+          .from('markers')
+          .select(
+            'id, visited, favorite, want, cities!inner(id, name, latitude, longitude, countries!inner(iso_code_2))',
+          )
+          .eq('book_id', bookId)
+          .eq('cities.countries.iso_code_2', normalizedIso2)
+          .range(offset, offset + pageSize - 1);
+
+        if (error) {
+          console.error('Error fetching country markers for book:', error);
+          return [];
+        }
+
+        const pageRows = data ?? [];
+        allRows.push(...pageRows);
+
+        if (pageRows.length < pageSize) break;
+        offset += pageSize;
       }
 
       return (
-        (data ?? []).map((row: unknown) => {
+        allRows.map((row: unknown) => {
           const typed = row as {
             id?: string;
             visited?: boolean;

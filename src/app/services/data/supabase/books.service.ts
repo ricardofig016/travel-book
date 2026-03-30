@@ -12,73 +12,114 @@ interface MembershipRow {
 export class SupabaseBooksService {
   private readonly authService = inject(SupabaseAuthService);
 
+  private readonly pageSize = 1000;
+
+  private async fetchPublicBooks(client: SupabaseClient): Promise<Book[]> {
+    const books: Book[] = [];
+    let offset = 0;
+
+    while (true) {
+      const { data, error } = await client
+        .from('books')
+        .select('*')
+        .eq('is_public', true)
+        .range(offset, offset + this.pageSize - 1);
+
+      if (error) {
+        console.error('Error fetching public books:', error);
+        return [];
+      }
+
+      const pageRows = (data as Book[] | null) ?? [];
+      books.push(...pageRows);
+
+      if (pageRows.length < this.pageSize) break;
+      offset += this.pageSize;
+    }
+
+    return books;
+  }
+
+  private async fetchMembershipBookIds(
+    client: SupabaseClient,
+    userId: string,
+  ): Promise<string[]> {
+    const bookIds: string[] = [];
+    let offset = 0;
+
+    while (true) {
+      const { data, error } = await client
+        .from('book_members')
+        .select('book_id')
+        .eq('user_id', userId)
+        .range(offset, offset + this.pageSize - 1);
+
+      if (error) {
+        console.error('Error fetching user memberships:', error);
+        return [];
+      }
+
+      const pageRows = ((data ?? []) as MembershipRow[]).map(
+        (membership) => membership.book_id,
+      );
+      bookIds.push(...pageRows);
+
+      if (pageRows.length < this.pageSize) break;
+      offset += this.pageSize;
+    }
+
+    return bookIds;
+  }
+
+  private async fetchBooksByIds(
+    client: SupabaseClient,
+    bookIds: string[],
+  ): Promise<Book[]> {
+    const result: Book[] = [];
+    const chunkSize = 500;
+
+    for (let start = 0; start < bookIds.length; start += chunkSize) {
+      const chunk = bookIds.slice(start, start + chunkSize);
+      if (chunk.length === 0) continue;
+
+      const { data, error } = await client
+        .from('books')
+        .select('*')
+        .in('id', chunk);
+
+      if (error) {
+        console.error('Error fetching member books:', error);
+        return [];
+      }
+
+      result.push(...((data as Book[] | null) ?? []));
+    }
+
+    return result;
+  }
+
   async getUserBooks(client: SupabaseClient): Promise<Book[]> {
     try {
       const {
         data: { user },
       } = await client.auth.getUser();
 
-      if (!user) {
-        const { data, error } = await client
-          .from('books')
-          .select('*')
-          .eq('is_public', true);
-
-        if (error) {
-          console.error('Error fetching public book:', error);
-          return [];
-        }
-
-        return (data as Book[] | null) ?? [];
-      }
+      if (!user) return await this.fetchPublicBooks(client);
 
       const profile = await this.authService.getUserProfile(client);
       const hideDemoBook = profile?.hide_demo_book ?? false;
 
-      const { data: memberships, error: membershipsError } = await client
-        .from('book_members')
-        .select('book_id')
-        .eq('user_id', user.id);
-
-      if (membershipsError) {
-        console.error('Error fetching user memberships:', membershipsError);
-        return [];
-      }
-
-      const memberBookIds = ((memberships ?? []) as MembershipRow[]).map(
-        (membership) => membership.book_id,
-      );
-
-      const { data: publicBooks, error: publicBooksError } = await client
-        .from('books')
-        .select('*')
-        .eq('is_public', true);
-
-      if (publicBooksError) {
-        console.error('Error fetching public books:', publicBooksError);
-        return [];
-      }
+      const memberBookIds = await this.fetchMembershipBookIds(client, user.id);
+      const publicBooks = await this.fetchPublicBooks(client);
 
       let memberBooks: Book[] = [];
       if (memberBookIds.length > 0) {
-        const { data: fetchedMemberBooks, error: memberBooksError } =
-          await client.from('books').select('*').in('id', memberBookIds);
-
-        if (memberBooksError) {
-          console.error('Error fetching member books:', memberBooksError);
-          return [];
-        }
-
-        memberBooks = (fetchedMemberBooks as Book[] | null) ?? [];
+        memberBooks = await this.fetchBooksByIds(client, memberBookIds);
       }
 
       const booksById = new Map<string, Book>();
-      for (const book of [
-        ...memberBooks,
-        ...((publicBooks as Book[] | null) ?? []),
-      ]) {
+      for (const book of [...memberBooks, ...publicBooks])
         booksById.set(book.id, book);
-      }
 
       const books = Array.from(booksById.values());
       if (hideDemoBook) return books.filter((book) => !book.is_public);

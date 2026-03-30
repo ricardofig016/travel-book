@@ -10,25 +10,38 @@ export class SupabaseStatsService {
     bookId: string,
   ): Promise<BookVisitedLandAreaStats> {
     try {
-      const { data: markerRows, error: markersError } = await client
-        .from('markers')
-        .select('cities(country_id)')
-        .eq('book_id', bookId)
-        .eq('visited', true);
+      const pageSize = 1000;
+      let offset = 0;
+      const markerRows: Array<{
+        cities?: { country_id?: string | null } | null;
+      }> = [];
 
-      if (markersError) {
-        console.error(
-          'Error fetching visited marker country ids:',
-          markersError,
-        );
-        return { visitedArea: 0, totalArea: 0, visitedPercent: 0 };
+      while (true) {
+        const { data, error } = await client
+          .from('markers')
+          .select('cities(country_id)')
+          .eq('book_id', bookId)
+          .eq('visited', true)
+          .range(offset, offset + pageSize - 1);
+
+        if (error) {
+          console.error('Error fetching visited marker country ids:', error);
+          return { visitedArea: 0, totalArea: 0, visitedPercent: 0 };
+        }
+
+        const pageRows =
+          (data as Array<{
+            cities?: { country_id?: string | null } | null;
+          }> | null) ?? [];
+        markerRows.push(...pageRows);
+
+        if (pageRows.length < pageSize) break;
+        offset += pageSize;
       }
 
       const visitedCountryIds = new Set<string>();
-      for (const marker of markerRows ?? []) {
-        const countryId = (
-          marker as { cities?: { country_id?: string | null } | null }
-        )?.cities?.country_id;
+      for (const marker of markerRows) {
+        const countryId = marker?.cities?.country_id;
 
         if (countryId) visitedCountryIds.add(countryId);
       }
@@ -140,45 +153,56 @@ export class SupabaseStatsService {
     if (!/^[A-Z]{2}$/.test(normalizedIso2)) return this.emptyMarkerSummary();
 
     try {
-      const { data, error } = await client
-        .from('markers')
-        .select('visited, favorite, want, cities(name, countries(iso_code_2))')
-        .eq('book_id', bookId);
+      const pageSize = 1000;
+      let offset = 0;
+      const allRows: Array<{
+        visited?: boolean;
+        favorite?: boolean;
+        want?: boolean;
+        cities?: { name?: string | null } | null;
+      }> = [];
 
-      if (error) {
-        console.error('Error fetching markers for country summary:', error);
-        return this.emptyMarkerSummary();
+      while (true) {
+        const { data, error } = await client
+          .from('markers')
+          .select(
+            'visited, favorite, want, cities!inner(name, countries!inner(iso_code_2))',
+          )
+          .eq('book_id', bookId)
+          .eq('cities.countries.iso_code_2', normalizedIso2)
+          .range(offset, offset + pageSize - 1);
+
+        if (error) {
+          console.error('Error fetching markers for country summary:', error);
+          return this.emptyMarkerSummary();
+        }
+
+        const pageRows =
+          (data as Array<{
+            visited?: boolean;
+            favorite?: boolean;
+            want?: boolean;
+            cities?: { name?: string | null } | null;
+          }> | null) ?? [];
+        allRows.push(...pageRows);
+
+        if (pageRows.length < pageSize) break;
+        offset += pageSize;
       }
-
-      const filtered = (data ?? []).filter((marker) => {
-        const markerIso2 = (
-          marker as {
-            cities?: {
-              countries?: { iso_code_2?: string | null } | null;
-            } | null;
-          }
-        )?.cities?.countries?.iso_code_2;
-
-        return markerIso2?.toUpperCase() === normalizedIso2;
-      });
 
       const markerCities = Array.from(
         new Set(
-          filtered
-            .map(
-              (marker) =>
-                (marker as { cities?: { name?: string | null } | null })?.cities
-                  ?.name ?? null,
-            )
+          allRows
+            .map((marker) => marker.cities?.name ?? null)
             .filter((name): name is string => Boolean(name)),
         ),
       );
 
       return {
-        markerCount: filtered.length,
-        visitedCount: filtered.filter((marker) => marker.visited).length,
-        favoriteCount: filtered.filter((marker) => marker.favorite).length,
-        wantCount: filtered.filter((marker) => marker.want).length,
+        markerCount: allRows.length,
+        visitedCount: allRows.filter((marker) => marker.visited).length,
+        favoriteCount: allRows.filter((marker) => marker.favorite).length,
+        wantCount: allRows.filter((marker) => marker.want).length,
         markerCities,
       };
     } catch (err) {
