@@ -127,6 +127,96 @@ python seed_dishes.py
 - Uses upsert on `(name, country_id)` for idempotent re-runs
 - Logs unmatched countries and skipped rows
 
+## Maintenance & Validation Scripts
+
+### City-Country Reconciliation
+
+Validates and repairs city-to-country assignments by comparing city coordinates against country boundary geometries. Use this after city or country geometry changes to ensure data consistency.
+
+**Dry-run (validate without applying changes)**
+
+```bash
+python reconcile_city_country_by_geometry.py
+```
+
+**Apply updates to database**
+
+```bash
+python reconcile_city_country_by_geometry.py --apply
+```
+
+**With custom tolerance settings**
+
+```bash
+python reconcile_city_country_by_geometry.py --apply --nearest-tolerance-deg 0.08 --nearest-margin-ratio 0.6
+```
+
+**Command-line options:**
+
+- `--apply`: Apply discovered fixes to the database. Without this flag, script runs in dry-run mode.
+- `--nearest-tolerance-deg FLOAT`: Max geometry distance (degrees) for nearest-fallback assignment when a city point is not inside any polygon boundary. Default: `0.08` (~9 km at equator). Lower values = stricter.
+- `--nearest-margin-ratio FLOAT`: Confidence margin for nearest fallback: nearest distance must be ≤ ratio × second_nearest distance. Default: `0.6`. Lower values = stricter (requires clear winner).
+- `--max-cities INT`: Optional safety limit for number of cities to process (0 = all). Default: `0` (process all).
+- `--source-geojson PATH`: Original GeoJSON source to normalize before reconciliation. Default: `public/assets/data/geo/countries.geojson`. The script applies the same normalization + dissolve pipeline as `normalize_country_shapes_geojson.py` to ensure consistent geometry processing.
+
+**How it works:**
+
+1. **Loads source GeoJSON** and normalizes it through the canonical matching + dissolve pipeline (same as seed process).
+2. **Fetches all cities and countries** from Supabase (paginated, no truncation at 1000 rows).
+3. **For each city:**
+   - **Exact match**: Check if city point is covered by exactly one country polygon.
+     - If yes and matches current assignment: no change needed.
+     - If yes and differs: flag as `unique-cover` (high confidence).
+     - If covered by multiple: flag as `ambiguous-overlap` (low confidence, skip).
+   - **Fallback**: If point is not inside any polygon:
+     - Find nearest country by geometry distance (using STRtree spatial index).
+     - If nearest ≤ tolerance AND nearest ≤ (second_nearest × margin_ratio): flag as `nearest-fallback` (medium confidence).
+     - Otherwise: flag as `unresolved-outside` (low confidence, skip).
+   - **Vatican City override**: If city name is "Vatican City", force assignment to Vatican City country (ISO2 VA) regardless of geometry.
+4. **Decision categories:**
+   - `unique-cover`: Point covered by exactly one polygon → high confidence → auto-fix.
+   - `nearest-fallback`: Point outside all polygons but nearest country passes checks → medium confidence → auto-fix.
+   - `ambiguous-overlap`: Point covered by multiple polygons → skip (manual review needed).
+   - `unresolved-outside`: Point outside all polygons and nearest fails checks → skip (manual review needed).
+   - `manual-override-vatican`: Special case for Vatican City city (always mapped to VA).
+5. **Output:**
+   - Detailed log file: `../logs/reconcile-city-country-YYYYMMDD-HHMMSS.log`
+   - Per-city decision lines (strategy, confidence, distances, rationale)
+   - Country-level delta report (gains/losses by country)
+   - In apply mode: summary of successful/failed updates
+
+**Example output (dry-run):**
+
+```
+[DRY-RUN] reconcile_city_country_by_geometry completed
+Cities checked: 48031
+Mismatches found: 357
+Fixable mismatches: 349
+Unresolved mismatches: 8
+Log file: supabase/logs/reconcile-city-country-20260330-012345.log
+```
+
+**Example output (apply mode):**
+
+```
+[APPLY] reconcile_city_country_by_geometry completed
+Cities checked: 48031
+Mismatches found: 357
+Fixable mismatches: 349
+Unresolved mismatches: 8
+Updates applied successfully: 349
+Updates failed: 0
+Log file: supabase/logs/reconcile-city-country-20260330-014625.log
+```
+
+**Requirements:** `shapely` (for geometric operations and spatial indexing). Install with:
+
+```bash
+pip install shapely
+```
+
+**Performance:** ~30–60 seconds for full 48k-city dataset on modern hardware.
+
 ## Available Scripts
 
 | Script                   | Purpose                                    | Input                                                           | Output                 |
