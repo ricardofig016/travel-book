@@ -9,11 +9,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SupabaseService } from '../../services/data/supabase.service';
 import { UserLookupResult } from '../../services/data/supabase/models';
-
-export interface CreateBookResult {
-  name: string;
-  memberUserIds: string[];
-}
+import { CreateBookResult } from './models';
 
 @Component({
   selector: 'app-create-book-dialog',
