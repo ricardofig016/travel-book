@@ -315,13 +315,18 @@
           <h3>Cities</h3>
           <input
             type="text"
-            [(ngModel)]="citiesSearchText"
+            [ngModel]="citiesSearchText()"
+            (ngModelChange)="onCitiesSearchChange($event)"
             placeholder="Search cities..."
             class="search-input"
           />
+          <div class="cities-count-text">
+            Showing {{ visibleCities().length }} of
+            {{ filteredCities().length }}
+          </div>
           <ul class="cities-list">
             <li
-              *ngFor="let city of filteredCities(); trackBy: trackCityById"
+              *ngFor="let city of visibleCities(); trackBy: trackCityById"
               (mouseenter)="onCityHover(city)"
               (mouseleave)="onCityLeave()"
             >
@@ -330,6 +335,13 @@
                 {{ formatPopulation(city.population) }}
               </span>
             </li>
+            @if (hasMoreCities()) {
+              <li class="load-more-item">
+                <button type="button" (click)="loadMoreCities()">
+                  Load more ({{ nextCitiesBatchSize() }})
+                </button>
+              </li>
+            }
           </ul>
         </div>
       </div>

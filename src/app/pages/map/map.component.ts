@@ -42,6 +42,7 @@ import { FlagIconComponent } from '../../shared/flag-icon/flag-icon.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
+  private static readonly CITY_PAGE_SIZE = 200;
   private static readonly HOVERED_COUNTRY_FILL = '#f2af55';
   private static readonly HOME_COUNTRY_FILL = '#7fcf6e';
   private static readonly VISITED_COUNTRY_FILL = '#8fa8ff';
@@ -89,6 +90,9 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
   protected readonly selectedCountryMarkers = signal<CountryMarkerDetail[]>([]);
   protected readonly updatingMarkerIds = signal<Set<string>>(new Set());
   protected readonly citiesSearchText = signal('');
+  protected readonly visibleCitiesCount = signal(
+    WorldMapComponent.CITY_PAGE_SIZE,
+  );
   protected readonly hoveredCityCoords = signal<[number, number] | null>(null);
 
   protected get zoom(): Signal<number> {
@@ -174,6 +178,20 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
         city.name.toLowerCase().includes(searchText) ||
         city.name_ascii.toLowerCase().includes(searchText),
     );
+  });
+
+  protected readonly visibleCities = computed(() => {
+    return this.filteredCities().slice(0, this.visibleCitiesCount());
+  });
+
+  protected readonly hasMoreCities = computed(() => {
+    return this.visibleCitiesCount() < this.filteredCities().length;
+  });
+
+  protected readonly nextCitiesBatchSize = computed(() => {
+    const remaining = this.filteredCities().length - this.visibleCitiesCount();
+    if (remaining <= 0) return 0;
+    return Math.min(WorldMapComponent.CITY_PAGE_SIZE, remaining);
   });
 
   protected readonly selectedCountryMetadata = computed(() => {
@@ -348,6 +366,7 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.selectedCountryIso2.set(iso2);
     this.citiesSearchText.set('');
+    this.visibleCitiesCount.set(WorldMapComponent.CITY_PAGE_SIZE);
     this.hoveredCityCoords.set(null);
     void this.loadSelectedCountryData(iso2);
   }
@@ -357,7 +376,21 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.selectedCountryCities.set([]);
     this.selectedCountryMarkers.set([]);
     this.citiesSearchText.set('');
+    this.visibleCitiesCount.set(WorldMapComponent.CITY_PAGE_SIZE);
     this.hoveredCityCoords.set(null);
+  }
+
+  onCitiesSearchChange(value: string): void {
+    this.citiesSearchText.set(value);
+    this.visibleCitiesCount.set(WorldMapComponent.CITY_PAGE_SIZE);
+  }
+
+  loadMoreCities(): void {
+    const nextVisible =
+      this.visibleCitiesCount() + WorldMapComponent.CITY_PAGE_SIZE;
+    this.visibleCitiesCount.set(
+      Math.min(nextVisible, this.filteredCities().length),
+    );
   }
 
   onMarkerHover(marker: CountryMarkerDetail): void {
