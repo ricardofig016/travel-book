@@ -275,6 +275,10 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
     );
   };
 
+  protected readonly canOpenMarkerAlbumPage = (
+    marker: Pick<MarkerFullDetail, 'visited'>,
+  ): boolean => marker.visited;
+
   protected readonly computedCityDot = computed(() => {
     const coords = this.hoveredCityCoords();
     if (!coords) return null;

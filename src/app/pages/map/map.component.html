@@ -506,7 +506,13 @@
           @if (selectedMarkerDetail(); as marker) {
             <div class="panel">
               <div class="panel-header">
-                <h3>{{ markerPanelCityName() }}</h3>
+                @if (canOpenMarkerAlbumPage(marker)) {
+                  <a [routerLink]="getMarkerPanelAlbumUrl(marker)">
+                    <h3>{{ markerPanelCityName() }}</h3>
+                  </a>
+                } @else {
+                  <h3>{{ markerPanelCityName() }}</h3>
+                }
                 <button type="button" (click)="closeDetailPanel()">✕</button>
               </div>
 
@@ -571,9 +577,11 @@
                   </div>
 
                   <div class="panel-actions-row">
-                    <a [routerLink]="getMarkerPanelAlbumUrl(marker)">
-                      Marker Album Page
-                    </a>
+                    @if (canOpenMarkerAlbumPage(marker)) {
+                      <a [routerLink]="getMarkerPanelAlbumUrl(marker)">
+                        Marker Album Page
+                      </a>
+                    }
                     <a
                       [routerLink]="
                         getCountryAlbumSegments(selectedCountryMetadata()?.name)
