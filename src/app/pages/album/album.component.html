@@ -20,23 +20,21 @@
       <p>No markers found for the selected book.</p>
     } @else {
       <ul>
-        @for (country of countryIndex(); track country.countryId) {
-          <li>
-            <a [routerLink]="['/album', country.countrySlug]">
-              <app-flag-icon
-                [isoCode2]="country.isoCode2"
-                [countryName]="country.countryName"
-              />
-              {{ country.countryName }}
-            </a>
-            <span>
-              | markers: {{ country.markerCount }} | visited:
-              {{ country.visitedCount }} | favorite:
-              {{ country.favoriteCount }} | want:
-              {{ country.wantCount }}
-            </span>
-          </li>
-        }
+        <li *ngFor="let country of countryIndex(); trackBy: trackCountryById">
+          <a [routerLink]="['/album', country.countrySlug]">
+            <app-flag-icon
+              [isoCode2]="country.isoCode2"
+              [countryName]="country.countryName"
+            />
+            {{ country.countryName }}
+          </a>
+          <span>
+            | markers: {{ country.markerCount }} | visited:
+            {{ country.visitedCount }} | favorite: {{ country.favoriteCount }} |
+            want:
+            {{ country.wantCount }}
+          </span>
+        </li>
       </ul>
     }
   }
@@ -72,30 +70,28 @@
         <p>No marker cities found for this country.</p>
       } @else {
         <ul>
-          @for (city of page.cities; track city.markerId) {
-            <li>
-              @if (city.visited) {
-                <a
-                  [routerLink]="
-                    getCityMarkerLink(
-                      page.country.slug,
-                      city.citySlug,
-                      city.markerIdTail
-                    )
-                  "
-                >
-                  {{ city.cityName }}
-                </a>
-              } @else {
-                <span>{{ city.cityName }}</span>
-              }
-              <span>
-                | status: {{ city.visited ? "Visited " : "" }}
-                {{ city.favorite ? "Favorite " : "" }}
-                {{ city.want ? "Want " : "" }} | photos: {{ city.photoCount }}
-              </span>
-            </li>
-          }
+          <li *ngFor="let city of page.cities; trackBy: trackCityMarkerById">
+            @if (city.visited) {
+              <a
+                [routerLink]="
+                  getCityMarkerLink(
+                    page.country.slug,
+                    city.citySlug,
+                    city.markerIdTail
+                  )
+                "
+              >
+                {{ city.cityName }}
+              </a>
+            } @else {
+              <span>{{ city.cityName }}</span>
+            }
+            <span>
+              | status: {{ city.visited ? "Visited " : "" }}
+              {{ city.favorite ? "Favorite " : "" }}
+              {{ city.want ? "Want " : "" }} | photos: {{ city.photoCount }}
+            </span>
+          </li>
         </ul>
       }
 
@@ -104,15 +100,13 @@
         <p>No tried dishes found for this country in this book.</p>
       } @else {
         <ul>
-          @for (dish of page.dishesTried; track dish.dishId) {
-            <li>
-              <strong>{{ dish.name }}</strong>
-              <span>
-                | category: {{ dish.category || "N/A" }} | rating:
-                {{ dish.rating ?? "N/A" }}
-              </span>
-            </li>
-          }
+          <li *ngFor="let dish of page.dishesTried; trackBy: trackDishById">
+            <strong>{{ dish.name }}</strong>
+            <span>
+              | category: {{ dish.category || "N/A" }} | rating:
+              {{ dish.rating ?? "N/A" }}
+            </span>
+          </li>
         </ul>
       }
     }
@@ -150,9 +144,9 @@
         <p>No companions listed.</p>
       } @else {
         <ul>
-          @for (companion of markerPage.companions; track $index) {
-            <li>{{ companion }}</li>
-          }
+          <li *ngFor="let companion of markerPage.companions">
+            {{ companion }}
+          </li>
         </ul>
       }
 
@@ -161,9 +155,9 @@
         <p>No activities listed.</p>
       } @else {
         <ul>
-          @for (activity of markerPage.activities; track $index) {
-            <li>{{ activity }}</li>
-          }
+          <li *ngFor="let activity of markerPage.activities">
+            {{ activity }}
+          </li>
         </ul>
       }
 
@@ -172,9 +166,10 @@
         <p>No visit periods recorded.</p>
       } @else {
         <ul>
-          @for (visit of markerPage.visits; track visit.id) {
-            <li>{{ visit.startDate }} to {{ visit.endDate }}</li>
-          }
+          <li *ngFor="let visit of markerPage.visits; trackBy: trackVisitById">
+            {{ visit.startDate | date: "mediumDate" }} to
+            {{ visit.endDate | date: "mediumDate" }}
+          </li>
         </ul>
       }
 
@@ -183,17 +178,19 @@
         <p>No photos uploaded yet.</p>
       } @else {
         <ul>
-          @for (photo of markerPage.photos; track photo.id) {
-            <li>
-              <a [href]="photo.url" target="_blank" rel="noopener noreferrer">
-                {{ photo.publicId }}
-              </a>
-              <span>
-                | date: {{ photo.dateTaken || "N/A" }} | caption:
-                {{ photo.caption || "N/A" }}
-              </span>
-            </li>
-          }
+          <li *ngFor="let photo of markerPage.photos; trackBy: trackPhotoById">
+            <a [href]="photo.url" target="_blank" rel="noopener noreferrer">
+              {{ photo.publicId }}
+            </a>
+            <span>
+              | date:
+              {{
+                photo.dateTaken ? (photo.dateTaken | date: "mediumDate") : "N/A"
+              }}
+              | caption:
+              {{ photo.caption || "N/A" }}
+            </span>
+          </li>
         </ul>
       }
     }

@@ -539,7 +539,8 @@
                           track visit.id;
                           let isLast = $last
                         ) {
-                          {{ visit.startDate }} to {{ visit.endDate
+                          {{ visit.startDate | date: "mediumDate" }} to
+                          {{ visit.endDate | date: "mediumDate"
                           }}{{ isLast ? "" : " | " }}
                         }
                       </span>

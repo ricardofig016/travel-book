@@ -15,8 +15,12 @@ import { AlbumRouteService } from '../../services/album/album-route.service';
 import { FlagIconComponent } from '../../shared/flag-icon/flag-icon.component';
 import {
   AlbumCityMarkerData,
+  AlbumCountryCityItem,
   AlbumCountryIndexItem,
   AlbumCountryPageData,
+  AlbumMarkerVisit,
+  AlbumPhoto,
+  AlbumTriedDishItem,
 } from '../../services/album/models';
 
 @Component({
@@ -163,5 +167,25 @@ export class PhotoAlbumComponent {
   formatArea(value: number | null): string {
     if (!value || value <= 0) return 'N/A';
     return `${Math.round(value).toLocaleString()} km²`;
+  }
+
+  trackCountryById(_index: number, item: AlbumCountryIndexItem): string {
+    return item.countryId;
+  }
+
+  trackCityMarkerById(_index: number, item: AlbumCountryCityItem): string {
+    return item.markerId;
+  }
+
+  trackDishById(_index: number, item: AlbumTriedDishItem): string {
+    return item.dishId;
+  }
+
+  trackVisitById(_index: number, item: AlbumMarkerVisit): string {
+    return item.id;
+  }
+
+  trackPhotoById(_index: number, item: AlbumPhoto): string {
+    return item.id;
   }
 }
