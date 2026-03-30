@@ -14,8 +14,8 @@ export class MapViewportService {
   readonly dragStartThresholdPx = 2;
 
   readonly minZoom = 1;
-  readonly maxZoom = 15;
-  readonly zoomStep = 0.2;
+  readonly maxZoom = 30;
+  readonly zoomStep = 0.3;
   readonly ctrlZoomMultiplier = 3;
   readonly defaultZoom = 2;
   readonly mapWidth = 1200;
