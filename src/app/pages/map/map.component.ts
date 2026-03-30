@@ -64,6 +64,10 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
   private static readonly HOME_COUNTRY_FILL = '#7fcf6e';
   private static readonly VISITED_COUNTRY_FILL = '#8fa8ff';
   private static readonly DEFAULT_COUNTRY_FILL = 'transparent';
+  private static readonly CITY_DOT_SCREEN_RADIUS_PX = 5;
+  private static readonly CAPITAL_DOT_SCREEN_RADIUS_PX = 7;
+  private static readonly CITY_DOT_STROKE_SCREEN_PX = 3;
+  private static readonly CAPITAL_DOT_STROKE_SCREEN_PX = 3;
 
   @ViewChild('mapCanvas') mapCanvas!: ElementRef<HTMLDivElement>;
 
@@ -203,6 +207,30 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   protected readonly viewBox = computed(
     () => `0 0 ${this.mapWidth} ${this.mapHeight}`,
+  );
+
+  protected readonly cityDotRadius = computed(() =>
+    this.getZoomCompensatedDotRadius(
+      WorldMapComponent.CITY_DOT_SCREEN_RADIUS_PX,
+    ),
+  );
+
+  protected readonly capitalDotRadius = computed(() =>
+    this.getZoomCompensatedDotRadius(
+      WorldMapComponent.CAPITAL_DOT_SCREEN_RADIUS_PX,
+    ),
+  );
+
+  protected readonly cityDotStrokeWidth = computed(() =>
+    this.getZoomCompensatedDotRadius(
+      WorldMapComponent.CITY_DOT_STROKE_SCREEN_PX,
+    ),
+  );
+
+  protected readonly capitalDotStrokeWidth = computed(() =>
+    this.getZoomCompensatedDotRadius(
+      WorldMapComponent.CAPITAL_DOT_STROKE_SCREEN_PX,
+    ),
   );
 
   protected readonly filteredCities = computed(() => {
@@ -1108,6 +1136,11 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
     return (
       Math.abs(latA - latB) <= tolerance && Math.abs(lngA - lngB) <= tolerance
     );
+  }
+
+  private getZoomCompensatedDotRadius(screenRadiusPx: number): number {
+    const currentZoom = Math.max(this.zoom(), 0.0001);
+    return screenRadiusPx / currentZoom;
   }
 
   private emptyMarkerSummary(): BookCountryMarkerSummary {

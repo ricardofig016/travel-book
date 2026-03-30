@@ -189,7 +189,8 @@
             <circle
               [attr.cx]="markerDot.x"
               [attr.cy]="markerDot.y"
-              r="1"
+              [attr.r]="cityDotRadius()"
+              [style.stroke-width]="cityDotStrokeWidth()"
             ></circle>
           </g>
         }
@@ -201,7 +202,8 @@
             <circle
               [attr.cx]="markerDot.x"
               [attr.cy]="markerDot.y"
-              r="1"
+              [attr.r]="cityDotRadius()"
+              [style.stroke-width]="cityDotStrokeWidth()"
             ></circle>
           </g>
         }
@@ -212,7 +214,8 @@
           <circle
             [attr.cx]="capitalDot.x"
             [attr.cy]="capitalDot.y"
-            r="1.5"
+            [attr.r]="capitalDotRadius()"
+            [style.stroke-width]="capitalDotStrokeWidth()"
           ></circle>
           <title>{{ capitalDot.name }}</title>
         </g>
@@ -220,7 +223,12 @@
 
       @if (computedCityDot(); as cityDot) {
         <g class="city-dot" pointer-events="none">
-          <circle [attr.cx]="cityDot.x" [attr.cy]="cityDot.y" r="1"></circle>
+          <circle
+            [attr.cx]="cityDot.x"
+            [attr.cy]="cityDot.y"
+            [attr.r]="cityDotRadius()"
+            [style.stroke-width]="cityDotStrokeWidth()"
+          ></circle>
         </g>
       }
     </svg>

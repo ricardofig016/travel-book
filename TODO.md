@@ -4,7 +4,7 @@
 - [ ] data: seed cloudinary with demo photos for the demo book
 - [ ] feat: if a user tries to modify the demo book (add markers, toggle marker statuses, add pictures, etc.) prompt them to sign up (if unauthenticated) or create a new book (if authenticated).
 - [ ] refactor: it's weird to have a service for supabase when the map and album services are also doing supabase queries.
-- [ ] map: city and capital highlight dots sizes should be dynamic based on the zoom level, so that they are not too small when zoomed out and not too big when zoomed in.
+- [x] map: city and capital highlight dots sizes should be dynamic based on the zoom level, so that they are not too small when zoomed out and not too big when zoomed in.
 - [x] map: city title in marker panel should have anchor to marker album page (similar to country panel) if applicable.
 - [x] bug/map: non visited markers in marker panel should not have the marker album page link in panel actions row.
 - [x] fix: when the country panel is active for countries that have a lot of cities, the website becomes laggy, mostly map dragging is laggy and not fluid. it is noticeable with countries like france with 1000 cities and unbearable in india, that has 7000 cities. - only 200 are shown inicially, with a "load more" button that loads 200 more until there is none left.
