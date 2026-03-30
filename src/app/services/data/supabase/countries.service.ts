@@ -203,7 +203,7 @@ export class SupabaseCountriesService {
         const { data, error } = await client
           .from('cities')
           .select(
-            'id, name, population, latitude, longitude, countries!inner(iso_code_2)',
+            'id, name, name_ascii, population, latitude, longitude, countries!inner(iso_code_2)',
           )
           .eq('countries.iso_code_2', normalizedIso2)
           .order('population', { ascending: false, nullsFirst: false })
@@ -226,6 +226,7 @@ export class SupabaseCountriesService {
           const typed = row as {
             id?: string;
             name?: string;
+            name_ascii?: string;
             population?: number | string | null;
             latitude?: number | string | null;
             longitude?: number | string | null;
@@ -238,6 +239,7 @@ export class SupabaseCountriesService {
           if (
             !typed.id ||
             !typed.name ||
+            !typed.name_ascii ||
             !Number.isFinite(latitude) ||
             !Number.isFinite(longitude)
           )
@@ -246,6 +248,7 @@ export class SupabaseCountriesService {
           return {
             id: typed.id,
             name: typed.name,
+            name_ascii: typed.name_ascii,
             population:
               population !== null &&
               Number.isFinite(population) &&

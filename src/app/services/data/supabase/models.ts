@@ -73,6 +73,7 @@ export interface CountryCapitalCity {
 export interface CountryCity {
   id: string;
   name: string;
+  name_ascii: string;
   population: number | null;
   latitude: number;
   longitude: number;

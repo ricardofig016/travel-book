@@ -169,8 +169,10 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
   protected readonly filteredCities = computed(() => {
     const searchText = this.citiesSearchText().toLowerCase();
     if (!searchText) return this.selectedCountryCities();
-    return this.selectedCountryCities().filter((city) =>
-      city.name.toLowerCase().includes(searchText),
+    return this.selectedCountryCities().filter(
+      (city) =>
+        city.name.toLowerCase().includes(searchText) ||
+        city.name_ascii.toLowerCase().includes(searchText),
     );
   });
 
@@ -609,7 +611,10 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
       const [metadata, markerSummary, capitalCity, countryMarkers] =
         await Promise.all([
           this.metadataCache.getCountryMetadata(normalizedIso2),
-          this.metadataCache.getBookCountryMarkerSummary(bookId, normalizedIso2),
+          this.metadataCache.getBookCountryMarkerSummary(
+            bookId,
+            normalizedIso2,
+          ),
           this.metadataCache.getCountryCapital(normalizedIso2),
           bookId
             ? this.supabase.getCountryMarkersForBook(bookId, normalizedIso2)
