@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { SupabaseClient } from '@supabase/supabase-js';
 
 import {
+  HomeCityDisplay,
   CountryCapitalCity,
   CountryCity,
   CountryIsoLookup,
@@ -254,6 +255,89 @@ export class SupabaseCountriesService {
         byName: {},
       };
     }
+  }
+
+  async getCountryIso2ByCityId(
+    client: SupabaseClient,
+    cityId: string,
+  ): Promise<string | null> {
+    if (!cityId) return null;
+
+    try {
+      const { data, error } = await client
+        .from('cities')
+        .select('countries(iso_code_2)')
+        .eq('id', cityId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching country ISO2 by city id:', error);
+        return null;
+      }
+
+      const relation = (data as { countries?: unknown } | null)?.countries;
+      const iso2 = this.resolveRelationStringField(relation, 'iso_code_2');
+      const normalizedIso2 = iso2?.trim().toUpperCase() ?? '';
+      if (!/^[A-Z]{2}$/.test(normalizedIso2)) return null;
+
+      return normalizedIso2;
+    } catch (err) {
+      console.error('Exception fetching country ISO2 by city id:', err);
+      return null;
+    }
+  }
+
+  async getHomeCityDisplayByCityId(
+    client: SupabaseClient,
+    cityId: string,
+  ): Promise<HomeCityDisplay | null> {
+    if (!cityId) return null;
+
+    try {
+      const { data, error } = await client
+        .from('cities')
+        .select('name, countries(name)')
+        .eq('id', cityId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching home city display by city id:', error);
+        return null;
+      }
+
+      const row = data as { name?: string | null; countries?: unknown } | null;
+      const cityName = row?.name?.trim() ?? '';
+      const countryName =
+        this.resolveRelationStringField(row?.countries, 'name')?.trim() ?? '';
+
+      if (!cityName || !countryName) return null;
+
+      return {
+        cityName,
+        countryName,
+      };
+    } catch (err) {
+      console.error('Exception fetching home city display by city id:', err);
+      return null;
+    }
+  }
+
+  private resolveRelationStringField(
+    relation: unknown,
+    field: string,
+  ): string | null {
+    if (Array.isArray(relation)) {
+      const first = relation[0] as Record<string, unknown> | undefined;
+      const value = first?.[field];
+      return typeof value === 'string' ? value : null;
+    }
+
+    if (relation && typeof relation === 'object') {
+      const value = (relation as Record<string, unknown>)[field];
+      return typeof value === 'string' ? value : null;
+    }
+
+    return null;
   }
 
   async getCountryMetadataByIso2(

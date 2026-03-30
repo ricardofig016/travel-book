@@ -47,21 +47,7 @@ export class MapDataService {
         return null;
       }
 
-      const { data, error } = await this.supabase
-        .getClient()
-        .from('cities')
-        .select('countries(iso_code_2)')
-        .eq('id', profile.home_city_id)
-        .single();
-
-      if (error) {
-        console.error('Failed to resolve home country from home city', error);
-        return null;
-      }
-
-      const iso2 = (data as { countries?: { iso_code_2?: string } | null })
-        ?.countries?.iso_code_2;
-      return iso2?.toUpperCase() ?? null;
+      return await this.supabase.getCountryIso2ByCityId(profile.home_city_id);
     } catch (err) {
       console.error('Failed to load user home country', err);
       return null;

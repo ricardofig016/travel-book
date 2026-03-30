@@ -1,5 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-import { Book } from './supabase/models';
+import { Book } from '../../services/data/supabase/models';
 
 @Injectable({ providedIn: 'root' })
 export class BookStateService {

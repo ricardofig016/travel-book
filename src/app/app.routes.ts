@@ -12,7 +12,7 @@ import { AccountComponent } from './pages/account/account.component';
 import { WorldMapComponent } from './pages/map/map.component';
 import { PhotoAlbumComponent } from './pages/album/album.component';
 import { StatisticsComponent } from './pages/statistics/statistics.component';
-import { BookStateService } from './services/data/book-state.service';
+import { BookStateService } from './core/state/book-state.service';
 import { AlbumDataService } from './services/album/album-data.service';
 
 const albumCityMarkerMatcher = (

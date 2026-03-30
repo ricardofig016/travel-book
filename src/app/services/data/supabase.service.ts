@@ -3,10 +3,13 @@ import { createClient, SupabaseClient, User } from '@supabase/supabase-js';
 
 import { environment } from '../../core/config/environment';
 import { SupabaseAuthService } from './supabase/auth.service';
+import { SupabaseAlbumService } from './supabase/album.service';
 import { SupabaseBooksService } from './supabase/books.service';
 import { SupabaseCountriesService } from './supabase/countries.service';
 import { SupabaseStatsService } from './supabase/stats.service';
 import type {
+  AlbumBookTriedDishRow,
+  AlbumMarkerCountryRow,
   Book,
   BookCountryMarkerSummary,
   BookVisitedLandAreaStats,
@@ -19,6 +22,7 @@ import type {
   MarkerMutationInput,
   CountryMarkerStatusPatch,
   CountryMetadata,
+  HomeCityDisplay,
   SupabaseConnectionStatus,
   UserLookupResult,
   UserProfile,
@@ -27,6 +31,7 @@ import type {
 @Injectable({ providedIn: 'root' })
 export class SupabaseService {
   private readonly authService = inject(SupabaseAuthService);
+  private readonly albumService = inject(SupabaseAlbumService);
   private readonly booksService = inject(SupabaseBooksService);
   private readonly countriesService = inject(SupabaseCountriesService);
   private readonly statsService = inject(SupabaseStatsService);
@@ -63,10 +68,6 @@ export class SupabaseService {
     this.client.auth.onAuthStateChange((_event, session) => {
       this.currentUserSignal.set(session?.user ?? null);
     });
-  }
-
-  getClient(): SupabaseClient {
-    return this.client;
   }
 
   getCurrentUser(): User | null {
@@ -130,6 +131,41 @@ export class SupabaseService {
 
   async getCountryIsoLookup(): Promise<CountryIsoLookup> {
     return this.countriesService.getCountryIsoLookup(this.client);
+  }
+
+  async getCountryIso2ByCityId(cityId: string): Promise<string | null> {
+    return this.countriesService.getCountryIso2ByCityId(this.client, cityId);
+  }
+
+  async getHomeCityDisplayByCityId(
+    cityId: string,
+  ): Promise<HomeCityDisplay | null> {
+    return this.countriesService.getHomeCityDisplayByCityId(
+      this.client,
+      cityId,
+    );
+  }
+
+  async getAlbumMarkerCountryRows(
+    bookId: string,
+    includeMarkerDetails = false,
+  ): Promise<AlbumMarkerCountryRow[]> {
+    return this.albumService.getMarkerCountryRows(
+      this.client,
+      bookId,
+      includeMarkerDetails,
+    );
+  }
+
+  async getAlbumBookTriedDishes(
+    bookId: string,
+    countryId: string,
+  ): Promise<AlbumBookTriedDishRow[]> {
+    return this.albumService.getBookTriedDishesForCountry(
+      this.client,
+      bookId,
+      countryId,
+    );
   }
 
   async getBookVisitedLandAreaStats(

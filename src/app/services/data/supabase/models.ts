@@ -27,6 +27,11 @@ export interface CitySearchResult {
   country: string;
 }
 
+export interface HomeCityDisplay {
+  cityName: string;
+  countryName: string;
+}
+
 export interface UserLookupResult {
   user_id: string;
   email: string;
@@ -129,4 +134,51 @@ export interface MarkerFullDetail {
   visits: MarkerVisitPeriod[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface AlbumMarkerCountryRow {
+  id?: string | null;
+  visited?: boolean | null;
+  favorite?: boolean | null;
+  want?: boolean | null;
+  notes?: string | null;
+  companions?: string[] | null;
+  activities?: string[] | null;
+  photos?: Array<{
+    id?: string | null;
+    url?: string | null;
+    public_id?: string | null;
+    date_taken?: string | null;
+    caption?: string | null;
+  }> | null;
+  marker_visits?: Array<{
+    id?: string | null;
+    start_date?: string | null;
+    end_date?: string | null;
+  }> | null;
+  cities?: {
+    id?: string | null;
+    name?: string | null;
+    admin_name?: string | null;
+    countries?: {
+      id?: string | null;
+      name?: string | null;
+      native_name?: string | null;
+      iso_code_2?: string | null;
+      iso_code_3?: string | null;
+      population?: number | string | null;
+      area?: number | string | null;
+      flag_emoji?: string | null;
+    } | null;
+  } | null;
+}
+
+export interface AlbumBookTriedDishRow {
+  dishes?: {
+    id?: string | null;
+    name?: string | null;
+    category?: string | null;
+    rating?: number | string | null;
+    image_url?: string | null;
+  } | null;
 }

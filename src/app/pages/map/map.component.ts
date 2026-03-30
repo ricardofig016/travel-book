@@ -15,7 +15,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { BookStateService } from '../../services/data/book-state.service';
+import { BookStateService } from '../../core/state/book-state.service';
 import { SupabaseService } from '../../services/data/supabase.service';
 import {
   BookCountryMarkerSummary,

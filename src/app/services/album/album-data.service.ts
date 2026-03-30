@@ -1,5 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import { SupabaseService } from '../data/supabase.service';
+import {
+  AlbumBookTriedDishRow,
+  AlbumMarkerCountryRow,
+} from '../data/supabase/models';
 import { AlbumRouteService } from './album-route.service';
 import {
   AlbumCityMarkerData,
@@ -9,43 +13,6 @@ import {
   AlbumPhoto,
   AlbumTriedDishItem,
 } from './models';
-
-interface MarkerCountryRow {
-  id?: string | null;
-  visited?: boolean | null;
-  favorite?: boolean | null;
-  want?: boolean | null;
-  notes?: string | null;
-  companions?: string[] | null;
-  activities?: string[] | null;
-  photos?: Array<{
-    id?: string | null;
-    url?: string | null;
-    public_id?: string | null;
-    date_taken?: string | null;
-    caption?: string | null;
-  }> | null;
-  marker_visits?: Array<{
-    id?: string | null;
-    start_date?: string | null;
-    end_date?: string | null;
-  }> | null;
-  cities?: {
-    id?: string | null;
-    name?: string | null;
-    admin_name?: string | null;
-    countries?: {
-      id?: string | null;
-      name?: string | null;
-      native_name?: string | null;
-      iso_code_2?: string | null;
-      iso_code_3?: string | null;
-      population?: number | string | null;
-      area?: number | string | null;
-      flag_emoji?: string | null;
-    } | null;
-  } | null;
-}
 
 @Injectable({ providedIn: 'root' })
 export class AlbumDataService {
@@ -351,46 +318,11 @@ export class AlbumDataService {
   private async fetchMarkerCountryRows(
     bookId: string,
     includeMarkerDetails = false,
-  ): Promise<MarkerCountryRow[]> {
-    try {
-      const photoSelect = includeMarkerDetails
-        ? 'photos(id, url, public_id, date_taken, caption)'
-        : 'photos(id)';
-
-      const selectBase = [
-        'id',
-        'visited',
-        'favorite',
-        'want',
-        'cities!inner(id, name, admin_name, countries!inner(id, name, native_name, iso_code_2, iso_code_3, population, area, flag_emoji))',
-        photoSelect,
-      ];
-
-      const selectDetails = includeMarkerDetails
-        ? [
-            'notes',
-            'companions',
-            'activities',
-            'marker_visits(id, start_date, end_date)',
-          ]
-        : [];
-
-      const { data, error } = await this.supabase
-        .getClient()
-        .from('markers')
-        .select([...selectBase, ...selectDetails].join(', '))
-        .eq('book_id', bookId);
-
-      if (error) {
-        console.error('Failed to load marker-country rows:', error);
-        return [];
-      }
-
-      return (data as MarkerCountryRow[] | null) ?? [];
-    } catch (error) {
-      console.error('Exception while loading marker-country rows:', error);
-      return [];
-    }
+  ): Promise<AlbumMarkerCountryRow[]> {
+    return this.supabase.getAlbumMarkerCountryRows(
+      bookId,
+      includeMarkerDetails,
+    );
   }
 
   private async fetchCountryTriedDishes(
@@ -398,31 +330,12 @@ export class AlbumDataService {
     countryId: string,
   ): Promise<AlbumTriedDishItem[]> {
     try {
-      const { data, error } = await this.supabase
-        .getClient()
-        .from('book_tried_dishes')
-        .select(
-          'dish_id, dishes!inner(id, name, category, rating, image_url, country_id)',
-        )
-        .eq('book_id', bookId)
-        .eq('dishes.country_id', countryId);
+      const data = await this.supabase.getAlbumBookTriedDishes(
+        bookId,
+        countryId,
+      );
 
-      if (error) {
-        console.error('Failed to load country dishes:', error);
-        return [];
-      }
-
-      return (
-        (data as Array<{
-          dishes?: {
-            id?: string | null;
-            name?: string | null;
-            category?: string | null;
-            rating?: number | string | null;
-            image_url?: string | null;
-          } | null;
-        }> | null) ?? []
-      )
+      return ((data as AlbumBookTriedDishRow[] | null) ?? [])
         .map((row) => {
           const dish = row.dishes;
           if (!dish?.id || !dish.name) return null;

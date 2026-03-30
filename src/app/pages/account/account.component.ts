@@ -185,16 +185,14 @@ export class AccountComponent {
       const profile = await this.supabase.getUserProfile();
 
       if (profile?.home_city_id) {
-        const { data } = await this.supabase
-          .getClient()
-          .from('cities')
-          .select('name, countries(name)')
-          .eq('id', profile.home_city_id)
-          .single();
+        const homeCityDisplay = await this.supabase.getHomeCityDisplayByCityId(
+          profile.home_city_id,
+        );
 
-        if (data) {
-          const countryName = (data as any).countries?.name || 'Unknown';
-          this.homeCity.set(`${data.name}, ${countryName}`);
+        if (homeCityDisplay) {
+          this.homeCity.set(
+            `${homeCityDisplay.cityName}, ${homeCityDisplay.countryName}`,
+          );
         } else {
           this.homeCity.set('Not set');
         }

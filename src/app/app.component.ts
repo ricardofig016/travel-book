@@ -13,7 +13,7 @@ import { filter } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SupabaseService } from './services/data/supabase.service';
 import { Book } from './services/data/supabase/models';
-import { BookStateService } from './services/data/book-state.service';
+import { BookStateService } from './core/state/book-state.service';
 import { CommonModule } from '@angular/common';
 import {
   CreateBookDialogComponent,

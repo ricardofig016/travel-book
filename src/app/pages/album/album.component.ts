@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { BookStateService } from '../../services/data/book-state.service';
+import { BookStateService } from '../../core/state/book-state.service';
 import { AlbumDataService } from '../../services/album/album-data.service';
 import { AlbumRouteService } from '../../services/album/album-route.service';
 import { FlagIconComponent } from '../../shared/flag-icon/flag-icon.component';
