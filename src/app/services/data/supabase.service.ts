@@ -165,6 +165,10 @@ export class SupabaseService {
     );
   }
 
+  async getBookMarkersForBook(bookId: string): Promise<CountryMarkerDetail[]> {
+    return this.countriesService.getBookMarkersForBook(this.client, bookId);
+  }
+
   async updateMarkerStatuses(
     markerId: string,
     patch: CountryMarkerStatusPatch,

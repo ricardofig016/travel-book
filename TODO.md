@@ -3,7 +3,10 @@
 - [ ] data: setup cloudinary
 - [ ] data: seed cloudinary with demo photos for the demo book
 - [ ] feat: if a user tries to modify the demo book (add markers, toggle marker statuses, add pictures, etc.) prompt them to sign up (if unauthenticated) or create a new book (if authenticated).
-- [ ] reafctor: it's weird to have a service for supabase when the map and album services are also doing supabase queries.
+- [ ] refactor: it's weird to have a service for supabase when the map and album services are also doing supabase queries.
+- [ ] map: city and capital highlight dots sizes should be dynamic based on the zoom level, so that they are not too small when zoomed out and not too big when zoomed in.
+- [ ] map: city title in marker panel should have anchor to marker album page (similar to country paenl) if applicaple.
+- [ ] bug/map: non visited markers in marker panel should not have the marker album page link in panel actions row.
 - [x] fix: when the country panel is active for countries that have a lot of cities, the website becomes laggy, mostly map dragging is laggy and not fluid. it is noticeable with countries like france with 1000 cities and unbearable in india, that has 7000 cities. - only 200 are shown inicially, with a "load more" button that loads 200 more until there is none left.
 - [x] map: city search should also consider city_name_ascii for matching, not just city_name.
 - [x] geojson: merge western sahara into morocco on the map since cities in its territory are part of morocco in the database. - instead of this, created and run new script `supabase\scripts\reconcile_city_country_by_geometry.py` to fix mismatches between cities and countries tables in the database by using the cities' lat/long and country geometries to determine which country they belong to, then update the city records accordingly. western sahara is not part of morocco, but cities in western sahara (Tifariti) are now correctly associated with western sahara instead of morocco.

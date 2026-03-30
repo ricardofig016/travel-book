@@ -195,6 +195,18 @@
         }
       }
 
+      @if (allVisibleMarkerDots().length > 0) {
+        @for (markerDot of allVisibleMarkerDots(); track $index) {
+          <g class="city-dot" pointer-events="none">
+            <circle
+              [attr.cx]="markerDot.x"
+              [attr.cy]="markerDot.y"
+              r="1"
+            ></circle>
+          </g>
+        }
+      }
+
       @if (hoveredCapitalDot(); as capitalDot) {
         <g class="capital-dot" pointer-events="none">
           <circle
@@ -219,6 +231,9 @@
     <button type="button" (click)="resetView()">Reset View</button>
     <button type="button" (click)="zoomIn()">+</button>
     <span>Zoom: {{ zoom() }}x</span>
+    <button type="button" (click)="toggleShowAllMarkers()">
+      {{ showAllMarkerDots() ? "Hide Markers" : "Show Markers" }}
+    </button>
   </div>
 
   @if (selectedCountryIso2() || activeDetailPanel()) {

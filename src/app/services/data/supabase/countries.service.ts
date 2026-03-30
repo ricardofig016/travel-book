@@ -492,6 +492,85 @@ export class SupabaseCountriesService {
     }
   }
 
+  async getBookMarkersForBook(
+    client: SupabaseClient,
+    bookId: string,
+  ): Promise<CountryMarkerDetail[]> {
+    if (!bookId) return [];
+
+    try {
+      const pageSize = 1000;
+      let offset = 0;
+      const allRows: unknown[] = [];
+
+      while (true) {
+        const { data, error } = await client
+          .from('markers')
+          .select(
+            'id, visited, favorite, want, cities!inner(id, name, latitude, longitude)',
+          )
+          .eq('book_id', bookId)
+          .range(offset, offset + pageSize - 1);
+
+        if (error) {
+          console.error('Error fetching book markers:', error);
+          return [];
+        }
+
+        const pageRows = data ?? [];
+        allRows.push(...pageRows);
+
+        if (pageRows.length < pageSize) break;
+        offset += pageSize;
+      }
+
+      return (
+        allRows.map((row: unknown) => {
+          const typed = row as {
+            id?: string;
+            visited?: boolean;
+            favorite?: boolean;
+            want?: boolean;
+            cities?: {
+              id?: string;
+              name?: string;
+              latitude?: number | string | null;
+              longitude?: number | string | null;
+            } | null;
+          };
+          const city = typed.cities;
+          const latitude = Number(city?.latitude);
+          const longitude = Number(city?.longitude);
+
+          if (
+            !typed.id ||
+            !city?.id ||
+            !city?.name ||
+            !Number.isFinite(latitude) ||
+            !Number.isFinite(longitude)
+          )
+            return null;
+
+          return {
+            id: typed.id,
+            cityId: city.id,
+            cityName: city.name,
+            latitude,
+            longitude,
+            visited: typed.visited ?? false,
+            favorite: typed.favorite ?? false,
+            want: typed.want ?? false,
+          };
+        }) as (CountryMarkerDetail | null)[]
+      )
+        .filter((marker): marker is CountryMarkerDetail => marker !== null)
+        .sort((a, b) => a.cityName.localeCompare(b.cityName));
+    } catch (err) {
+      console.error('Exception fetching book markers:', err);
+      return [];
+    }
+  }
+
   async updateMarkerStatuses(
     client: SupabaseClient,
     markerId: string,

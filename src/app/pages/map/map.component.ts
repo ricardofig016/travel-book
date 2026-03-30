@@ -101,6 +101,8 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
   protected readonly hoveredCountryMarkerSummary =
     signal<BookCountryMarkerSummary>(this.emptyMarkerSummary());
   protected readonly hoveredCountryMarkerDots = signal<CapitalDot[]>([]);
+  protected readonly allBookMarkerDots = signal<CapitalDot[]>([]);
+  protected readonly showAllMarkerDots = signal(false);
   protected readonly hoveredCapitalDot = signal<CapitalDot | null>(null);
 
   protected readonly selectedCountryIso2 = signal<string | null>(null);
@@ -280,11 +282,17 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
     return { x, y };
   });
 
+  protected readonly allVisibleMarkerDots = computed(() => {
+    if (!this.showAllMarkerDots()) return [];
+    return this.allBookMarkerDots();
+  });
+
   constructor() {
     // Load data when selected book changes
     effect(() => {
       const bookId = this.bookState.selectedBook()?.id ?? null;
       void this.loadBookVisitedMetadata(bookId);
+      void this.loadAllBookMarkerDots(bookId);
     });
 
     // Load home country metadata when it changes
@@ -360,6 +368,10 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   resetView(): void {
     this.viewport.resetView();
+  }
+
+  toggleShowAllMarkers(): void {
+    this.showAllMarkerDots.update((value) => !value);
   }
 
   onPointerDown(event: PointerEvent): void {
@@ -812,9 +824,33 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
     if (iso2) await this.loadSelectedCountryData(iso2);
 
     await this.loadBookVisitedMetadata(bookId);
+    await this.loadAllBookMarkerDots(bookId);
 
     const hoveredIso2 = this.hoveredCountry()?.iso2 ?? null;
     await this.loadHoveredCountryMetadata(hoveredIso2, bookId);
+  }
+
+  private async loadAllBookMarkerDots(bookId: string | null): Promise<void> {
+    if (!bookId) {
+      this.allBookMarkerDots.set([]);
+      this.showAllMarkerDots.set(false);
+      return;
+    }
+
+    try {
+      const markers = await this.supabase.getBookMarkersForBook(bookId);
+      const dots = markers.map((marker) => {
+        const [x, y] = this.geoProcessor.projectCoordinate(
+          marker.longitude,
+          marker.latitude,
+        );
+        return { name: marker.cityName, x, y };
+      });
+      this.allBookMarkerDots.set(dots);
+    } catch (err) {
+      console.error('Failed to load all marker dots', err);
+      this.allBookMarkerDots.set([]);
+    }
   }
 
   protected getCountryFill(country: CountryShape): string {
