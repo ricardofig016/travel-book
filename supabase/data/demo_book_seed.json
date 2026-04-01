@@ -11,7 +11,7 @@
       "favorite": true,
       "want": false,
       "notes": "Amazing food, incredible energy, must return",
-      "companions": ["Sarah", "Alex"],
+      "companions": [],
       "activities": ["Temple visit", "Karaoke", "Street food tour"],
       "visits": [
         {
@@ -61,6 +61,20 @@
           "start_date": "2026-05-10",
           "end_date": "2026-05-18"
         }
+      ],
+      "photos": [
+        {
+          "date_taken": "2026-05-11",
+          "caption": "we loved pastéis de nata",
+          "url": "https://res.cloudinary.com/dkpf6sa1o/image/upload/v1775054658/travel-book/y5fcvsjf3q5taiy5eflv.png",
+          "public_id": "travel-book/y5fcvsjf3q5taiy5eflv"
+        },
+        {
+          "date_taken": "2026-05-16",
+          "caption": null,
+          "url": "https://res.cloudinary.com/dkpf6sa1o/image/upload/v1775054769/travel-book/g1hmskhnlkzgclnouztd.png",
+          "public_id": "travel-book/g1hmskhnlkzgclnouztd"
+        }
       ]
     },
     {
@@ -70,12 +84,26 @@
       "favorite": false,
       "want": false,
       "notes": "Beautiful riverside city, wine tasting was memorable",
-      "companions": ["Maria", "John"],
+      "companions": ["Maria", "Lucas"],
       "activities": ["Wine tasting", "Bridge walk"],
       "visits": [
         {
           "start_date": "2026-05-19",
           "end_date": "2026-05-22"
+        }
+      ],
+      "photos": [
+        {
+          "date_taken": "2026-05-21",
+          "caption": "i found out i loooooveee wine",
+          "url": "https://res.cloudinary.com/dkpf6sa1o/image/upload/v1775055020/travel-book/so8njlphhzcizje65zec.png",
+          "public_id": "travel-book/so8njlphhzcizje65zec"
+        },
+        {
+          "date_taken": "2026-05-20",
+          "caption": "great view",
+          "url": "https://res.cloudinary.com/dkpf6sa1o/image/upload/v1775055175/travel-book/td6eo1hfldzb4vv9bdvf.png",
+          "public_id": "travel-book/td6eo1hfldzb4vv9bdvf"
         }
       ]
     },
@@ -92,6 +120,20 @@
         {
           "start_date": "2026-06-01",
           "end_date": "2026-06-10"
+        }
+      ],
+      "photos": [
+        {
+          "date_taken": "2026-06-03",
+          "caption": "it's taller than what it looks i promise",
+          "url": "https://res.cloudinary.com/dkpf6sa1o/image/upload/v1775055557/travel-book/lhk9kbfrpeiknzfrx7zy.png",
+          "public_id": "travel-book/lhk9kbfrpeiknzfrx7zy"
+        },
+        {
+          "date_taken": "2026-06-07",
+          "caption": null,
+          "url": "https://res.cloudinary.com/dkpf6sa1o/image/upload/v1775055678/travel-book/gmbbeqwocczhjmqyowxh.png",
+          "public_id": "travel-book/gmbbeqwocczhjmqyowxh"
         }
       ]
     },
@@ -114,7 +156,7 @@
       "want": false,
       "notes": "History everywhere, incredible pasta",
       "companions": ["Sophie", "Marco"],
-      "activities": ["Colosseum tour", "Vatican", "Gelato crawl"],
+      "activities": ["Colosseum tour"],
       "visits": [
         {
           "start_date": "2026-07-02",
@@ -145,12 +187,26 @@
       "favorite": true,
       "want": false,
       "notes": "Breathtaking beaches and vibrant culture",
-      "companions": ["Lucas", "Ana"],
-      "activities": ["Christ statue hike", "Beach time", "Carnival atmosphere"],
+      "companions": ["Lucas", "Maria"],
+      "activities": ["Christ statue hike", "Beach time"],
       "visits": [
         {
           "start_date": "2026-08-15",
           "end_date": "2026-08-25"
+        }
+      ],
+      "photos": [
+        {
+          "date_taken": "2026-08-16",
+          "caption": "selfie with Christ the Redeemeeeeer yoooooo it's so tall",
+          "url": "https://res.cloudinary.com/dkpf6sa1o/image/upload/v1774993691/travel-book/shaetpim7vpeqzkszpue.png",
+          "public_id": "travel-book/shaetpim7vpeqzkszpue"
+        },
+        {
+          "date_taken": "2026-08-21",
+          "caption": "beach day",
+          "url": "https://res.cloudinary.com/dkpf6sa1o/image/upload/v1774994570/travel-book/a4uovmbxufeq4mhmejsn.png",
+          "public_id": "travel-book/a4uovmbxufeq4mhmejsn"
         }
       ]
     },
@@ -178,6 +234,20 @@
         {
           "start_date": "2026-08-26",
           "end_date": "2026-08-29"
+        }
+      ],
+      "photos": [
+        {
+          "date_taken": "2026-08-28",
+          "caption": "super cool street art tour",
+          "url": "https://res.cloudinary.com/dkpf6sa1o/image/upload/v1774995077/travel-book/tkmxvv8lwtffulhk3yii.png",
+          "public_id": "travel-book/tkmxvv8lwtffulhk3yii"
+        },
+        {
+          "date_taken": "2026-08-26",
+          "caption": "super tasty \"picanha à brasileira\" in são pauloooooo",
+          "url": "https://res.cloudinary.com/dkpf6sa1o/image/upload/v1774995376/travel-book/i07hup5jduqywwq0xr7y.png",
+          "public_id": "travel-book/i07hup5jduqywwq0xr7y"
         }
       ]
     }

@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-Seed demo book with markers and visits from demo_book_seed.json into Supabase.
+Seed demo book with markers, visits, and photos from demo_book_seed.json into Supabase.
 Loads SUPABASE_URL and SUPABASE_SECRET_KEY from .env file.
 
 This script:
 1. Deletes the existing public demo book (cascade deletes markers, visits, members)
 2. Creates a new public demo book with the admin user as creator
 3. Adds the admin user as a book member (triggers user_profile creation)
-4. Seeds markers and marker visits from demo_book_seed.json
+4. Seeds markers, marker visits, and photos from demo_book_seed.json
 """
 
 import json
@@ -263,6 +263,40 @@ def create_marker_visits(supabase_client, marker_id: str, visits: list[dict]) ->
         return False
 
 
+def create_marker_photos(supabase_client, marker_id: str, photos: list[dict]) -> bool:
+    """Create photo records for a marker."""
+    if not photos:
+        return True  # No photos to create
+
+    try:
+        photo_rows = []
+        for photo in photos:
+            url = photo.get("url")
+            public_id = photo.get("public_id")
+
+            if not url or not public_id:
+                continue
+
+            photo_rows.append(
+                {
+                    "marker_id": marker_id,
+                    "url": url,
+                    "public_id": public_id,
+                    "date_taken": photo.get("date_taken"),
+                    "caption": photo.get("caption"),
+                }
+            )
+
+        if photo_rows:
+            supabase_client.table("photos").insert(photo_rows).execute()
+
+        return True
+
+    except Exception as e:
+        print(f"  ✗ Error creating marker photos: {e}")
+        return False
+
+
 def seed_demo_markers(supabase_client, book_id: str, markers_data: list[dict]) -> int:
     """Seed all demo markers and their visits. Returns count of successful markers."""
     city_lookup = fetch_city_lookup(supabase_client)
@@ -298,9 +332,12 @@ def seed_demo_markers(supabase_client, book_id: str, markers_data: list[dict]) -
         visits = marker_data.get("visits", [])
         if create_marker_visits(supabase_client, marker_id, visits):
             visit_count = len(visits)
-            visited_str = "visited" if marker_data.get("visited") else "not visited"
-            print(f"✓ {resolved_name}, {country_name} ({visited_str}, {visit_count} visit periods)")
-            successful_count += 1
+            photos = marker_data.get("photos", [])
+            if create_marker_photos(supabase_client, marker_id, photos):
+                photo_count = len(photos)
+                visited_str = "visited" if marker_data.get("visited") else "not visited"
+                print(f"✓ {resolved_name}, {country_name} ({visited_str}, {visit_count} visit periods, {photo_count} photos)")
+                successful_count += 1
 
     return successful_count
 
