@@ -1,8 +1,9 @@
 # TODO
 
-- [ ] data: setup cloudinary
 - [ ] data: seed cloudinary with demo photos for the demo book
 - [ ] feat: if a user tries to modify the demo book (add markers, toggle marker statuses, add pictures, etc.) prompt them to sign up (if unauthenticated) or create a new book (if authenticated).
+- [ ] db: update demo book seed script to reflect recent manual changes made to the demo book in the database, and also to add the photos to the demo book from the cloudinary seed.
+- [x] data: setup cloudinary
 - [x] refactor: it's weird to have a service for supabase when the map and album services are also doing supabase queries. - enforced single Supabase data-access door and clean service boundaries
 - [x] map: city and capital highlight dots sizes should be dynamic based on the zoom level, so that they are not too small when zoomed out and not too big when zoomed in.
 - [x] map: city title in marker panel should have anchor to marker album page (similar to country panel) if applicable.

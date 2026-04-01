@@ -174,24 +174,117 @@
       }
 
       <h3>Photos</h3>
+
       @if (markerPage.photos.length === 0) {
         <p>No photos uploaded yet.</p>
       } @else {
-        <ul>
+        <ul class="photo-list">
           <li *ngFor="let photo of markerPage.photos; trackBy: trackPhotoById">
             <a [href]="photo.url" target="_blank" rel="noopener noreferrer">
-              {{ photo.publicId }}
+              <img
+                [src]="photo.url"
+                [alt]="photo.caption || photo.publicId"
+                title="Marker photo"
+              />
             </a>
             <span>
-              | date:
               {{
                 photo.dateTaken ? (photo.dateTaken | date: "mediumDate") : "N/A"
               }}
-              | caption:
+              |
               {{ photo.caption || "N/A" }}
             </span>
+            <div class="photo-item-actions">
+              <button type="button" (click)="startPhotoEdit(photo)">
+                Edit
+              </button>
+              <button
+                type="button"
+                [disabled]="isDeletingPhoto(photo.id)"
+                (click)="deletePhotoForCurrentMarker(photo.id)"
+              >
+                {{ isDeletingPhoto(photo.id) ? "Deleting..." : "Delete" }}
+              </button>
+            </div>
           </li>
         </ul>
+      }
+
+      <button
+        type="button"
+        class="photo-toggle-button"
+        (click)="togglePhotoPanel()"
+      >
+        {{ isPhotoPanelOpen() ? "Hide upload form" : "Upload photo" }}
+      </button>
+
+      @if (isPhotoPanelOpen()) {
+        <div class="photo-panel">
+          <div class="panel-header">
+            <h4>
+              {{ photoFormMode() === "edit" ? "Edit photo" : "Upload photo" }}
+            </h4>
+            <button type="button" (click)="closePhotoPanel()">✕</button>
+          </div>
+
+          <div class="panel-content">
+            <label>
+              {{ photoFormMode() === "edit" ? "Replace image" : "Image file" }}
+              <input
+                #photoFileInput
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                (change)="onPhotoFileSelected($event)"
+              />
+            </label>
+
+            <label>
+              Date taken
+              <input
+                type="date"
+                [value]="uploadDateTaken()"
+                (input)="
+                  uploadDateTaken.set(($any($event.target).value || '').trim())
+                "
+              />
+            </label>
+            <label>
+              Caption
+              <input
+                type="text"
+                maxlength="240"
+                [value]="uploadCaption()"
+                (input)="
+                  uploadCaption.set(
+                    ($any($event.target).value || '').trimStart()
+                  )
+                "
+                placeholder="Optional caption"
+              />
+            </label>
+
+            @if (photoActionError(); as photoError) {
+              <p>{{ photoError }}</p>
+            }
+
+            <div class="photo-panel-actions">
+              <button
+                type="button"
+                [disabled]="isUploadingPhoto()"
+                (click)="uploadPhotoForCurrentMarker(photoFileInput)"
+              >
+                {{
+                  isUploadingPhoto()
+                    ? "Saving..."
+                    : photoFormMode() === "edit"
+                      ? "Save photo"
+                      : "Upload photo"
+                }}
+              </button>
+              <button type="button" (click)="closePhotoPanel()">Cancel</button>
+            </div>
+          </div>
+        </div>
       }
     }
   }

@@ -132,6 +132,7 @@ export interface MarkerFullDetail {
   companions: string[];
   activities: string[];
   visits: MarkerVisitPeriod[];
+  photoCount: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -181,4 +182,29 @@ export interface AlbumBookTriedDishRow {
     rating?: number | string | null;
     image_url?: string | null;
   } | null;
+}
+
+export interface AlbumPhotoMutationInput {
+  markerId: string;
+  url: string;
+  publicId: string;
+  dateTaken: string | null;
+  caption: string | null;
+}
+
+export interface AlbumPhotoUpdateInput {
+  markerId: string;
+  photoId: string;
+  url?: string | null;
+  publicId?: string | null;
+  dateTaken: string | null;
+  caption: string | null;
+}
+
+export interface AlbumPhotoRow {
+  id: string;
+  url: string;
+  public_id: string;
+  date_taken: string | null;
+  caption: string | null;
 }

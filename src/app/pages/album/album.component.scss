@@ -1,0 +1,60 @@
+.photo-panel {
+  margin-top: 0.75rem;
+  padding: 1rem;
+  border: 1px solid #000;
+}
+
+.photo-panel .panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.8rem;
+}
+
+.photo-panel h4 {
+  margin: 0;
+}
+
+.photo-panel label {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.photo-panel .panel-content {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.photo-panel-actions,
+.photo-item-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.photo-list {
+  display: grid;
+  gap: 1rem;
+  list-style: none;
+  padding: 0;
+
+  li {
+    display: grid;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    border: 1px solid #000;
+    max-width: 30rem;
+  }
+
+  img {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+  }
+}
+
+.photo-panel input[type="file"],
+.photo-panel input[type="date"],
+.photo-panel input[type="text"] {
+  max-width: 22rem;
+}

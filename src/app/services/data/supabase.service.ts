@@ -10,6 +10,9 @@ import { SupabaseStatsService } from './supabase/stats.service';
 import type {
   AlbumBookTriedDishRow,
   AlbumMarkerCountryRow,
+  AlbumPhotoMutationInput,
+  AlbumPhotoUpdateInput,
+  AlbumPhotoRow,
   Book,
   BookCountryMarkerSummary,
   BookVisitedLandAreaStats,
@@ -166,6 +169,25 @@ export class SupabaseService {
       bookId,
       countryId,
     );
+  }
+
+  async createAlbumMarkerPhoto(
+    input: AlbumPhotoMutationInput,
+  ): Promise<AlbumPhotoRow | null> {
+    return this.albumService.createMarkerPhoto(this.client, input);
+  }
+
+  async updateAlbumMarkerPhoto(
+    input: AlbumPhotoUpdateInput,
+  ): Promise<AlbumPhotoRow | null> {
+    return this.albumService.updateMarkerPhoto(this.client, input);
+  }
+
+  async deleteAlbumMarkerPhoto(
+    markerId: string,
+    photoId: string,
+  ): Promise<boolean> {
+    return this.albumService.deleteMarkerPhoto(this.client, markerId, photoId);
   }
 
   async getBookVisitedLandAreaStats(

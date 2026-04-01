@@ -1,7 +1,13 @@
 import { Injectable } from '@angular/core';
 import { SupabaseClient } from '@supabase/supabase-js';
 
-import { AlbumBookTriedDishRow, AlbumMarkerCountryRow } from './models';
+import {
+  AlbumBookTriedDishRow,
+  AlbumMarkerCountryRow,
+  AlbumPhotoMutationInput,
+  AlbumPhotoUpdateInput,
+  AlbumPhotoRow,
+} from './models';
 
 @Injectable({ providedIn: 'root' })
 export class SupabaseAlbumService {
@@ -77,6 +83,101 @@ export class SupabaseAlbumService {
     } catch (error) {
       console.error('Exception while loading country dishes:', error);
       return [];
+    }
+  }
+
+  async createMarkerPhoto(
+    client: SupabaseClient,
+    input: AlbumPhotoMutationInput,
+  ): Promise<AlbumPhotoRow | null> {
+    if (!input.markerId || !input.url || !input.publicId) return null;
+
+    try {
+      const { data, error } = await client
+        .from('photos')
+        .insert({
+          marker_id: input.markerId,
+          url: input.url,
+          public_id: input.publicId,
+          date_taken: input.dateTaken,
+          caption: input.caption,
+        })
+        .select('id, url, public_id, date_taken, caption')
+        .single();
+
+      if (error) {
+        console.error('Failed to create marker photo:', error);
+        return null;
+      }
+
+      return (data as AlbumPhotoRow | null) ?? null;
+    } catch (error) {
+      console.error('Exception while creating marker photo:', error);
+      return null;
+    }
+  }
+
+  async updateMarkerPhoto(
+    client: SupabaseClient,
+    input: AlbumPhotoUpdateInput,
+  ): Promise<AlbumPhotoRow | null> {
+    if (!input.markerId || !input.photoId) return null;
+
+    try {
+      const payload: Record<string, string | null> = {
+        date_taken: input.dateTaken,
+        caption: input.caption,
+      };
+
+      if (typeof input.url === 'string' && input.url.length > 0)
+        payload['url'] = input.url;
+
+      if (typeof input.publicId === 'string' && input.publicId.length > 0)
+        payload['public_id'] = input.publicId;
+
+      const { data, error } = await client
+        .from('photos')
+        .update(payload)
+        .eq('id', input.photoId)
+        .eq('marker_id', input.markerId)
+        .select('id, url, public_id, date_taken, caption')
+        .single();
+
+      if (error) {
+        console.error('Failed to update marker photo:', error);
+        return null;
+      }
+
+      return (data as AlbumPhotoRow | null) ?? null;
+    } catch (error) {
+      console.error('Exception while updating marker photo:', error);
+      return null;
+    }
+  }
+
+  async deleteMarkerPhoto(
+    client: SupabaseClient,
+    markerId: string,
+    photoId: string,
+  ): Promise<boolean> {
+    if (!markerId || !photoId) return false;
+
+    try {
+      const { error } = await client
+        .from('photos')
+        .delete()
+        .eq('id', photoId)
+        .eq('marker_id', markerId);
+
+      if (error) {
+        console.error('Failed to delete marker photo:', error);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Exception while deleting marker photo:', error);
+      return false;
     }
   }
 }

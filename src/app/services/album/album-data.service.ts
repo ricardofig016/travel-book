@@ -1,10 +1,12 @@
 import { Injectable, inject } from '@angular/core';
 import { SupabaseService } from '../data/supabase.service';
+import { ERROR_MESSAGES } from '../../core/config/constants';
 import {
   AlbumBookTriedDishRow,
   AlbumMarkerCountryRow,
 } from '../data/supabase/models';
 import { AlbumRouteService } from './album-route.service';
+import { CloudinaryPhotoService } from './cloudinary-photo.service';
 import {
   AlbumCityMarkerData,
   AlbumCountryCityItem,
@@ -18,6 +20,7 @@ import {
 export class AlbumDataService {
   private readonly supabase = inject(SupabaseService);
   private readonly albumRoutes = inject(AlbumRouteService);
+  private readonly cloudinaryPhotos = inject(CloudinaryPhotoService);
 
   async getCountryIndex(bookId: string): Promise<AlbumCountryIndexItem[]> {
     const rows = await this.fetchMarkerCountryRows(bookId);
@@ -213,6 +216,19 @@ export class AlbumDataService {
       })
       .filter((value): value is AlbumPhoto => value !== null);
 
+    photos.sort((left, right) => {
+      const leftDate = left.dateTaken ?? '';
+      const rightDate = right.dateTaken ?? '';
+
+      if (leftDate && rightDate && leftDate !== rightDate)
+        return leftDate.localeCompare(rightDate);
+
+      if (leftDate && !rightDate) return -1;
+      if (!leftDate && rightDate) return 1;
+
+      return left.caption?.localeCompare(right.caption ?? '') ?? 0;
+    });
+
     const visits = (matchedRow.marker_visits ?? [])
       .map((visit) => {
         if (!visit.id || !visit.start_date || !visit.end_date) return null;
@@ -313,6 +329,73 @@ export class AlbumDataService {
 
     if (candidates.length === 0) return null;
     return candidates[0].markerIdTail;
+  }
+
+  async uploadMarkerPhoto(
+    markerId: string,
+    file: File,
+    options: { dateTaken: string | null; caption: string | null },
+  ): Promise<AlbumPhoto> {
+    const uploadResult = await this.cloudinaryPhotos.uploadImage(file);
+
+    const created = await this.supabase.createAlbumMarkerPhoto({
+      markerId,
+      url: uploadResult.url,
+      publicId: uploadResult.publicId,
+      dateTaken: options.dateTaken,
+      caption: options.caption,
+    });
+
+    if (!created?.id || !created.url || !created.public_id)
+      throw new Error(ERROR_MESSAGES.uploadFailed);
+
+    return {
+      id: created.id,
+      url: created.url,
+      publicId: created.public_id,
+      dateTaken: created.date_taken,
+      caption: created.caption,
+    };
+  }
+
+  async updateMarkerPhoto(
+    markerId: string,
+    photo: AlbumPhoto,
+    file: File | null,
+    options: { dateTaken: string | null; caption: string | null },
+  ): Promise<AlbumPhoto> {
+    let uploadResult: { url: string; publicId: string } | null = null;
+    if (file) uploadResult = await this.cloudinaryPhotos.uploadImage(file);
+
+    const updated = await this.supabase.updateAlbumMarkerPhoto({
+      markerId,
+      photoId: photo.id,
+      url: uploadResult?.url ?? photo.url,
+      publicId: uploadResult?.publicId ?? photo.publicId,
+      dateTaken: options.dateTaken,
+      caption: options.caption,
+    });
+
+    if (!updated?.id || !updated.url || !updated.public_id)
+      throw new Error(ERROR_MESSAGES.uploadFailed);
+
+    return {
+      id: updated.id,
+      url: updated.url,
+      publicId: updated.public_id,
+      dateTaken: updated.date_taken,
+      caption: updated.caption,
+    };
+  }
+
+  async deleteMarkerPhoto(markerId: string, photoId: string): Promise<void> {
+    const deleted = await this.supabase.deleteAlbumMarkerPhoto(
+      markerId,
+      photoId,
+    );
+    if (!deleted) {
+      throw new Error('Failed to delete photo.');
+    }
   }
 
   private async fetchMarkerCountryRows(

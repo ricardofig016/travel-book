@@ -47,6 +47,15 @@ export class PhotoAlbumComponent {
   readonly countryIndex = signal<AlbumCountryIndexItem[]>([]);
   readonly countryPage = signal<AlbumCountryPageData | null>(null);
   readonly cityMarkerPage = signal<AlbumCityMarkerData | null>(null);
+  readonly isUploadingPhoto = signal(false);
+  readonly deletingPhotoIds = signal<Set<string>>(new Set());
+  readonly photoActionError = signal<string | null>(null);
+  readonly isPhotoPanelOpen = signal(false);
+  readonly photoFormMode = signal<'create' | 'edit'>('create');
+  readonly editingPhoto = signal<AlbumPhoto | null>(null);
+  readonly selectedUploadFile = signal<File | null>(null);
+  readonly uploadCaption = signal('');
+  readonly uploadDateTaken = signal('');
 
   readonly countrySlug = computed(() => this.params().get('countrySlug'));
   readonly citySlug = computed(() => this.params().get('citySlug'));
@@ -79,6 +88,7 @@ export class PhotoAlbumComponent {
   ): Promise<void> {
     const requestId = ++this.requestId;
     this.loadError.set(null);
+    this.photoActionError.set(null);
     this.isLoading.set(true);
     this.countryPage.set(null);
     this.cityMarkerPage.set(null);
@@ -145,6 +155,204 @@ export class PhotoAlbumComponent {
       this.cityMarkerPage.set(null);
       this.isLoading.set(false);
     }
+  }
+
+  onPhotoFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    this.selectedUploadFile.set(file);
+    this.photoActionError.set(null);
+  }
+
+  togglePhotoPanel(): void {
+    if (this.isPhotoPanelOpen()) {
+      this.closePhotoPanel();
+      return;
+    }
+
+    this.openPhotoPanelForCreate();
+  }
+
+  startPhotoEdit(photo: AlbumPhoto): void {
+    this.photoFormMode.set('edit');
+    this.editingPhoto.set(photo);
+    this.uploadCaption.set(photo.caption ?? '');
+    this.uploadDateTaken.set(photo.dateTaken ?? '');
+    this.selectedUploadFile.set(null);
+    this.photoActionError.set(null);
+    this.isPhotoPanelOpen.set(true);
+  }
+
+  closePhotoPanel(): void {
+    this.isPhotoPanelOpen.set(false);
+    this.photoFormMode.set('create');
+    this.editingPhoto.set(null);
+    this.selectedUploadFile.set(null);
+    this.uploadCaption.set('');
+    this.uploadDateTaken.set('');
+    this.photoActionError.set(null);
+  }
+
+  async uploadPhotoForCurrentMarker(
+    fileInput: HTMLInputElement,
+  ): Promise<void> {
+    const markerPage = this.cityMarkerPage();
+    const selectedBookId = this.selectedBook()?.id ?? null;
+    const countrySlug = this.countrySlug();
+    const citySlug = this.citySlug();
+    const idTail = this.idTail();
+    const file = this.selectedUploadFile();
+    const dateTaken = this.uploadDateTaken().trim();
+    const caption = this.uploadCaption().trim();
+    const visits = markerPage?.visits ?? [];
+    const isEditing = this.photoFormMode() === 'edit';
+
+    if (
+      !markerPage ||
+      !selectedBookId ||
+      !countrySlug ||
+      !citySlug ||
+      !idTail
+    ) {
+      this.photoActionError.set('Select an image before uploading.');
+      return;
+    }
+
+    if (dateTaken && !this.isDateWithinVisits(dateTaken, visits)) {
+      this.photoActionError.set(
+        'Date taken must fall within one of the marker visit ranges.',
+      );
+      return;
+    }
+
+    this.photoActionError.set(null);
+    this.isUploadingPhoto.set(true);
+
+    try {
+      if (isEditing && this.editingPhoto()) {
+        await this.albumData.updateMarkerPhoto(
+          markerPage.markerId,
+          this.editingPhoto()!,
+          file,
+          {
+            caption: caption.length > 0 ? caption : null,
+            dateTaken: dateTaken.length > 0 ? dateTaken : null,
+          },
+        );
+      } else {
+        if (!file) {
+          this.photoActionError.set('Select an image before uploading.');
+          return;
+        }
+
+        await this.albumData.uploadMarkerPhoto(markerPage.markerId, file, {
+          caption: caption.length > 0 ? caption : null,
+          dateTaken: dateTaken.length > 0 ? dateTaken : null,
+        });
+      }
+
+      this.closePhotoPanel();
+      fileInput.value = '';
+
+      await this.refreshCityMarkerPage(
+        selectedBookId,
+        countrySlug,
+        citySlug,
+        idTail,
+      );
+    } catch (error) {
+      console.error('Failed to upload photo', error);
+      const message =
+        error instanceof Error ? error.message : 'Failed to upload photo.';
+      this.photoActionError.set(message);
+    } finally {
+      this.isUploadingPhoto.set(false);
+    }
+  }
+
+  private openPhotoPanelForCreate(): void {
+    this.photoFormMode.set('create');
+    this.editingPhoto.set(null);
+    this.selectedUploadFile.set(null);
+    this.uploadCaption.set('');
+    this.uploadDateTaken.set('');
+    this.photoActionError.set(null);
+    this.isPhotoPanelOpen.set(true);
+  }
+
+  private isDateWithinVisits(
+    dateTaken: string,
+    visits: AlbumMarkerVisit[],
+  ): boolean {
+    if (!dateTaken || visits.length === 0) return false;
+
+    return visits.some(
+      (visit) => dateTaken >= visit.startDate && dateTaken <= visit.endDate,
+    );
+  }
+
+  async deletePhotoForCurrentMarker(photoId: string): Promise<void> {
+    const markerPage = this.cityMarkerPage();
+    const selectedBookId = this.selectedBook()?.id ?? null;
+    const countrySlug = this.countrySlug();
+    const citySlug = this.citySlug();
+    const idTail = this.idTail();
+
+    if (
+      !markerPage ||
+      !selectedBookId ||
+      !countrySlug ||
+      !citySlug ||
+      !idTail
+    ) {
+      this.photoActionError.set('Cannot delete photo from this route.');
+      return;
+    }
+
+    this.photoActionError.set(null);
+    this.deletingPhotoIds.update((current) => {
+      const next = new Set(current);
+      next.add(photoId);
+      return next;
+    });
+
+    try {
+      await this.albumData.deleteMarkerPhoto(markerPage.markerId, photoId);
+      await this.refreshCityMarkerPage(
+        selectedBookId,
+        countrySlug,
+        citySlug,
+        idTail,
+      );
+    } catch (error) {
+      console.error('Failed to delete photo', error);
+      this.photoActionError.set('Failed to delete photo.');
+    } finally {
+      this.deletingPhotoIds.update((current) => {
+        const next = new Set(current);
+        next.delete(photoId);
+        return next;
+      });
+    }
+  }
+
+  isDeletingPhoto(photoId: string): boolean {
+    return this.deletingPhotoIds().has(photoId);
+  }
+
+  private async refreshCityMarkerPage(
+    bookId: string,
+    countrySlug: string,
+    citySlug: string,
+    idTail: string,
+  ): Promise<void> {
+    const [countryIndex, cityMarkerPage] = await Promise.all([
+      this.albumData.getCountryIndex(bookId),
+      this.albumData.getCityMarkerPage(bookId, countrySlug, citySlug, idTail),
+    ]);
+
+    this.countryIndex.set(countryIndex);
+    if (cityMarkerPage) this.cityMarkerPage.set(cityMarkerPage);
   }
 
   getCityMarkerLink(

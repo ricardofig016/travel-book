@@ -87,7 +87,7 @@ export class SupabaseCountriesService {
     const { data, error } = await client
       .from('markers')
       .select(
-        'id, book_id, city_id, visited, favorite, want, notes, companions, activities, created_at, updated_at, cities!inner(name), marker_visits(id, start_date, end_date)',
+        'id, book_id, city_id, visited, favorite, want, notes, companions, activities, created_at, updated_at, cities!inner(name), marker_visits(id, start_date, end_date), photos(id)',
       )
       .eq('id', markerId)
       .eq('book_id', bookId)
@@ -116,6 +116,7 @@ export class SupabaseCountriesService {
         start_date?: string;
         end_date?: string;
       }> | null;
+      photos?: Array<{ id?: string } | null> | null;
     } | null;
 
     if (
@@ -152,6 +153,8 @@ export class SupabaseCountriesService {
       companions: row.companions ?? [],
       activities: row.activities ?? [],
       visits,
+      photoCount: (row.photos ?? []).filter((photo) => Boolean(photo?.id))
+        .length,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     };
