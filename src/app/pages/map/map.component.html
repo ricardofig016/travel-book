@@ -289,15 +289,15 @@
                       <div class="marker-status">
                         <label>
                           <input
-                            #visitedBox
                             type="checkbox"
                             [checked]="marker.visited"
                             [disabled]="isMarkerUpdating(marker.id)"
-                            (change)="
-                              onMarkerStatusChange(
+                            (click)="
+                              onMarkerStatusClick(
+                                $event,
                                 marker.id,
                                 'visited',
-                                visitedBox.checked
+                                marker.visited
                               )
                             "
                           />
@@ -305,15 +305,15 @@
                         </label>
                         <label>
                           <input
-                            #favoriteBox
                             type="checkbox"
                             [checked]="marker.favorite"
                             [disabled]="isMarkerUpdating(marker.id)"
-                            (change)="
-                              onMarkerStatusChange(
+                            (click)="
+                              onMarkerStatusClick(
+                                $event,
                                 marker.id,
                                 'favorite',
-                                favoriteBox.checked
+                                marker.favorite
                               )
                             "
                           />
@@ -321,15 +321,15 @@
                         </label>
                         <label>
                           <input
-                            #wantBox
                             type="checkbox"
                             [checked]="marker.want"
                             [disabled]="isMarkerUpdating(marker.id)"
-                            (change)="
-                              onMarkerStatusChange(
+                            (click)="
+                              onMarkerStatusClick(
+                                $event,
                                 marker.id,
                                 'want',
-                                wantBox.checked
+                                marker.want
                               )
                             "
                           />

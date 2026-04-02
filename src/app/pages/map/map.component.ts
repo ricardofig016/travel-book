@@ -16,6 +16,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { BookStateService } from '../../core/state/book-state.service';
+import { DemoBookMutationGuardService } from '../../core/state/demo-book-mutation-guard.service';
 import { SupabaseService } from '../../services/data/supabase.service';
 import {
   BookCountryMarkerSummary,
@@ -72,6 +73,7 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('mapCanvas') mapCanvas!: ElementRef<HTMLDivElement>;
 
   private bookState = inject(BookStateService);
+  private demoBookMutationGuard = inject(DemoBookMutationGuardService);
   private geoProcessor = inject(GeoProcessorService);
   private viewport = inject(MapViewportService);
   private mapData = inject(MapDataService);
@@ -520,6 +522,8 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
+    if (!this.demoBookMutationGuard.canMutateSelectedBook()) return;
+
     this.selectedCityForPanel.set(city);
     this.cityPanelForm.set({
       ...createEmptyMarkerForm(),
@@ -557,6 +561,8 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
     const bookId = this.bookState.selectedBook()?.id ?? null;
     if (!city || !bookId || this.cityPanelSubmitting()) return;
 
+    if (!this.demoBookMutationGuard.canMutateSelectedBook()) return;
+
     this.cityPanelSubmitting.set(true);
 
     try {
@@ -584,6 +590,8 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   startMarkerEdit(): void {
+    if (!this.demoBookMutationGuard.canMutateSelectedBook()) return;
+
     const detail = this.selectedMarkerDetail();
     if (!detail) return;
 
@@ -605,6 +613,8 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
   async saveMarkerPanelChanges(): Promise<void> {
     const detail = this.selectedMarkerDetail();
     if (!detail || this.markerPanelSubmitting()) return;
+
+    if (!this.demoBookMutationGuard.canMutateSelectedBook()) return;
 
     this.markerPanelSubmitting.set(true);
 
@@ -629,6 +639,8 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
   async deleteSelectedMarker(): Promise<void> {
     const detail = this.selectedMarkerDetail();
     if (!detail || this.markerPanelDeleting()) return;
+
+    if (!this.demoBookMutationGuard.canMutateSelectedBook()) return;
 
     const confirmed = window.confirm(
       `Delete marker for ${detail.cityName}? This cannot be undone.`,
@@ -741,7 +753,22 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.updatingMarkerIds().has(markerId);
   }
 
-  async onMarkerStatusChange(
+  onMarkerStatusClick(
+    event: MouseEvent,
+    markerId: string,
+    status: keyof CountryMarkerStatusPatch,
+    currentValue: boolean,
+  ): void {
+    if (!this.demoBookMutationGuard.canMutateSelectedBook()) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+
+    void this.onMarkerStatusChange(markerId, status, !currentValue);
+  }
+
+  private async onMarkerStatusChange(
     markerId: string,
     status: keyof CountryMarkerStatusPatch,
     value: boolean,

@@ -10,6 +10,7 @@ import {
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { BookStateService } from '../../core/state/book-state.service';
+import { DemoBookMutationGuardService } from '../../core/state/demo-book-mutation-guard.service';
 import { AlbumDataService } from '../../services/album/album-data.service';
 import { AlbumRouteService } from '../../services/album/album-route.service';
 import { FlagIconComponent } from '../../shared/flag-icon/flag-icon.component';
@@ -45,6 +46,7 @@ export class PhotoAlbumComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly bookState = inject(BookStateService);
+  private readonly demoBookMutationGuard = inject(DemoBookMutationGuardService);
   private readonly albumData = inject(AlbumDataService);
   private readonly albumRoutes = inject(AlbumRouteService);
   private readonly params = toSignal(this.route.paramMap, {
@@ -196,6 +198,8 @@ export class PhotoAlbumComponent {
   }
 
   startMarkerEdit(): void {
+    if (!this.demoBookMutationGuard.canMutateSelectedBook()) return;
+
     const markerPage = this.cityMarkerPage();
     if (!markerPage) return;
 
@@ -234,6 +238,8 @@ export class PhotoAlbumComponent {
       this.markerActionError.set('Cannot save marker from this route.');
       return;
     }
+
+    if (!this.demoBookMutationGuard.canMutateSelectedBook()) return;
 
     this.markerActionError.set(null);
     this.markerPanelSubmitting.set(true);
@@ -278,6 +284,8 @@ export class PhotoAlbumComponent {
       this.markerActionError.set('Cannot delete marker from this route.');
       return;
     }
+
+    if (!this.demoBookMutationGuard.canMutateSelectedBook()) return;
 
     const confirmed = window.confirm(
       `Delete marker for ${markerPage.city.name}? This cannot be undone.`,
@@ -359,10 +367,14 @@ export class PhotoAlbumComponent {
       return;
     }
 
+    if (!this.demoBookMutationGuard.canMutateSelectedBook()) return;
+
     this.openPhotoPanelForCreate();
   }
 
   startPhotoEdit(photo: AlbumPhoto): void {
+    if (!this.demoBookMutationGuard.canMutateSelectedBook()) return;
+
     this.photoFormMode.set('edit');
     this.editingPhoto.set(photo);
     this.uploadCaption.set(photo.caption ?? '');
@@ -406,6 +418,8 @@ export class PhotoAlbumComponent {
       this.photoActionError.set('Select an image before uploading.');
       return;
     }
+
+    if (!this.demoBookMutationGuard.canMutateSelectedBook()) return;
 
     if (dateTaken && !this.isDateWithinVisits(dateTaken, visits)) {
       this.photoActionError.set(
@@ -497,6 +511,8 @@ export class PhotoAlbumComponent {
       this.photoActionError.set('Cannot delete photo from this route.');
       return;
     }
+
+    if (!this.demoBookMutationGuard.canMutateSelectedBook()) return;
 
     this.photoActionError.set(null);
     this.deletingPhotoIds.update((current) => {

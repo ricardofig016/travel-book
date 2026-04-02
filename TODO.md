@@ -1,9 +1,11 @@
 # TODO
 
-- [ ] feat: if a user tries to modify the demo book (add markers, toggle marker statuses, add pictures, etc.) prompt them to sign up (if unauthenticated) or create a new book (if authenticated).
 - [ ] album: implement country dishes
 - [ ] album: implement marker photo page layouts
 - [ ] feat: substitute the 2 page nav buttons (`<` and `>`) with bookmarks
+- [ ] feat: when the user changes the selected book, the country and city should be refreshed to reflect the new book's data. currently, the map and country panels still show the previously selected book's data until the user clicks on a country or city, which triggers a refresh.
+- [ ] map: in city list in country panel, highlight cities that are already a marker with bold text, and make the markers in marker list bold as well
+- [x] feat: if a user tries to modify the demo book (add markers, toggle marker statuses, add pictures, etc.) prompt them to sign up (if unauthenticated) or create a new book (if authenticated).
 - [x] data: seed cloudinary with demo photos for the demo book
 - [x] db: update demo book seed script to reflect recent manual changes made to the demo book in the database, and also to assign the respective photos in cloudinary to the demo book.
 - [x] data: setup cloudinary
