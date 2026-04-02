@@ -18,6 +18,20 @@
           "start_date": "2026-03-15",
           "end_date": "2026-03-22"
         }
+      ],
+      "photos": [
+        {
+          "date_taken": "2026-03-16",
+          "caption": "you don't know how amazing these things taste",
+          "url": "https://res.cloudinary.com/dkpf6sa1o/image/upload/v1775149719/travel-book/o4vfkpmgcsorhbzhtyna.png",
+          "public_id": "travel-book/o4vfkpmgcsorhbzhtyna"
+        },
+        {
+          "date_taken": "2026-03-20",
+          "caption": null,
+          "url": "https://res.cloudinary.com/dkpf6sa1o/image/upload/v1775149498/travel-book/nbbte0bsifvgyzndoitg.png",
+          "public_id": "travel-book/nbbte0bsifvgyzndoitg"
+        }
       ]
     },
     {
@@ -33,6 +47,20 @@
         {
           "start_date": "2026-03-23",
           "end_date": "2026-03-26"
+        }
+      ],
+      "photos": [
+        {
+          "date_taken": "2026-03-24",
+          "caption": null,
+          "url": "https://res.cloudinary.com/dkpf6sa1o/image/upload/v1775149269/travel-book/eiim36weiqyx584xtjed.png",
+          "public_id": "travel-book/eiim36weiqyx584xtjed"
+        },
+        {
+          "date_taken": "2026-03-25",
+          "caption": "it feels so calm here i love it",
+          "url": "https://res.cloudinary.com/dkpf6sa1o/image/upload/v1775149152/travel-book/ib8zobqlxztcdvepkxgg.png",
+          "public_id": "travel-book/ib8zobqlxztcdvepkxgg"
         }
       ]
     },
@@ -162,6 +190,14 @@
           "start_date": "2026-07-02",
           "end_date": "2026-07-09"
         }
+      ],
+      "photos": [
+        {
+          "date_taken": "2026-07-04",
+          "caption": "we loved this tour",
+          "url": "https://res.cloudinary.com/dkpf6sa1o/image/upload/v1775148071/travel-book/xlqlh9amtu4ujuxcw0to.png",
+          "public_id": "travel-book/xlqlh9amtu4ujuxcw0to"
+        }
       ]
     },
     {
@@ -177,6 +213,20 @@
         {
           "start_date": "2026-07-10",
           "end_date": "2026-07-12"
+        }
+      ],
+      "photos": [
+        {
+          "date_taken": "2026-07-10",
+          "caption": "it stinksssss",
+          "url": "https://res.cloudinary.com/dkpf6sa1o/image/upload/v1775148418/travel-book/phtucggkzzbisy6larij.png",
+          "public_id": "travel-book/phtucggkzzbisy6larij"
+        },
+        {
+          "date_taken": "2026-07-11",
+          "caption": "sooo pretty",
+          "url": "https://res.cloudinary.com/dkpf6sa1o/image/upload/v1775148583/travel-book/uzh9pscjwa04kbjjyc9y.png",
+          "public_id": "travel-book/uzh9pscjwa04kbjjyc9y"
         }
       ]
     },

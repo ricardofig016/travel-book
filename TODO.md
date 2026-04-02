@@ -1,7 +1,7 @@
 # TODO
 
-- [ ] data: seed cloudinary with demo photos for the demo book
 - [ ] feat: if a user tries to modify the demo book (add markers, toggle marker statuses, add pictures, etc.) prompt them to sign up (if unauthenticated) or create a new book (if authenticated).
+- [x] data: seed cloudinary with demo photos for the demo book
 - [x] db: update demo book seed script to reflect recent manual changes made to the demo book in the database, and also to assign the respective photos in cloudinary to the demo book.
 - [x] data: setup cloudinary
 - [x] refactor: it's weird to have a service for supabase when the map and album services are also doing supabase queries. - enforced single Supabase data-access door and clean service boundaries
