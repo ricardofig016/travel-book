@@ -4,6 +4,8 @@ import { ERROR_MESSAGES } from '../../core/config/constants';
 import {
   AlbumBookTriedDishRow,
   AlbumMarkerCountryRow,
+  MarkerFullDetail,
+  MarkerMutationInput,
 } from '../data/supabase/models';
 import { AlbumRouteService } from './album-route.service';
 import { CloudinaryPhotoService } from './cloudinary-photo.service';
@@ -396,6 +398,21 @@ export class AlbumDataService {
     if (!deleted) {
       throw new Error('Failed to delete photo.');
     }
+  }
+
+  async updateMarkerForBook(
+    markerId: string,
+    bookId: string,
+    input: MarkerMutationInput,
+  ): Promise<MarkerFullDetail | null> {
+    return this.supabase.updateMarkerForBook(markerId, bookId, input);
+  }
+
+  async deleteMarkerForBook(
+    markerId: string,
+    bookId: string,
+  ): Promise<boolean> {
+    return this.supabase.deleteMarkerForBook(markerId, bookId);
   }
 
   private async fetchMarkerCountryRows(

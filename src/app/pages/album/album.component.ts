@@ -7,12 +7,22 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { BookStateService } from '../../core/state/book-state.service';
 import { AlbumDataService } from '../../services/album/album-data.service';
 import { AlbumRouteService } from '../../services/album/album-route.service';
 import { FlagIconComponent } from '../../shared/flag-icon/flag-icon.component';
+import { MarkerFormComponent } from '../../shared/marker-form/marker-form.component';
+import {
+  MarkerFormState,
+  MarkerVisitFormRow,
+} from '../../shared/marker-form/marker-form.models';
+import {
+  createEmptyMarkerForm,
+  createMarkerFormFromSnapshot,
+  toMarkerMutationInput,
+} from '../../shared/marker-form/marker-form.utils';
 import {
   AlbumCityMarkerData,
   AlbumCountryCityItem,
@@ -26,13 +36,14 @@ import {
 @Component({
   selector: 'app-photo-album',
   standalone: true,
-  imports: [CommonModule, RouterLink, FlagIconComponent],
+  imports: [CommonModule, RouterLink, FlagIconComponent, MarkerFormComponent],
   templateUrl: './album.component.html',
   styleUrl: './album.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PhotoAlbumComponent {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly bookState = inject(BookStateService);
   private readonly albumData = inject(AlbumDataService);
   private readonly albumRoutes = inject(AlbumRouteService);
@@ -47,6 +58,11 @@ export class PhotoAlbumComponent {
   readonly countryIndex = signal<AlbumCountryIndexItem[]>([]);
   readonly countryPage = signal<AlbumCountryPageData | null>(null);
   readonly cityMarkerPage = signal<AlbumCityMarkerData | null>(null);
+  readonly markerActionError = signal<string | null>(null);
+  readonly markerEditMode = signal(false);
+  readonly markerPanelSubmitting = signal(false);
+  readonly markerPanelDeleting = signal(false);
+  readonly markerPanelForm = signal<MarkerFormState>(createEmptyMarkerForm());
   readonly isUploadingPhoto = signal(false);
   readonly deletingPhotoIds = signal<Set<string>>(new Set());
   readonly photoActionError = signal<string | null>(null);
@@ -80,6 +96,23 @@ export class PhotoAlbumComponent {
     });
   }
 
+  private createMarkerFormFromPage(
+    markerPage: AlbumCityMarkerData,
+  ): MarkerFormState {
+    return createMarkerFormFromSnapshot({
+      visited: markerPage.status.visited,
+      favorite: markerPage.status.favorite,
+      want: markerPage.status.want,
+      notes: markerPage.notes,
+      companions: markerPage.companions,
+      activities: markerPage.activities,
+      visits: markerPage.visits.map((visit) => ({
+        startDate: visit.startDate,
+        endDate: visit.endDate,
+      })),
+    });
+  }
+
   private async loadDataForRoute(
     bookId: string | null,
     countrySlug: string | null,
@@ -89,9 +122,14 @@ export class PhotoAlbumComponent {
     const requestId = ++this.requestId;
     this.loadError.set(null);
     this.photoActionError.set(null);
+    this.markerActionError.set(null);
     this.isLoading.set(true);
     this.countryPage.set(null);
     this.cityMarkerPage.set(null);
+    this.markerEditMode.set(false);
+    this.markerPanelForm.set(createEmptyMarkerForm());
+    this.markerPanelSubmitting.set(false);
+    this.markerPanelDeleting.set(false);
 
     if (!bookId) {
       this.countryIndex.set([]);
@@ -155,6 +193,157 @@ export class PhotoAlbumComponent {
       this.cityMarkerPage.set(null);
       this.isLoading.set(false);
     }
+  }
+
+  startMarkerEdit(): void {
+    const markerPage = this.cityMarkerPage();
+    if (!markerPage) return;
+
+    this.markerPanelForm.set(this.createMarkerFormFromPage(markerPage));
+    this.markerEditMode.set(true);
+    this.markerActionError.set(null);
+  }
+
+  cancelMarkerEdit(): void {
+    this.markerEditMode.set(false);
+    this.markerActionError.set(null);
+    const markerPage = this.cityMarkerPage();
+    if (!markerPage) {
+      this.markerPanelForm.set(createEmptyMarkerForm());
+      return;
+    }
+
+    this.markerPanelForm.set(this.createMarkerFormFromPage(markerPage));
+  }
+
+  async saveMarkerPanelChanges(): Promise<void> {
+    const markerPage = this.cityMarkerPage();
+    const selectedBookId = this.selectedBook()?.id ?? null;
+    const countrySlug = this.countrySlug();
+    const citySlug = this.citySlug();
+    const idTail = this.idTail();
+
+    if (
+      !markerPage ||
+      !selectedBookId ||
+      !countrySlug ||
+      !citySlug ||
+      !idTail ||
+      this.markerPanelSubmitting()
+    ) {
+      this.markerActionError.set('Cannot save marker from this route.');
+      return;
+    }
+
+    this.markerActionError.set(null);
+    this.markerPanelSubmitting.set(true);
+
+    try {
+      const updatedMarker = await this.albumData.updateMarkerForBook(
+        markerPage.markerId,
+        selectedBookId,
+        toMarkerMutationInput(this.markerPanelForm()),
+      );
+
+      if (!updatedMarker) {
+        this.markerActionError.set('Failed to save marker.');
+        return;
+      }
+
+      this.markerEditMode.set(false);
+      await this.refreshCityMarkerPage(
+        selectedBookId,
+        countrySlug,
+        citySlug,
+        idTail,
+      );
+    } catch (error) {
+      console.error('Failed to save marker', error);
+      this.markerActionError.set('Failed to save marker.');
+    } finally {
+      this.markerPanelSubmitting.set(false);
+    }
+  }
+
+  async deleteSelectedMarker(): Promise<void> {
+    const markerPage = this.cityMarkerPage();
+    const selectedBookId = this.selectedBook()?.id ?? null;
+    const countrySlug = this.countrySlug();
+    if (
+      !markerPage ||
+      !selectedBookId ||
+      !countrySlug ||
+      this.markerPanelDeleting()
+    ) {
+      this.markerActionError.set('Cannot delete marker from this route.');
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Delete marker for ${markerPage.city.name}? This cannot be undone.`,
+    );
+    if (!confirmed) return;
+
+    this.markerActionError.set(null);
+    this.markerPanelDeleting.set(true);
+
+    try {
+      const deleted = await this.albumData.deleteMarkerForBook(
+        markerPage.markerId,
+        selectedBookId,
+      );
+
+      if (!deleted) {
+        this.markerActionError.set('Failed to delete marker.');
+        return;
+      }
+
+      await this.router.navigateByUrl(
+        this.albumRoutes.buildCountryAlbumPath(markerPage.country.name),
+      );
+    } catch (error) {
+      console.error('Failed to delete marker', error);
+      this.markerActionError.set('Failed to delete marker.');
+    } finally {
+      this.markerPanelDeleting.set(false);
+    }
+  }
+
+  onMarkerFormFieldChange(
+    field: Exclude<keyof MarkerFormState, 'visits'>,
+    value: string | boolean,
+  ): void {
+    this.markerPanelForm.update((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  }
+
+  addMarkerVisitRow(): void {
+    this.markerPanelForm.update((current) => ({
+      ...current,
+      visits: [...current.visits, { startDate: '', endDate: '' }],
+    }));
+  }
+
+  removeMarkerVisitRow(index: number): void {
+    this.markerPanelForm.update((current) => ({
+      ...current,
+      visits: current.visits.filter((_, idx) => idx !== index),
+    }));
+  }
+
+  onMarkerVisitFieldChange(
+    index: number,
+    field: keyof MarkerVisitFormRow,
+    value: string,
+  ): void {
+    this.markerPanelForm.update((current) => ({
+      ...current,
+      visits: current.visits.map((visit, idx) =>
+        idx === index ? { ...visit, [field]: value } : visit,
+      ),
+    }));
   }
 
   onPhotoFileSelected(event: Event): void {

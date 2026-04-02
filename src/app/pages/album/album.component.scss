@@ -58,3 +58,11 @@
 .photo-panel input[type="text"] {
   max-width: 22rem;
 }
+
+.marker-page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.75rem 0 1rem;
+}
+

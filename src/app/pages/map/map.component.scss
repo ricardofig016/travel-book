@@ -132,43 +132,6 @@
   gap: 1rem;
 }
 
-.panel-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.panel-field-label {
-  font-weight: 700;
-}
-
-.panel-status-options {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.panel-status-options label {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-}
-
-.panel-visit-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.panel-visit-list li {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-
 .panel-actions-row {
   display: flex;
   flex-direction: row;
@@ -179,10 +142,6 @@
 .panel-details-block {
   display: flex;
   flex-direction: column;
-}
-
-.panel textarea {
-  resize: vertical;
 }
 
 .markers-section,

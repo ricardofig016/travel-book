@@ -1,0 +1,92 @@
+<div class="marker-form">
+  <div class="panel-field">
+    <label class="panel-field-label">Status</label>
+    <div class="panel-status-options">
+      <label>
+        <input
+          type="checkbox"
+          [ngModel]="form().visited"
+          (ngModelChange)="fieldChange.emit({ field: 'visited', value: $event })"
+        />
+        visited
+      </label>
+      <label>
+        <input
+          type="checkbox"
+          [ngModel]="form().favorite"
+          (ngModelChange)="fieldChange.emit({ field: 'favorite', value: $event })"
+        />
+        favorite
+      </label>
+      <label>
+        <input
+          type="checkbox"
+          [ngModel]="form().want"
+          (ngModelChange)="fieldChange.emit({ field: 'want', value: $event })"
+        />
+        want
+      </label>
+    </div>
+  </div>
+
+  <div class="panel-field">
+    <label class="panel-field-label" for="marker-notes">Notes</label>
+    <textarea
+      id="marker-notes"
+      [ngModel]="form().notes"
+      (ngModelChange)="fieldChange.emit({ field: 'notes', value: $event })"
+    ></textarea>
+  </div>
+
+  <div class="panel-field">
+    <label class="panel-field-label" for="marker-companions">
+      Companions (comma/new line separated)
+    </label>
+    <textarea
+      id="marker-companions"
+      [ngModel]="form().companionsText"
+      (ngModelChange)="
+        fieldChange.emit({ field: 'companionsText', value: $event })
+      "
+    ></textarea>
+  </div>
+
+  <div class="panel-field">
+    <label class="panel-field-label" for="marker-activities">
+      Activities (comma/new line separated)
+    </label>
+    <textarea
+      id="marker-activities"
+      [ngModel]="form().activitiesText"
+      (ngModelChange)="
+        fieldChange.emit({ field: 'activitiesText', value: $event })
+      "
+    ></textarea>
+  </div>
+
+  <div class="panel-field">
+    <label class="panel-field-label">Visit Dates</label>
+    <button type="button" (click)="addVisit.emit()">Add visit range</button>
+    <ul class="panel-visit-list">
+      <li *ngFor="let visit of form().visits; let i = index">
+        <input
+          type="date"
+          aria-label="Visit start date"
+          [ngModel]="visit.startDate"
+          (ngModelChange)="
+            visitFieldChange.emit({ index: i, field: 'startDate', value: $event })
+          "
+        />
+        <input
+          type="date"
+          aria-label="Visit end date"
+          [ngModel]="visit.endDate"
+          (ngModelChange)="
+            visitFieldChange.emit({ index: i, field: 'endDate', value: $event })
+          "
+        />
+        <button type="button" (click)="removeVisit.emit(i)">Remove</button>
+      </li>
+    </ul>
+  </div>
+</div>

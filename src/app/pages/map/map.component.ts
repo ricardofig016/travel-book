@@ -24,7 +24,6 @@ import {
   CountryMarkerDetail,
   CountryMarkerStatusPatch,
   MarkerFullDetail,
-  MarkerMutationInput,
   CountryMetadata,
 } from '../../services/data/supabase/models';
 import { CountryShape, CapitalDot, GridPaths } from '../../services/map/models';
@@ -34,26 +33,27 @@ import { MapDataService } from '../../services/map/map-data.service';
 import { MetadataCacheService } from '../../services/map/metadata-cache.service';
 import { AlbumRouteService } from '../../services/album/album-route.service';
 import { FlagIconComponent } from '../../shared/flag-icon/flag-icon.component';
-
-interface MarkerVisitFormRow {
-  startDate: string;
-  endDate: string;
-}
-
-interface MarkerFormState {
-  visited: boolean;
-  favorite: boolean;
-  want: boolean;
-  notes: string;
-  companionsText: string;
-  activitiesText: string;
-  visits: MarkerVisitFormRow[];
-}
+import { MarkerFormComponent } from '../../shared/marker-form/marker-form.component';
+import {
+  MarkerFormState,
+  MarkerVisitFormRow,
+} from '../../shared/marker-form/marker-form.models';
+import {
+  createEmptyMarkerForm,
+  createMarkerFormFromSnapshot,
+  toMarkerMutationInput,
+} from '../../shared/marker-form/marker-form.utils';
 
 @Component({
   selector: 'app-world-map',
   standalone: true,
-  imports: [FlagIconComponent, CommonModule, FormsModule, RouterLink],
+  imports: [
+    FlagIconComponent,
+    MarkerFormComponent,
+    CommonModule,
+    FormsModule,
+    RouterLink,
+  ],
   templateUrl: './map.component.html',
   styleUrl: './map.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -128,10 +128,10 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
   protected readonly markerPanelSubmitting = signal(false);
   protected readonly markerPanelDeleting = signal(false);
   protected readonly cityPanelForm = signal<MarkerFormState>(
-    this.createEmptyMarkerForm(),
+    createEmptyMarkerForm(),
   );
   protected readonly markerPanelForm = signal<MarkerFormState>(
-    this.createEmptyMarkerForm(),
+    createEmptyMarkerForm(),
   );
 
   protected get zoom(): Signal<number> {
@@ -522,7 +522,7 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.selectedCityForPanel.set(city);
     this.cityPanelForm.set({
-      ...this.createEmptyMarkerForm(),
+      ...createEmptyMarkerForm(),
       visits: [{ startDate: '', endDate: '' }],
     });
     this.activeDetailPanel.set('city');
@@ -545,8 +545,8 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.selectedCityForPanel.set(null);
     this.selectedMarkerDetail.set(null);
     this.markerEditMode.set(false);
-    this.cityPanelForm.set(this.createEmptyMarkerForm());
-    this.markerPanelForm.set(this.createEmptyMarkerForm());
+    this.cityPanelForm.set(createEmptyMarkerForm());
+    this.markerPanelForm.set(createEmptyMarkerForm());
     this.cityPanelSubmitting.set(false);
     this.markerPanelSubmitting.set(false);
     this.markerPanelDeleting.set(false);
@@ -563,7 +563,7 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
       const createdMarker = await this.supabase.createMarkerForBookCity(
         bookId,
         city.id,
-        this.toMarkerMutationInput(this.cityPanelForm()),
+        toMarkerMutationInput(this.cityPanelForm()),
       );
 
       if (!createdMarker) return;
@@ -587,7 +587,7 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
     const detail = this.selectedMarkerDetail();
     if (!detail) return;
 
-    this.markerPanelForm.set(this.createMarkerFormFromDetail(detail));
+    this.markerPanelForm.set(createMarkerFormFromSnapshot(detail));
     this.markerEditMode.set(true);
   }
 
@@ -595,11 +595,11 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.markerEditMode.set(false);
     const detail = this.selectedMarkerDetail();
     if (!detail) {
-      this.markerPanelForm.set(this.createEmptyMarkerForm());
+      this.markerPanelForm.set(createEmptyMarkerForm());
       return;
     }
 
-    this.markerPanelForm.set(this.createMarkerFormFromDetail(detail));
+    this.markerPanelForm.set(createMarkerFormFromSnapshot(detail));
   }
 
   async saveMarkerPanelChanges(): Promise<void> {
@@ -612,13 +612,13 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
       const updatedMarker = await this.supabase.updateMarkerForBook(
         detail.id,
         detail.bookId,
-        this.toMarkerMutationInput(this.markerPanelForm()),
+        toMarkerMutationInput(this.markerPanelForm()),
       );
 
       if (!updatedMarker) return;
 
       this.selectedMarkerDetail.set(updatedMarker);
-      this.markerPanelForm.set(this.createMarkerFormFromDetail(updatedMarker));
+      this.markerPanelForm.set(createMarkerFormFromSnapshot(updatedMarker));
       this.markerEditMode.set(false);
       await this.refreshAfterMarkerMutation();
     } finally {
@@ -791,63 +791,10 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!detail) return;
 
     this.selectedMarkerDetail.set(detail);
-    this.markerPanelForm.set(this.createMarkerFormFromDetail(detail));
+    this.markerPanelForm.set(createMarkerFormFromSnapshot(detail));
     this.markerEditMode.set(false);
     this.selectedCityForPanel.set(null);
     this.activeDetailPanel.set('marker');
-  }
-
-  private createEmptyMarkerForm(): MarkerFormState {
-    return {
-      visited: false,
-      favorite: false,
-      want: false,
-      notes: '',
-      companionsText: '',
-      activitiesText: '',
-      visits: [],
-    };
-  }
-
-  private createMarkerFormFromDetail(
-    detail: MarkerFullDetail,
-  ): MarkerFormState {
-    return {
-      visited: detail.visited,
-      favorite: detail.favorite,
-      want: detail.want,
-      notes: detail.notes ?? '',
-      companionsText: detail.companions.join(', '),
-      activitiesText: detail.activities.join(', '),
-      visits: detail.visits.map((visit) => ({
-        startDate: visit.startDate,
-        endDate: visit.endDate,
-      })),
-    };
-  }
-
-  private parseTextList(value: string): string[] {
-    return value
-      .split(/[\n,]/)
-      .map((item) => item.trim())
-      .filter((item) => item.length > 0);
-  }
-
-  private toMarkerMutationInput(form: MarkerFormState): MarkerMutationInput {
-    return {
-      visited: form.visited,
-      favorite: form.favorite,
-      want: form.want,
-      notes: form.notes.trim() ? form.notes.trim() : null,
-      companions: this.parseTextList(form.companionsText),
-      activities: this.parseTextList(form.activitiesText),
-      visits: form.visits
-        .filter((visit) => visit.startDate && visit.endDate)
-        .map((visit) => ({
-          startDate: visit.startDate,
-          endDate: visit.endDate,
-        })),
-    };
   }
 
   private async refreshAfterMarkerMutation(): Promise<void> {

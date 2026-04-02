@@ -131,46 +131,86 @@
       <p>Marker ID tail: {{ markerPage.markerIdTail }}</p>
       <p>Admin region: {{ markerPage.city.adminName || "N/A" }}</p>
 
-      <h3>Status</h3>
-      <p>Visited: {{ markerPage.status.visited ? "Yes" : "No" }}</p>
-      <p>Favorite: {{ markerPage.status.favorite ? "Yes" : "No" }}</p>
-      <p>Want: {{ markerPage.status.want ? "Yes" : "No" }}</p>
-
-      <h3>Marker Notes</h3>
-      <p>{{ markerPage.notes || "No notes." }}</p>
-
-      <h3>Companions</h3>
-      @if (markerPage.companions.length === 0) {
-        <p>No companions listed.</p>
-      } @else {
-        <ul>
-          <li *ngFor="let companion of markerPage.companions">
-            {{ companion }}
-          </li>
-        </ul>
+      @if (markerActionError(); as markerError) {
+        <p>{{ markerError }}</p>
       }
 
-      <h3>Activities</h3>
-      @if (markerPage.activities.length === 0) {
-        <p>No activities listed.</p>
-      } @else {
-        <ul>
-          <li *ngFor="let activity of markerPage.activities">
-            {{ activity }}
-          </li>
-        </ul>
-      }
+      @if (!markerEditMode()) {
+        <h3>Status</h3>
+        <p>Visited: {{ markerPage.status.visited ? "Yes" : "No" }}</p>
+        <p>Favorite: {{ markerPage.status.favorite ? "Yes" : "No" }}</p>
+        <p>Want: {{ markerPage.status.want ? "Yes" : "No" }}</p>
 
-      <h3>Visits</h3>
-      @if (markerPage.visits.length === 0) {
-        <p>No visit periods recorded.</p>
+        <h3>Marker Notes</h3>
+        <p>{{ markerPage.notes || "No notes." }}</p>
+
+        <h3>Companions</h3>
+        @if (markerPage.companions.length === 0) {
+          <p>No companions listed.</p>
+        } @else {
+          <ul>
+            <li *ngFor="let companion of markerPage.companions">
+              {{ companion }}
+            </li>
+          </ul>
+        }
+
+        <h3>Activities</h3>
+        @if (markerPage.activities.length === 0) {
+          <p>No activities listed.</p>
+        } @else {
+          <ul>
+            <li *ngFor="let activity of markerPage.activities">
+              {{ activity }}
+            </li>
+          </ul>
+        }
+
+        <h3>Visits</h3>
+        @if (markerPage.visits.length === 0) {
+          <p>No visit periods recorded.</p>
+        } @else {
+          <ul>
+            <li
+              *ngFor="let visit of markerPage.visits; trackBy: trackVisitById"
+            >
+              {{ visit.startDate | date: "mediumDate" }} to
+              {{ visit.endDate | date: "mediumDate" }}
+            </li>
+          </ul>
+        }
+
+        <div class="marker-page-actions">
+          <button type="button" (click)="startMarkerEdit()">Edit marker</button>
+          <button
+            type="button"
+            [disabled]="markerPanelDeleting()"
+            (click)="deleteSelectedMarker()"
+          >
+            {{ markerPanelDeleting() ? "Deleting..." : "Delete marker" }}
+          </button>
+        </div>
       } @else {
-        <ul>
-          <li *ngFor="let visit of markerPage.visits; trackBy: trackVisitById">
-            {{ visit.startDate | date: "mediumDate" }} to
-            {{ visit.endDate | date: "mediumDate" }}
-          </li>
-        </ul>
+        <app-marker-form
+          [form]="markerPanelForm()"
+          (fieldChange)="onMarkerFormFieldChange($event.field, $event.value)"
+          (visitFieldChange)="
+            onMarkerVisitFieldChange($event.index, $event.field, $event.value)
+          "
+          (addVisit)="addMarkerVisitRow()"
+          (removeVisit)="removeMarkerVisitRow($event)"
+        />
+
+        <div class="marker-page-actions">
+          <button
+            type="button"
+            [disabled]="markerPanelSubmitting()"
+            (click)="saveMarkerPanelChanges()"
+          >
+            {{ markerPanelSubmitting() ? "Saving..." : "Save marker" }}
+          </button>
+          <button type="button" (click)="cancelMarkerEdit()">Cancel</button>
+        </div>
       }
 
       <h3>Photos</h3>
