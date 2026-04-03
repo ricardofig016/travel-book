@@ -53,11 +53,22 @@ export interface AlbumTriedDishItem {
   imageUrl: string | null;
 }
 
+export interface AlbumCountryDishItem {
+  dishId: string;
+  name: string;
+  category: string | null;
+  location: string | null;
+  tasteAtlasUrl: string | null;
+  rating: number | null;
+  imageUrl: string | null;
+  isTried: boolean;
+}
+
 export interface AlbumCountryPageData {
   country: AlbumCountryMetadata;
   bookInfo: AlbumCountryBookInfo;
   cities: AlbumCountryCityItem[];
-  dishesTried: AlbumTriedDishItem[];
+  dishes: AlbumCountryDishItem[];
 }
 
 export interface AlbumMarkerVisit {

@@ -175,6 +175,7 @@ export interface AlbumMarkerCountryRow {
 }
 
 export interface AlbumBookTriedDishRow {
+  dish_id?: string | null;
   dishes?: {
     id?: string | null;
     name?: string | null;
@@ -182,6 +183,17 @@ export interface AlbumBookTriedDishRow {
     rating?: number | string | null;
     image_url?: string | null;
   } | null;
+}
+
+export interface AlbumCountryDishRow {
+  id?: string | null;
+  name?: string | null;
+  category?: string | null;
+  location?: string | null;
+  tasteatlas_url?: string | null;
+  rating?: number | string | null;
+  image_url?: string | null;
+  country_id?: string | null;
 }
 
 export interface AlbumPhotoMutationInput {

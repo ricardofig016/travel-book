@@ -3,6 +3,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 
 import {
   AlbumBookTriedDishRow,
+  AlbumCountryDishRow,
   AlbumMarkerCountryRow,
   AlbumPhotoMutationInput,
   AlbumPhotoUpdateInput,
@@ -83,6 +84,93 @@ export class SupabaseAlbumService {
     } catch (error) {
       console.error('Exception while loading country dishes:', error);
       return [];
+    }
+  }
+
+  async getCountryDishesForCountry(
+    client: SupabaseClient,
+    countryId: string,
+  ): Promise<AlbumCountryDishRow[]> {
+    if (!countryId) return [];
+
+    try {
+      const { data, error } = await client
+        .from('dishes')
+        .select(
+          'id, name, category, location, tasteatlas_url, rating, image_url, country_id',
+        )
+        .eq('country_id', countryId)
+        .order('name', { ascending: true });
+
+      if (error) {
+        console.error('Failed to load country dish list:', error);
+        return [];
+      }
+
+      return (data as AlbumCountryDishRow[] | null) ?? [];
+    } catch (error) {
+      console.error('Exception while loading country dish list:', error);
+      return [];
+    }
+  }
+
+  async setBookTriedDish(
+    client: SupabaseClient,
+    bookId: string,
+    dishId: string,
+    tried: boolean,
+  ): Promise<boolean> {
+    if (!bookId || !dishId) return false;
+
+    return tried
+      ? this.insertBookTriedDish(client, bookId, dishId)
+      : this.deleteBookTriedDish(client, bookId, dishId);
+  }
+
+  private async insertBookTriedDish(
+    client: SupabaseClient,
+    bookId: string,
+    dishId: string,
+  ): Promise<boolean> {
+    try {
+      const { error } = await client.from('book_tried_dishes').insert({
+        book_id: bookId,
+        dish_id: dishId,
+      });
+
+      if (error) {
+        console.error('Failed to add tried dish:', error);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Exception while adding tried dish:', error);
+      return false;
+    }
+  }
+
+  private async deleteBookTriedDish(
+    client: SupabaseClient,
+    bookId: string,
+    dishId: string,
+  ): Promise<boolean> {
+    try {
+      const { error } = await client
+        .from('book_tried_dishes')
+        .delete()
+        .eq('book_id', bookId)
+        .eq('dish_id', dishId);
+
+      if (error) {
+        console.error('Failed to remove tried dish:', error);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Exception while removing tried dish:', error);
+      return false;
     }
   }
 

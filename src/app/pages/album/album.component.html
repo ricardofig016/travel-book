@@ -95,17 +95,68 @@
         </ul>
       }
 
-      <h3>Dishes Tried In This Country</h3>
-      @if (page.dishesTried.length === 0) {
-        <p>No tried dishes found for this country in this book.</p>
+      <h3>Featured Dishes</h3>
+
+      @if (countryDishActionError(); as dishError) {
+        <p>{{ dishError }}</p>
+      }
+
+      @if (page.dishes.length === 0) {
+        <p>No dishes found for this country.</p>
       } @else {
-        <ul>
-          <li *ngFor="let dish of page.dishesTried; trackBy: trackDishById">
-            <strong>{{ dish.name }}</strong>
-            <span>
-              | category: {{ dish.category || "N/A" }} | rating:
-              {{ dish.rating ?? "N/A" }}
-            </span>
+        <ul class="country-dish-list">
+          <li
+            *ngFor="let dish of page.dishes; trackBy: trackDishById"
+            class="country-dish-item"
+          >
+            <a
+              class="country-dish-link"
+              [href]="dish.tasteAtlasUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              @if (dish.imageUrl) {
+                <img
+                  class="country-dish-image"
+                  [src]="dish.imageUrl"
+                  [alt]="dish.name"
+                  title="{{ dish.name }}"
+                  loading="lazy"
+                />
+              } @else {
+                <div
+                  class="country-dish-image country-dish-image--placeholder"
+                  aria-hidden="true"
+                ></div>
+              }
+
+              <div class="country-dish-copy">
+                <strong class="country-dish-name">{{ dish.name }}</strong>
+                <span class="country-dish-location">
+                  {{ dish.location || "Location: N/A" }}
+                </span>
+                <span class="country-dish-category">
+                  {{ dish.category || "N/A" }}
+                </span>
+                <span class="country-dish-rating">
+                  {{ dish.rating === null ? "N/A" : dish.rating + " / 5" }}
+                </span>
+              </div>
+            </a>
+
+            <label class="country-dish-toggle">
+              <input
+                type="checkbox"
+                [checked]="dish.isTried"
+                [disabled]="isDishUpdating(dish.dishId)"
+                (click)="onCountryDishStatusClick($event, dish, dish.isTried)"
+              />
+              Tried
+            </label>
+
+            @if (isDishUpdating(dish.dishId)) {
+              <small class="country-dish-status">Updating...</small>
+            }
           </li>
         </ul>
       }

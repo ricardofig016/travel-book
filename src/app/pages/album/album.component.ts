@@ -29,9 +29,9 @@ import {
   AlbumCountryCityItem,
   AlbumCountryIndexItem,
   AlbumCountryPageData,
+  AlbumCountryDishItem,
   AlbumMarkerVisit,
   AlbumPhoto,
-  AlbumTriedDishItem,
 } from '../../services/album/models';
 
 @Component({
@@ -68,6 +68,8 @@ export class PhotoAlbumComponent {
   readonly isUploadingPhoto = signal(false);
   readonly deletingPhotoIds = signal<Set<string>>(new Set());
   readonly photoActionError = signal<string | null>(null);
+  readonly countryDishActionError = signal<string | null>(null);
+  readonly updatingDishIds = signal<Set<string>>(new Set());
   readonly isPhotoPanelOpen = signal(false);
   readonly photoFormMode = signal<'create' | 'edit'>('create');
   readonly editingPhoto = signal<AlbumPhoto | null>(null);
@@ -124,10 +126,12 @@ export class PhotoAlbumComponent {
     const requestId = ++this.requestId;
     this.loadError.set(null);
     this.photoActionError.set(null);
+    this.countryDishActionError.set(null);
     this.markerActionError.set(null);
     this.isLoading.set(true);
     this.countryPage.set(null);
     this.cityMarkerPage.set(null);
+    this.updatingDishIds.set(new Set());
     this.markerEditMode.set(false);
     this.markerPanelForm.set(createEmptyMarkerForm());
     this.markerPanelSubmitting.set(false);
@@ -354,6 +358,66 @@ export class PhotoAlbumComponent {
     }));
   }
 
+  onCountryDishStatusClick(
+    event: MouseEvent,
+    dish: AlbumCountryDishItem,
+    currentValue: boolean,
+  ): void {
+    if (!this.demoBookMutationGuard.canMutateSelectedBook()) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+
+    void this.onCountryDishStatusChange(dish.dishId, !currentValue);
+  }
+
+  private async onCountryDishStatusChange(
+    dishId: string,
+    tried: boolean,
+  ): Promise<void> {
+    const selectedBookId = this.selectedBook()?.id ?? null;
+    const countryPage = this.countryPage();
+
+    if (!selectedBookId || !countryPage) {
+      this.countryDishActionError.set('Cannot update dishes from this route.');
+      return;
+    }
+
+    if (this.updatingDishIds().has(dishId)) return;
+
+    this.countryDishActionError.set(null);
+    this.updatingDishIds.update((current) => {
+      const next = new Set(current);
+      next.add(dishId);
+      return next;
+    });
+    this.setCountryDishTriedState(dishId, tried);
+
+    try {
+      const updated = await this.albumData.setCountryDishTried(
+        selectedBookId,
+        dishId,
+        tried,
+      );
+
+      if (!updated) {
+        this.setCountryDishTriedState(dishId, !tried);
+        this.countryDishActionError.set('Failed to update dish status.');
+      }
+    } catch (error) {
+      console.error('Failed to update tried dish', error);
+      this.setCountryDishTriedState(dishId, !tried);
+      this.countryDishActionError.set('Failed to update dish status.');
+    } finally {
+      this.updatingDishIds.update((current) => {
+        const next = new Set(current);
+        next.delete(dishId);
+        return next;
+      });
+    }
+  }
+
   onPhotoFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0] ?? null;
@@ -560,6 +624,18 @@ export class PhotoAlbumComponent {
     if (cityMarkerPage) this.cityMarkerPage.set(cityMarkerPage);
   }
 
+  private setCountryDishTriedState(dishId: string, tried: boolean): void {
+    const page = this.countryPage();
+    if (!page) return;
+
+    this.countryPage.set({
+      ...page,
+      dishes: page.dishes.map((dish) =>
+        dish.dishId === dishId ? { ...dish, isTried: tried } : dish,
+      ),
+    });
+  }
+
   getCityMarkerLink(
     countrySlug: string,
     citySlug: string,
@@ -590,8 +666,12 @@ export class PhotoAlbumComponent {
     return item.markerId;
   }
 
-  trackDishById(_index: number, item: AlbumTriedDishItem): string {
+  trackDishById(_index: number, item: AlbumCountryDishItem): string {
     return item.dishId;
+  }
+
+  isDishUpdating(dishId: string): boolean {
+    return this.updatingDishIds().has(dishId);
   }
 
   trackVisitById(_index: number, item: AlbumMarkerVisit): string {

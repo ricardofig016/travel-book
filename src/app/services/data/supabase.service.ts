@@ -9,6 +9,7 @@ import { SupabaseCountriesService } from './supabase/countries.service';
 import { SupabaseStatsService } from './supabase/stats.service';
 import type {
   AlbumBookTriedDishRow,
+  AlbumCountryDishRow,
   AlbumMarkerCountryRow,
   AlbumPhotoMutationInput,
   AlbumPhotoUpdateInput,
@@ -168,6 +169,25 @@ export class SupabaseService {
       this.client,
       bookId,
       countryId,
+    );
+  }
+
+  async getAlbumCountryDishes(
+    countryId: string,
+  ): Promise<AlbumCountryDishRow[]> {
+    return this.albumService.getCountryDishesForCountry(this.client, countryId);
+  }
+
+  async setAlbumBookTriedDish(
+    bookId: string,
+    dishId: string,
+    tried: boolean,
+  ): Promise<boolean> {
+    return this.albumService.setBookTriedDish(
+      this.client,
+      bookId,
+      dishId,
+      tried,
     );
   }
 

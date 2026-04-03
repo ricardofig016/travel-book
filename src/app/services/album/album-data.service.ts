@@ -3,6 +3,7 @@ import { SupabaseService } from '../data/supabase.service';
 import { ERROR_MESSAGES } from '../../core/config/constants';
 import {
   AlbumBookTriedDishRow,
+  AlbumCountryDishRow,
   AlbumMarkerCountryRow,
   MarkerFullDetail,
   MarkerMutationInput,
@@ -10,6 +11,7 @@ import {
 import { AlbumRouteService } from './album-route.service';
 import { CloudinaryPhotoService } from './cloudinary-photo.service';
 import {
+  AlbumCountryDishItem,
   AlbumCityMarkerData,
   AlbumCountryCityItem,
   AlbumCountryIndexItem,
@@ -122,7 +124,22 @@ export class AlbumDataService {
       .filter((value): value is AlbumCountryCityItem => value !== null)
       .sort((a, b) => a.cityName.localeCompare(b.cityName));
 
-    const dishesTried = await this.fetchCountryTriedDishes(bookId, countryId);
+    const [countryDishes, dishesTried] = await Promise.all([
+      this.fetchCountryDishes(countryId),
+      this.fetchCountryTriedDishes(bookId, countryId),
+    ]);
+
+    const triedDishIds = new Set(dishesTried.map((dish) => dish.dishId));
+    const dishes = countryDishes.map<AlbumCountryDishItem>((dish) => ({
+      dishId: dish.dishId,
+      name: dish.name,
+      category: dish.category,
+      location: dish.location,
+      tasteAtlasUrl: dish.tasteAtlasUrl,
+      rating: dish.rating,
+      imageUrl: dish.imageUrl,
+      isTried: triedDishIds.has(dish.dishId),
+    }));
 
     const photoCount = matchedRows.reduce(
       (sum, row) => sum + (row.photos ?? []).length,
@@ -150,7 +167,7 @@ export class AlbumDataService {
         photoCount,
       },
       cities,
-      dishesTried,
+      dishes,
     };
   }
 
@@ -415,6 +432,14 @@ export class AlbumDataService {
     return this.supabase.deleteMarkerForBook(markerId, bookId);
   }
 
+  async setCountryDishTried(
+    bookId: string,
+    dishId: string,
+    tried: boolean,
+  ): Promise<boolean> {
+    return this.supabase.setAlbumBookTriedDish(bookId, dishId, tried);
+  }
+
   private async fetchMarkerCountryRows(
     bookId: string,
     includeMarkerDetails = false,
@@ -452,6 +477,37 @@ export class AlbumDataService {
         .sort((a, b) => a.name.localeCompare(b.name));
     } catch (error) {
       console.error('Exception while loading country dishes:', error);
+      return [];
+    }
+  }
+
+  private async fetchCountryDishes(
+    countryId: string,
+  ): Promise<AlbumCountryDishItem[]> {
+    try {
+      const data = await this.supabase.getAlbumCountryDishes(countryId);
+
+      return ((data as AlbumCountryDishRow[] | null) ?? [])
+        .map((row) => {
+          const dishId = row.id ?? null;
+          const name = row.name ?? null;
+          if (!dishId || !name) return null;
+
+          return {
+            dishId,
+            name,
+            category: row.category ?? null,
+            location: row.location ?? null,
+            tasteAtlasUrl: row.tasteatlas_url ?? null,
+            rating: this.toNullableNumber(row.rating),
+            imageUrl: row.image_url ?? null,
+            isTried: false,
+          };
+        })
+        .filter((dish): dish is AlbumCountryDishItem => dish !== null)
+        .sort((a, b) => a.name.localeCompare(b.name));
+    } catch (error) {
+      console.error('Exception while loading country dish list:', error);
       return [];
     }
   }
