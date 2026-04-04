@@ -87,6 +87,7 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private hoveredMetadataRequestId = 0;
   private homeMetadataRequestId = 0;
+  private selectedBookRefreshRequestId = 0;
 
   protected readonly countries = signal<CountryShape[]>([]);
   protected readonly gridPaths = signal<GridPaths>({
@@ -261,6 +262,10 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
     return markerMap;
   });
 
+  protected readonly selectedCountryHasMarkers = computed(
+    () => this.selectedCountryMarkers().length > 0,
+  );
+
   protected readonly markerPanelCityName = computed(() => {
     return this.selectedMarkerDetail()?.cityName ?? 'Marker';
   });
@@ -322,11 +327,9 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
   });
 
   constructor() {
-    // Load data when selected book changes
     effect(() => {
       const bookId = this.bookState.selectedBook()?.id ?? null;
-      void this.loadBookVisitedMetadata(bookId);
-      void this.loadAllBookMarkerDots(bookId);
+      void this.syncSelectedBookState(bookId);
     });
 
     // Load home country metadata when it changes
@@ -466,10 +469,16 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     this.selectedCountryIso2.set(iso2);
+    this.selectedCountryCities.set([]);
+    this.selectedCountryMarkers.set([]);
+    this.closeDetailPanel();
     this.citiesSearchText.set('');
     this.visibleCitiesCount.set(WorldMapComponent.CITY_PAGE_SIZE);
     this.hoveredCityCoords.set(null);
-    void this.loadSelectedCountryData(iso2);
+    void this.loadSelectedCountryData(
+      iso2,
+      this.bookState.selectedBook()?.id ?? null,
+    );
   }
 
   closeCountryPanel(): void {
@@ -810,24 +819,29 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
     await this.loadHoveredCountryMetadata(hoveredIso2, bookId);
   }
 
-  private async openMarkerPanel(markerId: string): Promise<void> {
-    const bookId = this.bookState.selectedBook()?.id ?? null;
-    if (!bookId) return;
+  private async openMarkerPanel(
+    markerId: string,
+    bookId: string | null = this.bookState.selectedBook()?.id ?? null,
+  ): Promise<boolean> {
+    if (!bookId) return false;
 
     const detail = await this.supabase.getMarkerDetailForBook(markerId, bookId);
-    if (!detail) return;
+    if (!detail) return false;
+
+    if (bookId !== this.bookState.selectedBook()?.id) return false;
 
     this.selectedMarkerDetail.set(detail);
     this.markerPanelForm.set(createMarkerFormFromSnapshot(detail));
     this.markerEditMode.set(false);
     this.selectedCityForPanel.set(null);
     this.activeDetailPanel.set('marker');
+    return true;
   }
 
   private async refreshAfterMarkerMutation(): Promise<void> {
     const iso2 = this.selectedCountryIso2();
     const bookId = this.bookState.selectedBook()?.id ?? null;
-    if (iso2) await this.loadSelectedCountryData(iso2);
+    if (iso2) await this.loadSelectedCountryData(iso2, bookId);
 
     await this.loadBookVisitedMetadata(bookId);
     await this.loadAllBookMarkerDots(bookId);
@@ -852,9 +866,13 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
         );
         return { name: marker.cityName, x, y };
       });
+
+      if (bookId !== this.bookState.selectedBook()?.id) return;
+
       this.allBookMarkerDots.set(dots);
     } catch (err) {
       console.error('Failed to load all marker dots', err);
+      if (bookId !== this.bookState.selectedBook()?.id) return;
       this.allBookMarkerDots.set([]);
     }
   }
@@ -891,9 +909,10 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
     return `${value.toFixed(2)}%`;
   }
 
-  private async loadSelectedCountryData(iso2: string): Promise<void> {
-    const bookId = this.bookState.selectedBook()?.id ?? null;
-
+  private async loadSelectedCountryData(
+    iso2: string,
+    bookId: string | null,
+  ): Promise<void> {
     try {
       const [cities, markers] = await Promise.all([
         this.supabase.getCountryCitiesByIso2(iso2),
@@ -903,17 +922,99 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
       ]);
 
       // Only update if this is still the selected country
-      if (this.selectedCountryIso2() === iso2) {
+      if (
+        this.selectedCountryIso2() === iso2 &&
+        bookId === this.bookState.selectedBook()?.id
+      ) {
         this.selectedCountryCities.set(cities);
         this.selectedCountryMarkers.set(markers);
       }
     } catch (err) {
       console.error('Failed to load selected country data', err);
-      if (this.selectedCountryIso2() === iso2) {
+      if (
+        this.selectedCountryIso2() === iso2 &&
+        bookId === this.bookState.selectedBook()?.id
+      ) {
         this.selectedCountryCities.set([]);
         this.selectedCountryMarkers.set([]);
       }
     }
+  }
+
+  private async syncSelectedBookState(bookId: string | null): Promise<void> {
+    const requestId = ++this.selectedBookRefreshRequestId;
+
+    await Promise.all([
+      this.loadBookVisitedMetadata(bookId),
+      this.loadAllBookMarkerDots(bookId),
+    ]);
+
+    if (requestId !== this.selectedBookRefreshRequestId) return;
+
+    const selectedCountryIso2 = this.selectedCountryIso2();
+    if (selectedCountryIso2)
+      await this.loadSelectedCountryData(selectedCountryIso2, bookId);
+
+    if (requestId !== this.selectedBookRefreshRequestId) return;
+
+    await this.syncActiveDetailPanelForBook(bookId, requestId);
+  }
+
+  private async syncActiveDetailPanelForBook(
+    bookId: string | null,
+    requestId: number,
+  ): Promise<void> {
+    const activePanel = this.activeDetailPanel();
+    if (!activePanel) return;
+
+    if (!bookId) {
+      this.closeDetailPanel();
+      return;
+    }
+
+    if (activePanel === 'marker') {
+      const markerDetail = this.selectedMarkerDetail();
+      if (!markerDetail) {
+        this.closeDetailPanel();
+        return;
+      }
+
+      const opened = await this.openMarkerPanel(markerDetail.id, bookId);
+      if (requestId !== this.selectedBookRefreshRequestId) return;
+      if (opened) return;
+
+      const fallbackCity =
+        this.selectedCountryCities().find(
+          (city) => city.id === markerDetail.cityId,
+        ) ?? null;
+      if (!fallbackCity) {
+        this.closeDetailPanel();
+        return;
+      }
+
+      this.selectedCityForPanel.set(fallbackCity);
+      this.selectedMarkerDetail.set(null);
+      this.markerEditMode.set(false);
+      this.markerPanelForm.set(createEmptyMarkerForm());
+      this.cityPanelForm.set({
+        ...createEmptyMarkerForm(),
+        visits: [{ startDate: '', endDate: '' }],
+      });
+      this.activeDetailPanel.set('city');
+      return;
+    }
+
+    const selectedCity = this.selectedCityForPanel();
+    if (!selectedCity) {
+      this.closeDetailPanel();
+      return;
+    }
+
+    const marker = this.markerByCityId().get(selectedCity.id);
+    if (!marker) return;
+
+    await this.openMarkerPanel(marker.id, bookId);
+    if (requestId !== this.selectedBookRefreshRequestId) return;
   }
 
   private setHoveredCountry(countryId: string | null, source: string): void {
@@ -954,6 +1055,8 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
     try {
       const result = await this.mapData.loadVisitedMetadata(bookId);
+      if (bookId !== this.bookState.selectedBook()?.id) return;
+
       if (!result) {
         this.visitedCountryIso2s.set(new Set());
         this.visitedLandAreaPercent.set(0);
@@ -969,6 +1072,7 @@ export class WorldMapComponent implements OnInit, AfterViewInit, OnDestroy {
       if (result.totalArea > 0) this.totalLandAreaSqKm.set(result.totalArea);
     } catch (err) {
       console.error('Failed to load visited metadata', err);
+      if (bookId !== this.bookState.selectedBook()?.id) return;
       this.visitedCountryIso2s.set(new Set());
       this.visitedLandAreaPercent.set(0);
       this.visitedLandAreaSqKm.set(0);

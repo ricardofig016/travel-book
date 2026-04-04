@@ -1,10 +1,12 @@
 # TODO
 
 - [ ] album: implement marker photo page layouts
-- [ ] feat: substitute the 2 page nav buttons (`<` and `>`) with bookmarks
-- [ ] map: when the user changes the selected book, the country and city should be refreshed to reflect the new book's data. currently, the map and country panels still show the previously selected book's data until the user clicks on a country or city, which triggers a refresh.
-- [ ] map: in city list in country panel, highlight cities that are already a marker with bold text, and make the markers in marker list bold as well
-- [ ] map: the country title in country panel shouldn't be a link to the country album page if there are no markers for that country.
+- [ ] feat: divide album marker photos into multiple pages
+- [ ] feat: make the page nav buttons (`<` and `>`) actually move page to page instead of going through the 5 main pages (cover, account, map, album, statistics).
+- [ ] feat: add bookmarks for the 4 main pages (except cover) account, map, album, and statistics.
+- [x] map: when the user changes the selected book, the country and city should be refreshed to reflect the new book's data. currently, the map and country panels still show the previously selected book's data until the user clicks on a country or city, which triggers a refresh.
+- [x] map: in city list in country panel, highlight cities that are already a marker with bold text, and make the markers in marker list bold as well
+- [x] map: the country title in country panel shouldn't be a link to the country album page if there are no markers for that country.
 - [x] album: implement country dishes
 - [x] feat: if a user tries to modify the demo book (add markers, toggle marker statuses, add pictures, etc.) prompt them to sign up (if unauthenticated) or create a new book (if authenticated).
 - [x] data: seed cloudinary with demo photos for the demo book

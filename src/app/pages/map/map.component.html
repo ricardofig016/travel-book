@@ -250,14 +250,18 @@
         @if (selectedCountryIso2(); as iso2) {
           <div class="panel">
             <div class="panel-header">
-              <a
-                [routerLink]="
-                  getCountryAlbumSegments(selectedCountryMetadata()?.name)
-                "
-                class="country-album-link"
-              >
+              @if (selectedCountryHasMarkers()) {
+                <a
+                  [routerLink]="
+                    getCountryAlbumSegments(selectedCountryMetadata()?.name)
+                  "
+                  class="country-album-link"
+                >
+                  <h3>{{ selectedCountryMetadata()?.name || iso2 }}</h3>
+                </a>
+              } @else {
                 <h3>{{ selectedCountryMetadata()?.name || iso2 }}</h3>
-              </a>
+              }
               <button type="button" (click)="closeCountryPanel()">✕</button>
             </div>
 
@@ -281,10 +285,12 @@
                     >
                       @if (marker.visited) {
                         <a [routerLink]="getMarkerUrl(marker)">
-                          {{ marker.cityName }}
+                          <strong>{{ marker.cityName }}</strong>
                         </a>
                       } @else {
-                        <span>{{ marker.cityName }}</span>
+                        <span
+                          ><strong>{{ marker.cityName }}</strong></span
+                        >
                       }
                       <div class="marker-status">
                         <label>
@@ -363,7 +369,11 @@
                     (mouseenter)="onCityHover(city)"
                     (mouseleave)="onCityLeave()"
                   >
-                    <span class="city-name">{{ city.name }}</span>
+                    @if (markerByCityId().has(city.id)) {
+                      <strong class="city-name">{{ city.name }}</strong>
+                    } @else {
+                      <span class="city-name">{{ city.name }}</span>
+                    }
                     <span class="city-population">
                       {{ formatPopulation(city.population) }}
                     </span>
